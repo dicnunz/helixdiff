@@ -121,6 +121,23 @@ Allowed claim only if:
 - frozen context is 100%;
 - results include exact match, byte accuracy, structure accuracy, and failure breakdown.
 
+## 2026-05-21 Proof Update
+
+Suture TTA is now implemented, measurable, and stricter than the first sketch:
+
+- visible adaptation trains a temporary session copy only;
+- synthetic adaptation spans exclude the hidden target byte sequence even when the same text appears elsewhere in visible context;
+- JSON reports `hidden_target_seen_in_visible_context` separately from `hidden_target_excluded_from_synthetic_targets`;
+- frozen visible context remains preserved in tests and benchmark rows.
+
+The new nearest-visible baseline changed the research state. On the 4-case unseen Tiny Shakespeare slice, it got `50.0%` byte accuracy and `50.0%` exact match by copying visible local sutures. Bridge-only got `6.25%`. Static model, bridge-guided model, raw Suture TTA, and bridge-guided Suture TTA all got `0.0%`.
+
+That kills the naive version of the breakthrough. Raw visible-context adaptation is not enough. The promising mutation is:
+
+**Retrieval-Lattice Diffusion**: generate a lattice of allowed local repair candidates from visible context, training split bridge guesses, byte-class/morphology completions, and sampled diffusion proposals; then use the diffusion model as a verifier/remask controller instead of asking it to invent every byte from scratch.
+
+The next falsifiable edge is selection, not sampling. If the correct answer is in the candidate lattice and the diffusion verifier cannot pick it, improve scoring. If the correct answer is not in the lattice, improve candidate generation with byte-class and morphology channels. This turns each failure into a named bottleneck instead of a vague "train bigger" answer.
+
 ## Falsifiers
 
 The idea is fake if any of these happen:
@@ -198,4 +215,10 @@ Under 700 words. Ranked moves only. No encouragement. Include the public claim b
 
 ## Current Call
 
-Ship Suture TTA first. If that branch cannot clear n-gram bridge under hidden-answer exclusion, stop calling DocForge a breakthrough and pivot to verifier selection or a trained damage sampler. The public line stays severe: **Mac-local SOTA for visible-context document repair, not a general language model.**
+Suture TTA shipped and did not clear the stronger gate. Do not spend the next loop pretending more raw micro-steps are the breakthrough. Build Retrieval-Lattice Diffusion next:
+
+1. expose top-k visible suture candidates, bridge candidates, and sampled diffusion candidates in the benchmark;
+2. score every candidate with leave-one-out diffusion probes plus boundary-suture features;
+3. report oracle-in-lattice, selected accuracy, and failure category per case.
+
+Only call DocForge impressive after verifier-guided lattice selection beats nearest-visible and bridge-only on widened held-out spans. The public line stays severe: **Mac-local SOTA for visible-context document repair, not a general language model.**

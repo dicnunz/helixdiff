@@ -40,6 +40,24 @@ class VisibleAdaptTest(unittest.TestCase):
         self.assertFalse(torch.any(clean[mask] == tokenizer.bos_token_id).item())
         self.assertFalse(torch.any(clean[mask] == tokenizer.eos_token_id).item())
 
+    def test_visible_suture_batch_excludes_hidden_target_bytes(self) -> None:
+        tokenizer = ByteTokenizer()
+        generator = torch.Generator(device="cpu").manual_seed(9)
+        clean, _corrupted, mask = make_visible_suture_batch(
+            visible_text="aaaa secret bbbb secret cccc dddd",
+            tokenizer=tokenizer,
+            seq_len=48,
+            batch_size=6,
+            span_min=6,
+            span_max=8,
+            device=torch.device("cpu"),
+            generator=generator,
+            forbidden_span_text="secret",
+        )
+        for row in range(clean.shape[0]):
+            masked_text = tokenizer.decode(clean[row][mask[row]])
+            self.assertNotIn("secret", masked_text)
+
     def test_adaptation_returns_session_copy_and_leak_flag(self) -> None:
         tokenizer = ByteTokenizer()
         model = DiffusionTransformer(
@@ -57,6 +75,7 @@ class VisibleAdaptTest(unittest.TestCase):
         self.assertIsNot(adapted, model)
         self.assertTrue(report["enabled"])
         self.assertFalse(report["hidden_target_seen_in_visible_context"])
+        self.assertTrue(report["hidden_target_excluded_from_synthetic_targets"])
         self.assertGreater(report["trainable_parameters"], 0)
         self.assertIn("visible_context_sha256", report)
 

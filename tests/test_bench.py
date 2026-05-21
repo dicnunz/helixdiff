@@ -1,6 +1,7 @@
 import unittest
 
-from helixdiff.bench import make_marked_cases, model_quality_label, sha256_text, split_text
+from helixdiff.bench import make_marked_cases, model_quality_label, nearest_visible_case, sha256_text, split_text
+from helixdiff.tokenizer import ByteTokenizer
 
 
 class BenchTest(unittest.TestCase):
@@ -40,6 +41,16 @@ class BenchTest(unittest.TestCase):
     def test_quality_label_refuses_weak_model_as_strong(self) -> None:
         self.assertEqual(model_quality_label(0.14, 0.02, 0.1), "mechanism_checkpoint")
         self.assertEqual(model_quality_label(0.5, 0.3, 0.6), "strong_laptop_checkpoint")
+
+    def test_nearest_visible_baseline_uses_visible_suture_match(self) -> None:
+        row = nearest_visible_case(
+            tokenizer=ByteTokenizer(),
+            marked_text="alpha Tailor beta [[Tail]]or beta",
+        )
+        self.assertEqual(row["predicted_hole"], "Tail")
+        self.assertTrue(row["exact"])
+        self.assertTrue(row["frozen_context_unchanged"])
+        self.assertEqual(row["nearest_visible_source"], "before")
 
 
 if __name__ == "__main__":

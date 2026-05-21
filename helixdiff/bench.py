@@ -157,6 +157,83 @@ def guide_only_case(
     }
 
 
+def _common_suffix(left: list[int], right: list[int], limit: int) -> int:
+    score = 0
+    for offset in range(1, min(len(left), len(right), limit) + 1):
+        if left[-offset] != right[-offset]:
+            break
+        score += 1
+    return score
+
+
+def _common_prefix(left: list[int], right: list[int], limit: int) -> int:
+    score = 0
+    for left_id, right_id in zip(left[:limit], right[:limit], strict=False):
+        if left_id != right_id:
+            break
+        score += 1
+    return score
+
+
+@torch.no_grad()
+def nearest_visible_case(
+    *,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    context_window: int = 16,
+) -> dict[str, Any]:
+    example = parse_marked_infill(marked_text, tokenizer)
+    before_ids = tokenizer.encode(example.before, add_bos=False, add_eos=False)
+    after_ids = tokenizer.encode(example.after, add_bos=False, add_eos=False)
+    hole_len = example.hole_length
+    actual_left = before_ids[-context_window:]
+    actual_right = after_ids[:context_window]
+    best_span: list[int] | None = None
+    best_source = "fallback_space"
+    best_score = -1
+
+    for source, ids in (("before", before_ids), ("after", after_ids)):
+        if len(ids) < hole_len:
+            continue
+        for start in range(0, len(ids) - hole_len + 1):
+            end = start + hole_len
+            span = ids[start:end]
+            left_context = ids[max(0, start - context_window) : start]
+            right_context = ids[end : end + context_window]
+            score = _common_suffix(left_context, actual_left, context_window) + _common_prefix(
+                right_context,
+                actual_right,
+                context_window,
+            )
+            if score > best_score:
+                best_span = span
+                best_source = source
+                best_score = score
+
+    if best_span is None:
+        best_span = [tokenizer.byte_offset + ord(" ")] * hole_len
+        best_score = 0
+
+    repaired = example.tokens.clone()
+    repaired[example.hole_start : example.hole_end] = torch.tensor(best_span, dtype=torch.long)
+    pred = repaired[example.hole_start : example.hole_end]
+    target = example.target[example.hole_start : example.hole_end]
+    byte_accuracy = float((pred == target).float().mean().item()) if target.numel() else 0.0
+    return {
+        "marked_text": marked_text,
+        "target_hole": example.hole,
+        "predicted_hole": tokenizer.decode(pred),
+        "hole_length_bytes": example.hole_length,
+        "byte_accuracy": byte_accuracy,
+        "exact": bool(torch.equal(pred, target)),
+        "frozen_context_unchanged": bool((repaired[example.frozen] == example.target[example.frozen]).all().item()),
+        "strategy": "nearest_visible",
+        "nearest_visible_source": best_source,
+        "nearest_visible_score": int(best_score),
+        "nearest_visible_context_window": int(context_window),
+    }
+
+
 @torch.no_grad()
 def infill_case(
     *,
@@ -308,6 +385,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     guide = BigramGuide.from_text(train_text, tokenizer).to_device(device)
     unigram_rows: list[dict[str, Any]] = []
     bridge_rows: list[dict[str, Any]] = []
+    nearest_visible_rows: list[dict[str, Any]] = []
     unguided_rows: list[dict[str, Any]] = []
     guided_rows: list[dict[str, Any]] = []
     adapted_rows: list[dict[str, Any]] = []
@@ -317,6 +395,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
         bridge = guide_only_case(tokenizer=tokenizer, marked_text=marked, guide=guide, strategy="bridge")
         bridge["target_hole_seen_in_train_split"] = bridge["target_hole"] in train_text
         bridge_rows.append(bridge)
+        nearest_visible_rows.append(nearest_visible_case(tokenizer=tokenizer, marked_text=marked))
         unguided_rows.append(
             infill_case(
                 model=model,
@@ -397,6 +476,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     unguided_summary = summarize_infill(unguided_rows)
     unigram_summary = summarize_infill(unigram_rows)
     bridge_summary = summarize_infill(bridge_rows)
+    nearest_visible_summary = summarize_infill(nearest_visible_rows)
     guided_summary = summarize_infill(guided_rows)
     adapted_summary = summarize_infill(adapted_rows)
     adapted_guided_summary = summarize_infill(adapted_guided_rows)
@@ -404,6 +484,12 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     adapted_lift = float(adapted_summary["byte_accuracy"]) - float(unguided_summary["byte_accuracy"])
     adapted_vs_bridge = float(adapted_summary["byte_accuracy"]) - float(bridge_summary["byte_accuracy"])
     adapted_guided_vs_bridge = float(adapted_guided_summary["byte_accuracy"]) - float(bridge_summary["byte_accuracy"])
+    adapted_vs_nearest_visible = float(adapted_summary["byte_accuracy"]) - float(
+        nearest_visible_summary["byte_accuracy"]
+    )
+    adapted_guided_vs_nearest_visible = float(adapted_guided_summary["byte_accuracy"]) - float(
+        nearest_visible_summary["byte_accuracy"]
+    )
     label = model_quality_label(
         float(masked["masked_accuracy"]),
         float(unguided_summary["byte_accuracy"]),
@@ -434,6 +520,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "context_chars": args.context_chars,
             "unigram_baseline": {"summary": unigram_summary, "cases": unigram_rows},
             "bridge_only_baseline": {"summary": bridge_summary, "cases": bridge_rows},
+            "nearest_visible_baseline": {"summary": nearest_visible_summary, "cases": nearest_visible_rows},
             "unguided": {"summary": unguided_summary, "cases": unguided_rows},
             "bridge_guided": {"summary": guided_summary, "cases": guided_rows},
             "visible_context_adapted": {"summary": adapted_summary, "cases": adapted_rows},
@@ -445,6 +532,8 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "adapted_minus_unguided_byte_accuracy": adapted_lift,
             "adapted_minus_bridge_only_byte_accuracy": adapted_vs_bridge,
             "adapted_bridge_guided_minus_bridge_only_byte_accuracy": adapted_guided_vs_bridge,
+            "adapted_minus_nearest_visible_byte_accuracy": adapted_vs_nearest_visible,
+            "adapted_bridge_guided_minus_nearest_visible_byte_accuracy": adapted_guided_vs_nearest_visible,
         },
         "quality_label": label,
         "ten_out_of_ten_gate": {

@@ -1,0 +1,1047 @@
+{
+  "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt",
+  "checkpoint_sha256": "3d1ae0b04275291f44c17660eeef12c627ed0d8f96132eba3b8caff27bedd9bf",
+  "checkpoint_step": 30000,
+  "loaded_state": "model_state",
+  "state_migration": {
+    "missing_initialized": [],
+    "unexpected": []
+  },
+  "parameters": 439968,
+  "data": "data/tinyshakespeare.txt",
+  "data_bytes": 1115394,
+  "val_fraction": 0.08,
+  "train_split_sha256": "3bcee3c77095c0828e0bca96a9d3e56860063e4af1f1a4eb38486fac22f6aa16",
+  "validation_split_sha256": "8d0f7b33b39afc4bc3c80c8060f53b652a90e496a11a81c642cee37f1e028638",
+  "guide_scope": "training_split_only",
+  "case_filter": {
+    "require_unseen_hole": true,
+    "candidate_count": 2,
+    "visible_context_adaptation_steps": 10
+  },
+  "masked_eval": {
+    "loss": 3.2678399085998535,
+    "masked_accuracy": 0.1583222821354866,
+    "mask_rate": 0.5,
+    "batches": 2,
+    "batch_size": 4
+  },
+  "infill": {
+    "case_source": "validation_split",
+    "span_chars": 4,
+    "context_chars": 40,
+    "unigram_baseline": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": "\n\nTailor:\n\nGRUMIO:\nI confess the cape.\n\n[[Tail]]or:\n\nGRUMIO:\nI confess two sleeves.\n\nTai",
+          "target_hole": "Tail",
+          "predicted_hole": "    ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        },
+        {
+          "marked_text": "ood Grumio.\n\nGRUMIO:\nLend thine ear.\n\nCU[[RTIS]]:\nHere.\n\nGRUMIO:\nThere.\n\nCURTIS:\nThis is",
+          "target_hole": "RTIS",
+          "predicted_hole": "    ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        },
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd Gabr[[iel']]s pumps were all unpink'd i' the heel;\nT",
+          "target_hole": "iel'",
+          "predicted_hole": "    ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        },
+        {
+          "marked_text": "\n\nSEBASTIAN:\nWe would so, and then go a [[bat-]]fowling.\n\nANTONIO:\nNay, good my lord, be",
+          "target_hole": "bat-",
+          "predicted_hole": "    ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        }
+      ]
+    },
+    "bridge_only_baseline": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.0625,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": "\n\nTailor:\n\nGRUMIO:\nI confess the cape.\n\n[[Tail]]or:\n\nGRUMIO:\nI confess two sleeves.\n\nTai",
+          "target_hole": "Tail",
+          "predicted_hole": "A Pl",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.25,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "ood Grumio.\n\nGRUMIO:\nLend thine ear.\n\nCU[[RTIS]]:\nHere.\n\nGRUMIO:\nThere.\n\nCURTIS:\nThis is",
+          "target_hole": "RTIS",
+          "predicted_hole": "S:\nI",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd Gabr[[iel']]s pumps were all unpink'd i' the heel;\nT",
+          "target_hole": "iel'",
+          "predicted_hole": "oad ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "\n\nSEBASTIAN:\nWe would so, and then go a [[bat-]]fowling.\n\nANTONIO:\nNay, good my lord, be",
+          "target_hole": "bat-",
+          "predicted_hole": "thou",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "nearest_visible_baseline": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.5,
+        "exact_match_rate": 0.5,
+        "pass_at_k_exact": 0.5,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": "\n\nTailor:\n\nGRUMIO:\nI confess the cape.\n\n[[Tail]]or:\n\nGRUMIO:\nI confess two sleeves.\n\nTai",
+          "target_hole": "Tail",
+          "predicted_hole": "Tail",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 1.0,
+          "exact": true,
+          "frozen_context_unchanged": true,
+          "strategy": "nearest_visible",
+          "nearest_visible_source": "before",
+          "nearest_visible_score": 18,
+          "nearest_visible_context_window": 16
+        },
+        {
+          "marked_text": "ood Grumio.\n\nGRUMIO:\nLend thine ear.\n\nCU[[RTIS]]:\nHere.\n\nGRUMIO:\nThere.\n\nCURTIS:\nThis is",
+          "target_hole": "RTIS",
+          "predicted_hole": "RTIS",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 1.0,
+          "exact": true,
+          "frozen_context_unchanged": true,
+          "strategy": "nearest_visible",
+          "nearest_visible_source": "after",
+          "nearest_visible_score": 7,
+          "nearest_visible_context_window": 16
+        },
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd Gabr[[iel']]s pumps were all unpink'd i' the heel;\nT",
+          "target_hole": "iel'",
+          "predicted_hole": ", wa",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "nearest_visible",
+          "nearest_visible_source": "before",
+          "nearest_visible_score": 3,
+          "nearest_visible_context_window": 16
+        },
+        {
+          "marked_text": "\n\nSEBASTIAN:\nWe would so, and then go a [[bat-]]fowling.\n\nANTONIO:\nNay, good my lord, be",
+          "target_hole": "bat-",
+          "predicted_hole": "woul",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "nearest_visible",
+          "nearest_visible_source": "before",
+          "nearest_visible_score": 1,
+          "nearest_visible_context_window": 16
+        }
+      ]
+    },
+    "unguided": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": "\n\nTailor:\n\nGRUMIO:\nI confess the cape.\n\n[[Tail]]or:\n\nGRUMIO:\nI confess two sleeves.\n\nTai",
+          "target_hole": "Tail",
+          "predicted_hole": "  \n ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -1.6740620136260986,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -1.6740620136260986,
+              "score_is_finite": true,
+              "predicted_hole": "  \n ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 102,
+              "score": -4.032647132873535,
+              "score_is_finite": true,
+              "predicted_hole": "ehoU",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.2382115829968825
+        },
+        {
+          "marked_text": "ood Grumio.\n\nGRUMIO:\nLend thine ear.\n\nCU[[RTIS]]:\nHere.\n\nGRUMIO:\nThere.\n\nCURTIS:\nThis is",
+          "target_hole": "RTIS",
+          "predicted_hole": "  ro",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -2.0018880367279053,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 102,
+              "score": -4.032648086547852,
+              "score_is_finite": true,
+              "predicted_hole": "ehoU",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 103,
+              "score": -2.0018880367279053,
+              "score_is_finite": true,
+              "predicted_hole": "  ro",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.12407870800234377
+        },
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd Gabr[[iel']]s pumps were all unpink'd i' the heel;\nT",
+          "target_hole": "iel'",
+          "predicted_hole": "  ro",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -2.0018882751464844,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 103,
+              "score": -2.0018882751464844,
+              "score_is_finite": true,
+              "predicted_hole": "  ro",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 104,
+              "score": -2.751682758331299,
+              "score_is_finite": true,
+              "predicted_hole": "\n an",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.12954183301189914
+        },
+        {
+          "marked_text": "\n\nSEBASTIAN:\nWe would so, and then go a [[bat-]]fowling.\n\nANTONIO:\nNay, good my lord, be",
+          "target_hole": "bat-",
+          "predicted_hole": "\n an",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -2.7516822814941406,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 104,
+              "score": -2.7516822814941406,
+              "score_is_finite": true,
+              "predicted_hole": "\n an",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 105,
+              "score": -3.3011674880981445,
+              "score_is_finite": true,
+              "predicted_hole": "lwa ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.14615691601647995
+        }
+      ]
+    },
+    "bridge_guided": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": "\n\nTailor:\n\nGRUMIO:\nI confess the cape.\n\n[[Tail]]or:\n\nGRUMIO:\nI confess two sleeves.\n\nTai",
+          "target_hole": "Tail",
+          "predicted_hole": "A on",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -1.1654678583145142,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -1.59359610080719,
+              "score_is_finite": true,
+              "predicted_hole": "A ot",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 102,
+              "score": -1.1654678583145142,
+              "score_is_finite": true,
+              "predicted_hole": "A on",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 3.6037335419969168,
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "ood Grumio.\n\nGRUMIO:\nLend thine ear.\n\nCU[[RTIS]]:\nHere.\n\nGRUMIO:\nThere.\n\nCURTIS:\nThis is",
+          "target_hole": "RTIS",
+          "predicted_hole": "TIO:",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -0.11227580159902573,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 102,
+              "score": -0.11227580159902573,
+              "score_is_finite": true,
+              "predicted_hole": "TIO:",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 103,
+              "score": -0.2045494019985199,
+              "score_is_finite": true,
+              "predicted_hole": "S:\nI",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 4.822425624995958,
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd Gabr[[iel']]s pumps were all unpink'd i' the heel;\nT",
+          "target_hole": "iel'",
+          "predicted_hole": "oad ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -0.489911824464798,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 103,
+              "score": -0.489911824464798,
+              "score_is_finite": true,
+              "predicted_hole": "oad ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 104,
+              "score": -0.489911824464798,
+              "score_is_finite": true,
+              "predicted_hole": "oad ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 5.190149541012943,
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "\n\nSEBASTIAN:\nWe would so, and then go a [[bat-]]fowling.\n\nANTONIO:\nNay, good my lord, be",
+          "target_hole": "bat-",
+          "predicted_hole": "thou",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -0.11036379635334015,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 104,
+              "score": -0.11036379635334015,
+              "score_is_finite": true,
+              "predicted_hole": "thou",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 105,
+              "score": -0.1937430202960968,
+              "score_is_finite": true,
+              "predicted_hole": "hear",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 5.370015874999808,
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "visible_context_adapted": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": "\n\nTailor:\n\nGRUMIO:\nI confess the cape.\n\n[[Tail]]or:\n\nGRUMIO:\nI confess two sleeves.\n\nTai",
+          "target_hole": "Tail",
+          "predicted_hole": "  \n ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -1.6690068244934082,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -1.6690068244934082,
+              "score_is_finite": true,
+              "predicted_hole": "  \n ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 102,
+              "score": -3.9974732398986816,
+              "score_is_finite": true,
+              "predicted_hole": "ehoU",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.08634291600901634,
+          "adaptation": {
+            "enabled": true,
+            "mechanism": "visible_context_suture_tta",
+            "steps": 10,
+            "batch_size": 8,
+            "learning_rate": 0.0001,
+            "weight_decay": 0.0,
+            "span_min": 3,
+            "span_max": 12,
+            "train_scope": "last_block",
+            "seed": 101,
+            "visible_context_sha256": "5068ecbbcb77b8a615f4ae4cab19831ed96f4fc6d1fd59b40c39ddbd53e78318",
+            "visible_context_bytes": 80,
+            "hidden_target_seen_in_visible_context": true,
+            "hidden_target_excluded_from_synthetic_targets": true,
+            "trainable_parameter_names": [
+              "token_emb.weight",
+              "blocks.2.attn_norm.weight",
+              "blocks.2.ff_norm.weight",
+              "blocks.2.attn.qkv.weight",
+              "blocks.2.attn.out.weight",
+              "blocks.2.ff.up.weight",
+              "blocks.2.ff.up.bias",
+              "blocks.2.ff.down.weight",
+              "blocks.2.ff.down.bias",
+              "norm.weight"
+            ],
+            "trainable_parameters": 145728,
+            "first_loss": 4.039994716644287,
+            "final_loss": 3.569700002670288,
+            "mean_masked_accuracy": 0.09051833748817444,
+            "elapsed_seconds": 0.7085120829869993
+          },
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "ood Grumio.\n\nGRUMIO:\nLend thine ear.\n\nCU[[RTIS]]:\nHere.\n\nGRUMIO:\nThere.\n\nCURTIS:\nThis is",
+          "target_hole": "RTIS",
+          "predicted_hole": "  ru",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -2.41005539894104,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 102,
+              "score": -3.9884824752807617,
+              "score_is_finite": true,
+              "predicted_hole": "ehoU",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 103,
+              "score": -2.41005539894104,
+              "score_is_finite": true,
+              "predicted_hole": "  ru",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.12707004198455252,
+          "adaptation": {
+            "enabled": true,
+            "mechanism": "visible_context_suture_tta",
+            "steps": 10,
+            "batch_size": 8,
+            "learning_rate": 0.0001,
+            "weight_decay": 0.0,
+            "span_min": 3,
+            "span_max": 12,
+            "train_scope": "last_block",
+            "seed": 102,
+            "visible_context_sha256": "46d1b27e3bc2617bd5f2aeaf400dd141cd183415f630d0f3f2cbb51e5848a4ca",
+            "visible_context_bytes": 80,
+            "hidden_target_seen_in_visible_context": true,
+            "hidden_target_excluded_from_synthetic_targets": true,
+            "trainable_parameter_names": [
+              "token_emb.weight",
+              "blocks.2.attn_norm.weight",
+              "blocks.2.ff_norm.weight",
+              "blocks.2.attn.qkv.weight",
+              "blocks.2.attn.out.weight",
+              "blocks.2.ff.up.weight",
+              "blocks.2.ff.up.bias",
+              "blocks.2.ff.down.weight",
+              "blocks.2.ff.down.bias",
+              "norm.weight"
+            ],
+            "trainable_parameters": 145728,
+            "first_loss": 3.9656200408935547,
+            "final_loss": 3.7229323387145996,
+            "mean_masked_accuracy": 0.041908448375761506,
+            "elapsed_seconds": 0.6187842919898685
+          },
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd Gabr[[iel']]s pumps were all unpink'd i' the heel;\nT",
+          "target_hole": "iel'",
+          "predicted_hole": "  ru",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -2.397462844848633,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 103,
+              "score": -2.397462844848633,
+              "score_is_finite": true,
+              "predicted_hole": "  ru",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 104,
+              "score": -2.7313098907470703,
+              "score_is_finite": true,
+              "predicted_hole": "\n an",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.10023958300007507,
+          "adaptation": {
+            "enabled": true,
+            "mechanism": "visible_context_suture_tta",
+            "steps": 10,
+            "batch_size": 8,
+            "learning_rate": 0.0001,
+            "weight_decay": 0.0,
+            "span_min": 3,
+            "span_max": 12,
+            "train_scope": "last_block",
+            "seed": 103,
+            "visible_context_sha256": "74f65d42d7db1d1082d14a24361dd06b6de01c9857adf299b29696bfb4851a8e",
+            "visible_context_bytes": 80,
+            "hidden_target_seen_in_visible_context": false,
+            "hidden_target_excluded_from_synthetic_targets": true,
+            "trainable_parameter_names": [
+              "token_emb.weight",
+              "blocks.2.attn_norm.weight",
+              "blocks.2.ff_norm.weight",
+              "blocks.2.attn.qkv.weight",
+              "blocks.2.attn.out.weight",
+              "blocks.2.ff.up.weight",
+              "blocks.2.ff.up.bias",
+              "blocks.2.ff.down.weight",
+              "blocks.2.ff.down.bias",
+              "norm.weight"
+            ],
+            "trainable_parameters": 145728,
+            "first_loss": 3.302158832550049,
+            "final_loss": 3.238182306289673,
+            "mean_masked_accuracy": 0.16149868071079254,
+            "elapsed_seconds": 0.55376779101789
+          },
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "\n\nSEBASTIAN:\nWe would so, and then go a [[bat-]]fowling.\n\nANTONIO:\nNay, good my lord, be",
+          "target_hole": "bat-",
+          "predicted_hole": "\n an",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -2.7230100631713867,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 104,
+              "score": -2.7230100631713867,
+              "score_is_finite": true,
+              "predicted_hole": "\n an",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 105,
+              "score": -3.267200469970703,
+              "score_is_finite": true,
+              "predicted_hole": "lwa ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.13951716700103134,
+          "adaptation": {
+            "enabled": true,
+            "mechanism": "visible_context_suture_tta",
+            "steps": 10,
+            "batch_size": 8,
+            "learning_rate": 0.0001,
+            "weight_decay": 0.0,
+            "span_min": 3,
+            "span_max": 12,
+            "train_scope": "last_block",
+            "seed": 104,
+            "visible_context_sha256": "6e31b4f70ffe99ae91ec6417facc75e21270420a935ee339d4682a79719ae39e",
+            "visible_context_bytes": 80,
+            "hidden_target_seen_in_visible_context": false,
+            "hidden_target_excluded_from_synthetic_targets": true,
+            "trainable_parameter_names": [
+              "token_emb.weight",
+              "blocks.2.attn_norm.weight",
+              "blocks.2.ff_norm.weight",
+              "blocks.2.attn.qkv.weight",
+              "blocks.2.attn.out.weight",
+              "blocks.2.ff.up.weight",
+              "blocks.2.ff.up.bias",
+              "blocks.2.ff.down.weight",
+              "blocks.2.ff.down.bias",
+              "norm.weight"
+            ],
+            "trainable_parameters": 145728,
+            "first_loss": 3.813944101333618,
+            "final_loss": 3.362030267715454,
+            "mean_masked_accuracy": 0.1383667193353176,
+            "elapsed_seconds": 0.7209431669907644
+          },
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "visible_context_adapted_bridge_guided": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": "\n\nTailor:\n\nGRUMIO:\nI confess the cape.\n\n[[Tail]]or:\n\nGRUMIO:\nI confess two sleeves.\n\nTai",
+          "target_hole": "Tail",
+          "predicted_hole": "A on",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -1.1917595863342285,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -1.625698447227478,
+              "score_is_finite": true,
+              "predicted_hole": "A ot",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 102,
+              "score": -1.1917595863342285,
+              "score_is_finite": true,
+              "predicted_hole": "A on",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 3.76958554200246,
+          "adaptation": {
+            "enabled": true,
+            "mechanism": "visible_context_suture_tta",
+            "steps": 10,
+            "batch_size": 8,
+            "learning_rate": 0.0001,
+            "weight_decay": 0.0,
+            "span_min": 3,
+            "span_max": 12,
+            "train_scope": "last_block",
+            "seed": 101,
+            "visible_context_sha256": "5068ecbbcb77b8a615f4ae4cab19831ed96f4fc6d1fd59b40c39ddbd53e78318",
+            "visible_context_bytes": 80,
+            "hidden_target_seen_in_visible_context": true,
+            "hidden_target_excluded_from_synthetic_targets": true,
+            "trainable_parameter_names": [
+              "token_emb.weight",
+              "blocks.2.attn_norm.weight",
+              "blocks.2.ff_norm.weight",
+              "blocks.2.attn.qkv.weight",
+              "blocks.2.attn.out.weight",
+              "blocks.2.ff.up.weight",
+              "blocks.2.ff.up.bias",
+              "blocks.2.ff.down.weight",
+              "blocks.2.ff.down.bias",
+              "norm.weight"
+            ],
+            "trainable_parameters": 145728,
+            "first_loss": 4.039994716644287,
+            "final_loss": 3.569700002670288,
+            "mean_masked_accuracy": 0.09051833748817444,
+            "elapsed_seconds": 0.7085120829869993
+          },
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "ood Grumio.\n\nGRUMIO:\nLend thine ear.\n\nCU[[RTIS]]:\nHere.\n\nGRUMIO:\nThere.\n\nCURTIS:\nThis is",
+          "target_hole": "RTIS",
+          "predicted_hole": "TIO:",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -0.10837902873754501,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 102,
+              "score": -0.10837902873754501,
+              "score_is_finite": true,
+              "predicted_hole": "TIO:",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 103,
+              "score": -0.20068274438381195,
+              "score_is_finite": true,
+              "predicted_hole": "S:\nI",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 4.366121625003871,
+          "adaptation": {
+            "enabled": true,
+            "mechanism": "visible_context_suture_tta",
+            "steps": 10,
+            "batch_size": 8,
+            "learning_rate": 0.0001,
+            "weight_decay": 0.0,
+            "span_min": 3,
+            "span_max": 12,
+            "train_scope": "last_block",
+            "seed": 102,
+            "visible_context_sha256": "46d1b27e3bc2617bd5f2aeaf400dd141cd183415f630d0f3f2cbb51e5848a4ca",
+            "visible_context_bytes": 80,
+            "hidden_target_seen_in_visible_context": true,
+            "hidden_target_excluded_from_synthetic_targets": true,
+            "trainable_parameter_names": [
+              "token_emb.weight",
+              "blocks.2.attn_norm.weight",
+              "blocks.2.ff_norm.weight",
+              "blocks.2.attn.qkv.weight",
+              "blocks.2.attn.out.weight",
+              "blocks.2.ff.up.weight",
+              "blocks.2.ff.up.bias",
+              "blocks.2.ff.down.weight",
+              "blocks.2.ff.down.bias",
+              "norm.weight"
+            ],
+            "trainable_parameters": 145728,
+            "first_loss": 3.9656200408935547,
+            "final_loss": 3.7229323387145996,
+            "mean_masked_accuracy": 0.041908448375761506,
+            "elapsed_seconds": 0.6187842919898685
+          },
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd Gabr[[iel']]s pumps were all unpink'd i' the heel;\nT",
+          "target_hole": "iel'",
+          "predicted_hole": "oad ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -0.4995684325695038,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 103,
+              "score": -0.4995684325695038,
+              "score_is_finite": true,
+              "predicted_hole": "oad ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 104,
+              "score": -0.4995684325695038,
+              "score_is_finite": true,
+              "predicted_hole": "oad ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 6.235197791975224,
+          "adaptation": {
+            "enabled": true,
+            "mechanism": "visible_context_suture_tta",
+            "steps": 10,
+            "batch_size": 8,
+            "learning_rate": 0.0001,
+            "weight_decay": 0.0,
+            "span_min": 3,
+            "span_max": 12,
+            "train_scope": "last_block",
+            "seed": 103,
+            "visible_context_sha256": "74f65d42d7db1d1082d14a24361dd06b6de01c9857adf299b29696bfb4851a8e",
+            "visible_context_bytes": 80,
+            "hidden_target_seen_in_visible_context": false,
+            "hidden_target_excluded_from_synthetic_targets": true,
+            "trainable_parameter_names": [
+              "token_emb.weight",
+              "blocks.2.attn_norm.weight",
+              "blocks.2.ff_norm.weight",
+              "blocks.2.attn.qkv.weight",
+              "blocks.2.attn.out.weight",
+              "blocks.2.ff.up.weight",
+              "blocks.2.ff.up.bias",
+              "blocks.2.ff.down.weight",
+              "blocks.2.ff.down.bias",
+              "norm.weight"
+            ],
+            "trainable_parameters": 145728,
+            "first_loss": 3.302158832550049,
+            "final_loss": 3.238182306289673,
+            "mean_masked_accuracy": 0.16149868071079254,
+            "elapsed_seconds": 0.55376779101789
+          },
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "\n\nSEBASTIAN:\nWe would so, and then go a [[bat-]]fowling.\n\nANTONIO:\nNay, good my lord, be",
+          "target_hole": "bat-",
+          "predicted_hole": "thou",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 2,
+          "selected_candidate_score": -0.11256174743175507,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 104,
+              "score": -0.11256174743175507,
+              "score_is_finite": true,
+              "predicted_hole": "thou",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 105,
+              "score": -0.1953592300415039,
+              "score_is_finite": true,
+              "predicted_hole": "hear",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 4.673801958007971,
+          "adaptation": {
+            "enabled": true,
+            "mechanism": "visible_context_suture_tta",
+            "steps": 10,
+            "batch_size": 8,
+            "learning_rate": 0.0001,
+            "weight_decay": 0.0,
+            "span_min": 3,
+            "span_max": 12,
+            "train_scope": "last_block",
+            "seed": 104,
+            "visible_context_sha256": "6e31b4f70ffe99ae91ec6417facc75e21270420a935ee339d4682a79719ae39e",
+            "visible_context_bytes": 80,
+            "hidden_target_seen_in_visible_context": false,
+            "hidden_target_excluded_from_synthetic_targets": true,
+            "trainable_parameter_names": [
+              "token_emb.weight",
+              "blocks.2.attn_norm.weight",
+              "blocks.2.ff_norm.weight",
+              "blocks.2.attn.qkv.weight",
+              "blocks.2.attn.out.weight",
+              "blocks.2.ff.up.weight",
+              "blocks.2.ff.up.bias",
+              "blocks.2.ff.down.weight",
+              "blocks.2.ff.down.bias",
+              "norm.weight"
+            ],
+            "trainable_parameters": 145728,
+            "first_loss": 3.813944101333618,
+            "final_loss": 3.362030267715454,
+            "mean_masked_accuracy": 0.1383667193353176,
+            "elapsed_seconds": 0.7209431669907644
+          },
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "bridge_guided_minus_bridge_only_byte_accuracy": -0.0625,
+    "adapted_minus_unguided_byte_accuracy": 0.0,
+    "adapted_minus_bridge_only_byte_accuracy": -0.0625,
+    "adapted_bridge_guided_minus_bridge_only_byte_accuracy": -0.0625,
+    "adapted_minus_nearest_visible_byte_accuracy": -0.5,
+    "adapted_bridge_guided_minus_nearest_visible_byte_accuracy": -0.5
+  },
+  "quality_label": "mechanism_checkpoint",
+  "ten_out_of_ten_gate": {
+    "artifact": "pass_if_tests_verifier_docs_and_benchmarks_pass",
+    "actual_model": "requires strong_laptop_checkpoint or better; otherwise do not claim 10/10 model quality",
+    "public_wow": "requires visible infill trace plus non-leaky heldout benchmark"
+  }
+}

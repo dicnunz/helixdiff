@@ -34,6 +34,13 @@ def visible_context_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _contains_subsequence(values: list[int], needle: list[int]) -> bool:
+    if not needle or len(needle) > len(values):
+        return False
+    width = len(needle)
+    return any(values[index : index + width] == needle for index in range(len(values) - width + 1))
+
+
 def set_adaptation_train_scope(model: DiffusionTransformer, scope: str) -> list[str]:
     for parameter in model.parameters():
         parameter.requires_grad_(False)
@@ -61,6 +68,7 @@ def make_visible_suture_batch(
     span_max: int,
     device: torch.device,
     generator: torch.Generator,
+    forbidden_span_text: str | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     if not visible_text.strip():
         raise ValueError("visible context is empty; cannot adapt")
@@ -68,6 +76,11 @@ def make_visible_suture_batch(
     mask_rows: list[torch.Tensor] = []
     span_min = max(1, int(span_min))
     span_max = max(span_min, int(span_max))
+    forbidden_ids = (
+        tokenizer.encode(forbidden_span_text, add_bos=False, add_eos=False)
+        if forbidden_span_text
+        else []
+    )
     for _ in range(batch_size):
         encoded = tokenizer.encode(visible_text, add_bos=True, add_eos=True)
         if len(encoded) > seq_len:
@@ -89,13 +102,26 @@ def make_visible_suture_batch(
         valid_positions = torch.nonzero(valid, as_tuple=False).flatten()
         if valid_positions.numel() == 0:
             raise ValueError("visible context has no repairable byte positions")
-        span_len = min(
-            int(torch.randint(span_min, span_max + 1, (), generator=generator).item()),
-            int(valid_positions.numel()),
-        )
-        start_slot = int(torch.randint(0, int(valid_positions.numel() - span_len + 1), (), generator=generator).item())
-        start = int(valid_positions[start_slot].item())
-        end = int(valid_positions[start_slot + span_len - 1].item()) + 1
+        start = 0
+        end = 0
+        selected = False
+        for _attempt in range(256):
+            span_len = min(
+                int(torch.randint(span_min, span_max + 1, (), generator=generator).item()),
+                int(valid_positions.numel()),
+            )
+            start_slot = int(
+                torch.randint(0, int(valid_positions.numel() - span_len + 1), (), generator=generator).item()
+            )
+            start = int(valid_positions[start_slot].item())
+            end = int(valid_positions[start_slot + span_len - 1].item()) + 1
+            span_ids = clean[start:end].detach().cpu().tolist()
+            if forbidden_ids and _contains_subsequence(span_ids, forbidden_ids):
+                continue
+            selected = True
+            break
+        if not selected:
+            raise ValueError("could not sample a visible adaptation span without the hidden target bytes")
         mask = torch.zeros(seq_len, dtype=torch.bool, device=device)
         mask[start:end] = valid[start:end]
         clean_rows.append(clean)
@@ -145,6 +171,7 @@ def adapt_model_to_visible_context(
             span_max=config.span_max,
             device=device,
             generator=generator,
+            forbidden_span_text=example.hole,
         )
         rates = mask.float().mean(dim=1).clamp_min(1.0 / adapted.config.seq_len)
         logits = restrict_logits_to_ids(
@@ -174,6 +201,7 @@ def adapt_model_to_visible_context(
         "visible_context_sha256": visible_context_hash(visible_text),
         "visible_context_bytes": len(visible_text.encode("utf-8")),
         "hidden_target_seen_in_visible_context": target_seen,
+        "hidden_target_excluded_from_synthetic_targets": True,
         "trainable_parameter_names": trainable_names,
         "trainable_parameters": int(sum(parameter.numel() for parameter in parameters)),
         "first_loss": losses[0] if losses else None,

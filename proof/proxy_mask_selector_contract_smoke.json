@@ -1,6 +1,6 @@
 {
   "proof_name": "proxy_mask_selector_contract_smoke",
-  "commit": "1787ea7",
+  "commit": "87b0390",
   "git_dirty": false,
   "model_load": false,
   "device": "cpu",
@@ -14,7 +14,10 @@
   "redaction": {
     "target_span_redacted_before_calibration": true,
     "target_gold_available_to_contract_builder": false,
-    "masked_bytes_seen_by_features": false
+    "masked_bytes_seen_by_features": false,
+    "pseudo_masks_overlap_target_span": 0,
+    "pseudo_masks_overlap_target_anchor_window": 0,
+    "pseudo_gold_equals_target_gold": 0
   },
   "proxy_geometry": {
     "mode": "boundary_only",
@@ -43,11 +46,22 @@
       }
     ]
   },
+  "target_shadow": {
+    "enabled": false,
+    "shadow_match": null,
+    "shadow_pool": 24,
+    "shadow_keep": 6,
+    "heldout_top4_threshold": null,
+    "heldout_gate_passed": null,
+    "summaries": []
+  },
   "candidate_policy": {
     "train_only_retrieval": true,
     "eval_doc_exclusion": true,
     "same_doc_hits": 0,
+    "same_doc_retrieval_hits": 0,
     "near_duplicate_flags": 0,
+    "max_candidates_per_example": 64,
     "lattice_bi_anchor_candidates": 8,
     "lattice_bi_anchor_sizes": [
       32,
@@ -98,6 +112,28 @@
       "avg_gold_rank": null
     }
   },
+  "shadow_fit": {
+    "cases": 6,
+    "selected_exact": 0.0,
+    "top4_exact": 0.0,
+    "avg_gold_rank": null,
+    "selector_anchor": "visible_reranker",
+    "selector_margin": 3.0,
+    "harm_vs_prior": 0,
+    "beats_prior": 0
+  },
+  "shadow_heldout": {
+    "cases": 6,
+    "selected_exact": 0.16666666666666666,
+    "top4_exact": 0.16666666666666666,
+    "avg_gold_rank": 0.0,
+    "selector_anchor": "visible_reranker",
+    "selector_margin": 3.0,
+    "harm_vs_prior": 0,
+    "beats_prior": 0,
+    "beats_surface": 0,
+    "harms_surface": 0
+  },
   "target_after_freeze": {
     "cases": 2,
     "selected_exact": 0.0,
@@ -105,6 +141,7 @@
     "avg_gold_rank": null,
     "selector_anchor": "visible_reranker",
     "selector_margin": 3.0,
+    "gold_in_lattice_at_128": 0.0,
     "beats_prior": 0,
     "harms_prior": 0,
     "beats_surface": 0,
@@ -149,6 +186,9 @@
     "contract_apply": true,
     "target_span_redacted_before_calibration": true,
     "target_gold_unavailable_to_contract_builder": true,
+    "pseudo_masks_do_not_overlap_target_span": true,
+    "pseudo_masks_do_not_overlap_target_anchor_window": true,
+    "pseudo_gold_never_equals_target_gold": true,
     "preset_space_frozen": true,
     "selector_selected_before_target_eval": true,
     "train_only_retrieval": true,
@@ -159,7 +199,10 @@
     "target_top4_no_worse_than_visible_reranker": true,
     "proxy_masks_geometry_shaped": true,
     "proxy_geometry_uses_redacted_target_hole": true,
-    "selected_proxy_geometry_no_worse_than_pool": true
+    "selected_proxy_geometry_no_worse_than_pool": true,
+    "target_shadow_uses_fingerprint": true,
+    "target_shadow_no_exact_candidate_bytes": true,
+    "target_shadow_heldout_gate": true
   },
   "useful_ratchet": false,
   "cases": {
@@ -186,7 +229,12 @@
         "geometry_distance": null,
         "target_geometry_top_family": null,
         "proxy_geometry_top_family": null,
-        "geometry_top_family_match": null
+        "geometry_top_family_match": null,
+        "shadow_distance": null,
+        "target_shadow_top_family": null,
+        "proxy_shadow_top_family": null,
+        "shadow_top_family_match": null,
+        "overlaps_target_anchor_window": false
       },
       {
         "case_id": 0,
@@ -210,7 +258,12 @@
         "geometry_distance": null,
         "target_geometry_top_family": null,
         "proxy_geometry_top_family": null,
-        "geometry_top_family_match": null
+        "geometry_top_family_match": null,
+        "shadow_distance": null,
+        "target_shadow_top_family": null,
+        "proxy_shadow_top_family": null,
+        "shadow_top_family_match": null,
+        "overlaps_target_anchor_window": false
       },
       {
         "case_id": 0,
@@ -234,7 +287,12 @@
         "geometry_distance": null,
         "target_geometry_top_family": null,
         "proxy_geometry_top_family": null,
-        "geometry_top_family_match": null
+        "geometry_top_family_match": null,
+        "shadow_distance": null,
+        "target_shadow_top_family": null,
+        "proxy_shadow_top_family": null,
+        "shadow_top_family_match": null,
+        "overlaps_target_anchor_window": false
       },
       {
         "case_id": 0,
@@ -258,7 +316,12 @@
         "geometry_distance": null,
         "target_geometry_top_family": null,
         "proxy_geometry_top_family": null,
-        "geometry_top_family_match": null
+        "geometry_top_family_match": null,
+        "shadow_distance": null,
+        "target_shadow_top_family": null,
+        "proxy_shadow_top_family": null,
+        "shadow_top_family_match": null,
+        "overlaps_target_anchor_window": false
       },
       {
         "case_id": 0,
@@ -282,7 +345,12 @@
         "geometry_distance": null,
         "target_geometry_top_family": null,
         "proxy_geometry_top_family": null,
-        "geometry_top_family_match": null
+        "geometry_top_family_match": null,
+        "shadow_distance": null,
+        "target_shadow_top_family": null,
+        "proxy_shadow_top_family": null,
+        "shadow_top_family_match": null,
+        "overlaps_target_anchor_window": false
       },
       {
         "case_id": 0,
@@ -306,7 +374,12 @@
         "geometry_distance": null,
         "target_geometry_top_family": null,
         "proxy_geometry_top_family": null,
-        "geometry_top_family_match": null
+        "geometry_top_family_match": null,
+        "shadow_distance": null,
+        "target_shadow_top_family": null,
+        "proxy_shadow_top_family": null,
+        "shadow_top_family_match": null,
+        "overlaps_target_anchor_window": false
       }
     ],
     "pseudo_heldout": [
@@ -332,7 +405,12 @@
         "geometry_distance": null,
         "target_geometry_top_family": null,
         "proxy_geometry_top_family": null,
-        "geometry_top_family_match": null
+        "geometry_top_family_match": null,
+        "shadow_distance": null,
+        "target_shadow_top_family": null,
+        "proxy_shadow_top_family": null,
+        "shadow_top_family_match": null,
+        "overlaps_target_anchor_window": false
       },
       {
         "case_id": 1,
@@ -356,7 +434,12 @@
         "geometry_distance": null,
         "target_geometry_top_family": null,
         "proxy_geometry_top_family": null,
-        "geometry_top_family_match": null
+        "geometry_top_family_match": null,
+        "shadow_distance": null,
+        "target_shadow_top_family": null,
+        "proxy_shadow_top_family": null,
+        "shadow_top_family_match": null,
+        "overlaps_target_anchor_window": false
       },
       {
         "case_id": 1,
@@ -380,7 +463,12 @@
         "geometry_distance": null,
         "target_geometry_top_family": null,
         "proxy_geometry_top_family": null,
-        "geometry_top_family_match": null
+        "geometry_top_family_match": null,
+        "shadow_distance": null,
+        "target_shadow_top_family": null,
+        "proxy_shadow_top_family": null,
+        "shadow_top_family_match": null,
+        "overlaps_target_anchor_window": false
       },
       {
         "case_id": 1,
@@ -404,7 +492,12 @@
         "geometry_distance": null,
         "target_geometry_top_family": null,
         "proxy_geometry_top_family": null,
-        "geometry_top_family_match": null
+        "geometry_top_family_match": null,
+        "shadow_distance": null,
+        "target_shadow_top_family": null,
+        "proxy_shadow_top_family": null,
+        "shadow_top_family_match": null,
+        "overlaps_target_anchor_window": false
       },
       {
         "case_id": 1,
@@ -428,7 +521,12 @@
         "geometry_distance": null,
         "target_geometry_top_family": null,
         "proxy_geometry_top_family": null,
-        "geometry_top_family_match": null
+        "geometry_top_family_match": null,
+        "shadow_distance": null,
+        "target_shadow_top_family": null,
+        "proxy_shadow_top_family": null,
+        "shadow_top_family_match": null,
+        "overlaps_target_anchor_window": false
       },
       {
         "case_id": 1,
@@ -452,7 +550,12 @@
         "geometry_distance": null,
         "target_geometry_top_family": null,
         "proxy_geometry_top_family": null,
-        "geometry_top_family_match": null
+        "geometry_top_family_match": null,
+        "shadow_distance": null,
+        "target_shadow_top_family": null,
+        "proxy_shadow_top_family": null,
+        "shadow_top_family_match": null,
+        "overlaps_target_anchor_window": false
       }
     ],
     "target_after_freeze": [

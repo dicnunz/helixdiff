@@ -286,6 +286,8 @@ For the next model-scored run, use `--lattice-prior-rerank-top-k 4 --lattice-ver
 
 `--lattice-local-prior-calibration` adds a self-supervised diagnostic pass: for each case, HelixDiff hides same-length spans inside the already visible context, sweeps structural prior weights, and records which weights would best recover those known local holes. This does **not** change ranking unless `--lattice-apply-local-prior-calibration` is explicitly set. The checked-in 4-case oracle proof keeps it diagnostic-only because one local proposal would have pushed `y-ca` out of the top-4 rerank set if applied; top-k oracle coverage is more valuable than a clever but unproven local tweak.
 
+The oracle summary reports this as a gate: `local_prior_suggested_top4_delta`, `local_prior_suggested_harm_count`, `local_prior_suggested_help_count`, and `local_prior_applied_rate` make local calibration auditable before it is ever allowed to steer a scored run.
+
 After a scored run, turn the sweep into a calibration receipt:
 
 ```

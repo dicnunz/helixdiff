@@ -547,6 +547,9 @@ class BenchTest(unittest.TestCase):
                 "prior_exact_in_top4": True,
                 "prior_exact_in_top8": True,
                 "prior_exact_rank": 0,
+                "local_prior_calibration": {"applied": False},
+                "local_prior_calibration_suggested_prior_exact_rank": 7,
+                "local_prior_calibration_suggested_prior_top4_exact": False,
             },
             {
                 "oracle_candidate_exact": False,
@@ -560,6 +563,9 @@ class BenchTest(unittest.TestCase):
                 "prior_exact_in_top4": False,
                 "prior_exact_in_top8": False,
                 "prior_exact_rank": None,
+                "local_prior_calibration": {"applied": False},
+                "local_prior_calibration_suggested_prior_exact_rank": 2,
+                "local_prior_calibration_suggested_prior_top4_exact": True,
             },
         ]
         summary = summarize_lattice_oracle(rows)
@@ -571,6 +577,12 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(summary["prior_top4_exact_rate"], 0.5)
         self.assertEqual(summary["prior_top8_exact_rate"], 0.5)
         self.assertEqual(summary["avg_prior_exact_rank"], 0.0)
+        self.assertEqual(summary["local_prior_calibration_cases"], 2)
+        self.assertEqual(summary["local_prior_suggested_top4_exact_rate"], 0.5)
+        self.assertEqual(summary["local_prior_suggested_top4_delta"], 0.0)
+        self.assertEqual(summary["local_prior_suggested_harm_count"], 1)
+        self.assertEqual(summary["local_prior_suggested_help_count"], 1)
+        self.assertEqual(summary["local_prior_applied_rate"], 0.0)
 
 
 if __name__ == "__main__":

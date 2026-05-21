@@ -1654,7 +1654,25 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "prior_top4_exact_rate": 0.0,
             "prior_top8_exact_rate": 0.0,
             "avg_prior_exact_rank": None,
+            "local_prior_calibration_cases": 0,
+            "local_prior_suggested_top4_exact_rate": None,
+            "local_prior_suggested_avg_prior_exact_rank": None,
+            "local_prior_suggested_top4_delta": None,
+            "local_prior_suggested_harm_count": 0,
+            "local_prior_suggested_help_count": 0,
+            "local_prior_applied_rate": 0.0,
         }
+    local_rows = [row for row in rows if row.get("local_prior_calibration") is not None]
+    local_rank_rows = [
+        row for row in local_rows if row.get("local_prior_calibration_suggested_prior_exact_rank") is not None
+    ]
+    prior_top4_rate = sum(1.0 for row in rows if row["prior_exact_in_top4"]) / len(rows)
+    local_top4_rate = (
+        sum(1.0 for row in local_rank_rows if row.get("local_prior_calibration_suggested_prior_top4_exact"))
+        / len(rows)
+        if local_rows
+        else None
+    )
     return {
         "cases": len(rows),
         "oracle_exact_rate": sum(1.0 for row in rows if row["oracle_candidate_exact"]) / len(rows),
@@ -1665,7 +1683,7 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "unigram_oracle_exact_rate": sum(1.0 for row in rows if row["unigram_oracle_exact"]) / len(rows),
         "avg_candidate_count": sum(float(row["candidate_count"]) for row in rows) / len(rows),
         "prior_selected_exact_rate": sum(1.0 for row in rows if row["prior_selected_exact"]) / len(rows),
-        "prior_top4_exact_rate": sum(1.0 for row in rows if row["prior_exact_in_top4"]) / len(rows),
+        "prior_top4_exact_rate": prior_top4_rate,
         "prior_top8_exact_rate": sum(1.0 for row in rows if row["prior_exact_in_top8"]) / len(rows),
         "avg_prior_exact_rank": (
             sum(float(row["prior_exact_rank"]) for row in rows if row["prior_exact_rank"] is not None)
@@ -1673,6 +1691,33 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
         )
         if any(row["prior_exact_rank"] is not None for row in rows)
         else None,
+        "local_prior_calibration_cases": len(local_rows),
+        "local_prior_suggested_top4_exact_rate": local_top4_rate,
+        "local_prior_suggested_avg_prior_exact_rank": (
+            sum(float(row["local_prior_calibration_suggested_prior_exact_rank"]) for row in local_rank_rows)
+            / len(local_rank_rows)
+            if local_rank_rows
+            else None
+        ),
+        "local_prior_suggested_top4_delta": (local_top4_rate - prior_top4_rate) if local_top4_rate is not None else None,
+        "local_prior_suggested_harm_count": sum(
+            1
+            for row in local_rows
+            if row.get("prior_exact_in_top4")
+            and not row.get("local_prior_calibration_suggested_prior_top4_exact")
+        ),
+        "local_prior_suggested_help_count": sum(
+            1
+            for row in local_rows
+            if not row.get("prior_exact_in_top4")
+            and row.get("local_prior_calibration_suggested_prior_top4_exact")
+        ),
+        "local_prior_applied_rate": sum(
+            1.0 for row in local_rows if row.get("local_prior_calibration", {}).get("applied")
+        )
+        / len(local_rows)
+        if local_rows
+        else 0.0,
     }
 
 

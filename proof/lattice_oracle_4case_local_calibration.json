@@ -42,7 +42,14 @@
         "prior_selected_exact_rate": 0.25,
         "prior_top4_exact_rate": 1.0,
         "prior_top8_exact_rate": 1.0,
-        "avg_prior_exact_rank": 1.5
+        "avg_prior_exact_rank": 1.5,
+        "local_prior_calibration_cases": 4,
+        "local_prior_suggested_top4_exact_rate": 0.75,
+        "local_prior_suggested_avg_prior_exact_rank": 3.75,
+        "local_prior_suggested_top4_delta": -0.25,
+        "local_prior_suggested_harm_count": 1,
+        "local_prior_suggested_help_count": 0,
+        "local_prior_applied_rate": 0.0
       },
       "cases": [
         {

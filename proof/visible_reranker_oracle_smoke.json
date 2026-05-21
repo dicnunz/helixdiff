@@ -1,6 +1,6 @@
 {
   "proof_name": "visible_reranker_oracle_smoke",
-  "commit": "511b621",
+  "commit": "86b4661",
   "git_dirty": false,
   "model_load": false,
   "device": "cpu",
@@ -57,6 +57,17 @@
       "apply": false
     }
   },
+  "counterfactual_context": {
+    "verdict": "pass",
+    "real_visible_reranker_selected_exact": 1.0,
+    "blank_context_selected_exact": 0.0,
+    "swapped_edges_selected_exact": 0.5,
+    "causal_visible_selected_exact": 1.0,
+    "causal_visible_top4_exact": 1.0,
+    "context_specificity_gap": 0.5,
+    "apply": false,
+    "claim_boundary": "diagnostic-only causal visible-context audit; counterfactual labels never select the held-out answer"
+  },
   "leakage": {
     "eval_doc_hits": 0,
     "same_doc_hits": 0,
@@ -96,6 +107,17 @@
         },
         "apply": false,
         "calibration_cases": 2
+      },
+      "counterfactual_context": {
+        "blank_context_selected_exact": false,
+        "blank_context_rank": 24,
+        "swapped_edges_selected_exact": true,
+        "swapped_edges_rank": 0,
+        "causal_visible_selected_exact": true,
+        "causal_visible_rank": 0,
+        "causal_visible_top4_exact": true,
+        "target_surface_lift": 0.0,
+        "apply": false
       }
     },
     {
@@ -122,6 +144,17 @@
         },
         "apply": false,
         "calibration_cases": 2
+      },
+      "counterfactual_context": {
+        "blank_context_selected_exact": false,
+        "blank_context_rank": 2,
+        "swapped_edges_selected_exact": false,
+        "swapped_edges_rank": 2,
+        "causal_visible_selected_exact": true,
+        "causal_visible_rank": 0,
+        "causal_visible_top4_exact": true,
+        "target_surface_lift": 12.86389860431748,
+        "apply": false
       }
     }
   ],
@@ -132,19 +165,25 @@
     "checks": {
       "model_not_loaded": true,
       "visible_reranker_diagnostic_only": true,
+      "causal_visible_context_diagnostic_only": true,
       "gold_not_used_for_selection": true,
       "masked_bytes_not_seen_by_features": true,
       "no_train_split_target_hole_leakage": true,
       "no_eval_doc_hits": true,
       "no_same_doc_hits": true,
       "shuffle_falsification_drops_selected_exact": true,
-      "shuffle_falsification_drops_lattice_coverage": true
+      "shuffle_falsification_drops_lattice_coverage": true,
+      "counterfactual_context_drops_selected_exact": true,
+      "causal_visible_context_no_harm": true
     },
     "observed": {
       "visible_reranker_selected_exact": 1.0,
       "shuffle_visible_reranker_selected_exact": 0.3333333333333333,
       "gold_in_lattice_at_128": 1.0,
-      "shuffle_gold_in_lattice_at_128": 0.3333333333333333
+      "shuffle_gold_in_lattice_at_128": 0.3333333333333333,
+      "blank_context_selected_exact": 0.0,
+      "swapped_edges_selected_exact": 0.5,
+      "causal_visible_selected_exact": 1.0
     },
     "claim_boundary": "model_free_oracle_smoke_only_no_generation_claim"
   },

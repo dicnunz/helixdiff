@@ -1,0 +1,38 @@
+{
+  "kind": "helixdiff_selector_contract",
+  "version": 1,
+  "contract_id": "c45a6f96847214a4",
+  "status": "ready_for_heldout",
+  "ready_for_heldout": true,
+  "claim_boundary": "proxy-mask contracts freeze visible-only selector choices; target claims require a later held-out gate",
+  "missing": [],
+  "min_cases": 6,
+  "selected": {
+    "selector_anchor": "visible_reranker",
+    "selector_margin": 3.0,
+    "source": "proxy_mask_visible_context",
+    "recommendation_status": "candidate_anchor_margin",
+    "selection_rule": "maximize proxy-mask fit selected exact, then top4, then avg rank"
+  },
+  "frozen_benchmark_flags": [
+    "--lattice-selector-anchor",
+    "visible_reranker",
+    "--lattice-selector-margin",
+    "3"
+  ],
+  "frozen_shell_flags": "--lattice-selector-anchor visible_reranker --lattice-selector-margin 3",
+  "heldout_requirements": [
+    "apply this contract only after the target span is redacted from calibration",
+    "run on target cases not used to choose the selector preset",
+    "keep --require-unseen-hole enabled",
+    "run helixdiff-gate --require-repair-proof-contract before making a narrow repair claim"
+  ],
+  "calibrations": [
+    {
+      "source_path": "proof/proxy_mask_selector_contract_smoke.json",
+      "cases": 6,
+      "recommendation_status": "candidate_anchor_margin",
+      "source_reports": []
+    }
+  ]
+}

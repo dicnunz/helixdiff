@@ -91,6 +91,11 @@ def build_breakthrough_plan() -> dict[str, Any]:
         "--out proof/proxy_mask_selector_contract_smoke.json "
         "--contract-out proof/proxy_mask_selector_contract_smoke_contract.json --json"
     )
+    in_document_echo_command = (
+        "uv run helixdiff-in-document-echo-oracle-smoke "
+        "--config configs/proof_in_document_echo_oracle_smoke.yaml "
+        "--out proof/in_document_echo_oracle_smoke.json --json"
+    )
     benchmark_command = strict_recipe["shell_commands"]["benchmark"]
     calibrate_command = strict_recipe["shell_commands"]["calibrate"]
     selector_contract_command = strict_recipe["shell_commands"]["selector_contract"]
@@ -138,6 +143,21 @@ def build_breakthrough_plan() -> dict[str, Any]:
         },
         {
             "rank": 3,
+            "name": "redacted_in_document_echo_lattice",
+            "thesis": "When proxy calibration does not transfer, mine the redacted eval document itself for same-document recurrence before spending compute.",
+            "source_ids": ["arxiv:2506.23529", "arxiv:2602.15014"],
+            "repo_move": "Add a model-free in-document echo candidate source with target/anchor-window redaction audits and a baseline-preserving K=128 containment receipt.",
+            "proof_commands": [in_document_echo_command],
+            "pass_condition": (
+                "receipt has model_load=false, target_span_redacted_before_index=true, zero target/anchor overlap, "
+                "combined K=128 containment lift over prior, and shuffle echo containment below real echo containment"
+            ),
+            "claim_if_passes": "transductive visible-document candidate containment lift only",
+            "kill_condition": "8 cheap cases add echo candidates but produce zero K=128 containment lift while candidate_count_p95 increases",
+            "heavy_slot_required": False,
+        },
+        {
+            "rank": 4,
             "name": "gold_blind_bi_anchor_oracle",
             "thesis": "If the exact span is not in the train-only visible-anchor lattice, no sampler can rescue the run.",
             "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
@@ -152,7 +172,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": False,
         },
         {
-            "rank": 4,
+            "rank": 5,
             "name": "strict_repair_lattice_proof",
             "thesis": "Make the next benchmark a predeclared trial, not a sampler search.",
             "source_ids": ["arxiv:2406.07524", "arxiv:2503.09573"],
@@ -167,7 +187,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": True,
         },
         {
-            "rank": 5,
+            "rank": 6,
             "name": "frozen_selector_heldout_trial",
             "thesis": "A selector choice is not evidence until a separate benchmark loads it from a ready contract.",
             "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
@@ -179,7 +199,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": True,
         },
         {
-            "rank": 6,
+            "rank": 7,
             "name": "visible_hole_reranker",
             "thesis": "The answer is often in a tiny top-k set; the breakthrough is selecting it without hidden leakage.",
             "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
@@ -201,7 +221,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": False,
         },
         {
-            "rank": 7,
+            "rank": 8,
             "name": "prompt_canvas_curriculum",
             "thesis": "The next training breakthrough is not just more masking; it is matching the masking canvas to visible-context repair.",
             "source_ids": ["arxiv:2604.03677", "arxiv:2602.01326", "arxiv:2602.15014"],
@@ -220,7 +240,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": False,
         },
         {
-            "rank": 8,
+            "rank": 9,
             "name": "frequency_block_suture_curriculum",
             "thesis": "Mac-local training must spend scarce gradient signal on rare boundary bytes and local blocks.",
             "source_ids": ["arxiv:2503.09573", "aclanthology:2025.babylm-main.38", "arxiv:2604.03677"],
@@ -238,7 +258,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": True,
         },
         {
-            "rank": 9,
+            "rank": 10,
             "name": "latent_surface_signature",
             "thesis": "A tiny model needs cheap joint structure; surface-unit signatures can mimic some latent-channel benefits.",
             "source_ids": ["arxiv:2510.18114", "arxiv:2502.09992"],
@@ -263,13 +283,13 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "usable_this_run": True,
             "model_mode": "Extended Pro",
             "conversation_url": "https://chatgpt.com/c/6a0f1cf7-b734-83ea-afa1-1a92152682f1",
-            "latest_request": "fresh Extended Pro critique for target-shadow proxy calibration",
+            "latest_request": "fresh Extended Pro critique after target-shadow proxy failed closed",
             "latest_response_status": "answered",
-            "latest_recommendation": "target-shadow proxy calibration",
+            "latest_recommendation": "redacted in-document echo lattice",
             "blocker": None,
             "claim": (
-                "Extended Pro recommended target-shadow proxy calibration: match visible pseudo masks "
-                "to the redacted target lattice fingerprint before freezing a selector."
+                "Extended Pro recommended moving off proxy calibration and adding a redacted same-document "
+                "echo lattice that uses only visible eval-document bytes after target redaction."
             ),
             "recorded_prior_note": {
                 "model_mode": "Extended Pro",
@@ -282,7 +302,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             },
         },
         "claim_boundary": CLAIM_BOUNDARY,
-        "current_best_move": "proxy_mask_selector_contract_smoke",
+        "current_best_move": "redacted_in_document_echo_lattice",
         "sources": DIFFUSION_LM_SOURCES,
         "lanes": lanes,
         "release_standard": [
@@ -292,6 +312,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "frozen visible context preserved exactly",
             "bridge-only and nearest-visible baselines reported",
             "proxy-mask receipts cannot be cited as target-lift evidence unless --require-useful-ratchet passes",
+            "in-document echo receipts are transductive visible-document containment evidence, not model-quality evidence",
             "fixed-length canvas limits disclosed until a variable-length repair gate exists",
             "global model-quality language forbidden unless helixdiff-gate model_quality_passed is true",
         ],

@@ -740,15 +740,16 @@ def parse_selector_margin_sweep(value: str) -> list[float]:
 
 
 def parse_selector_anchor_sweep(value: str) -> list[str]:
+    valid = ("prior", "surface", "visible_reranker")
     anchors: list[str] = []
     for chunk in value.split(","):
         stripped = chunk.strip()
         if not stripped:
             continue
-        if stripped not in {"prior", "surface"}:
+        if stripped not in valid:
             raise ValueError(f"unknown selector anchor: {stripped}")
         anchors.append(stripped)
-    return sorted(set(anchors), key=lambda anchor: ("prior", "surface").index(anchor))
+    return sorted(set(anchors), key=lambda anchor: valid.index(anchor))
 
 
 def parse_prior_weight_grid(value: str) -> list[float]:
@@ -905,6 +906,59 @@ def surface_verifier_candidate_report(
     return report
 
 
+def visible_reranker_candidate_report(
+    candidates: list[dict[str, Any]],
+    *,
+    prior_weight: float = 1.0,
+    surface_weight: float = 1.0,
+) -> dict[tuple[int, ...], dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for candidate in candidates:
+        raw_prior = candidate.get("prior_score")
+        prior_score = float(raw_prior) if raw_prior is not None and math.isfinite(float(raw_prior)) else -1e9
+        surface_score = float(candidate.get("surface_verifier_score", 0.0))
+        score = float(prior_weight) * prior_score + float(surface_weight) * surface_score
+        rows.append(
+            {
+                "ids": tuple(int(token_id) for token_id in candidate["ids"]),
+                "visible_reranker_score": score,
+                "prior_rank": int(candidate.get("prior_rank", 0)),
+                "predicted_hole": str(candidate["predicted_hole"]),
+            }
+        )
+    rows.sort(
+        key=lambda row: (
+            -float(row["visible_reranker_score"]),
+            int(row["prior_rank"]),
+            str(row["predicted_hole"]),
+        )
+    )
+    return {
+        row["ids"]: {
+            "visible_reranker_rank": rank,
+            "visible_reranker_score": json_score(float(row["visible_reranker_score"])),
+            "visible_reranker_weights": {
+                "prior_weight": float(prior_weight),
+                "surface_weight": float(surface_weight),
+            },
+        }
+        for rank, row in enumerate(rows)
+    }
+
+
+def _ranked_candidates_with_surface_report(
+    candidates: list[dict[str, Any]],
+    surface_report: dict[tuple[int, ...], dict[str, Any]],
+) -> list[dict[str, Any]]:
+    return [
+        {
+            **candidate,
+            **surface_report[tuple(int(token_id) for token_id in candidate["ids"])],
+        }
+        for candidate in candidates
+    ]
+
+
 def recommend_selector_anchor_from_visible_rows(
     rows: list[dict[str, Any]],
     *,
@@ -957,6 +1011,203 @@ def recommend_selector_anchor_from_visible_rows(
         "surface_harm_count": surface_harm,
         "reason": reason,
         "claim_boundary": "visible-context anchor calibration is diagnostic unless predeclared for held-out cases",
+    }
+
+
+def exact_rank_for_visible_reranker_weights(
+    *,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    guide: BigramGuide,
+    train_text: str,
+    visible_limit: int,
+    morphology_limit: int,
+    surface_limit: int,
+    suture_weight: float,
+    morphology_weight: float,
+    surface_weight: float,
+    prior_weight: float,
+    reranker_surface_weight: float,
+) -> tuple[int | None, int]:
+    example = parse_marked_infill(marked_text, tokenizer)
+    target = example.target[example.hole_start : example.hole_end]
+    ranked = rank_lattice_candidates_by_prior(
+        build_lattice_candidate_rows(
+            tokenizer=tokenizer,
+            marked_text=marked_text,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+        ),
+        suture_weight=suture_weight,
+        morphology_weight=morphology_weight,
+        surface_weight=surface_weight,
+    )
+    surface_report = surface_verifier_candidate_report(ranked, marked_text=marked_text, train_text=train_text)
+    visible_report = visible_reranker_candidate_report(
+        _ranked_candidates_with_surface_report(ranked, surface_report),
+        prior_weight=prior_weight,
+        surface_weight=reranker_surface_weight,
+    )
+    ranks = [
+        int(visible_report[tuple(int(token_id) for token_id in candidate["ids"])]["visible_reranker_rank"])
+        for candidate in ranked
+        if torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)
+    ]
+    return (min(ranks) if ranks else None), len(ranked)
+
+
+def evaluate_visible_reranker_weight_combo(
+    *,
+    tokenizer: ByteTokenizer,
+    calibration_cases: list[str],
+    guide: BigramGuide,
+    train_text: str,
+    visible_limit: int,
+    morphology_limit: int,
+    surface_limit: int,
+    suture_weight: float,
+    morphology_weight: float,
+    surface_weight: float,
+    prior_weight: float,
+    reranker_surface_weight: float,
+) -> dict[str, Any]:
+    ranks: list[int | None] = []
+    candidate_counts: list[int] = []
+    for marked in calibration_cases:
+        rank, candidate_count = exact_rank_for_visible_reranker_weights(
+            tokenizer=tokenizer,
+            marked_text=marked,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+            suture_weight=suture_weight,
+            morphology_weight=morphology_weight,
+            surface_weight=surface_weight,
+            prior_weight=prior_weight,
+            reranker_surface_weight=reranker_surface_weight,
+        )
+        ranks.append(rank)
+        candidate_counts.append(candidate_count)
+    exact_ranks = [rank for rank in ranks if rank is not None]
+    cases = len(calibration_cases)
+    return {
+        "prior_weight": float(prior_weight),
+        "surface_weight": float(reranker_surface_weight),
+        "cases": cases,
+        "oracle_exact_rate": (len(exact_ranks) / cases) if cases else 0.0,
+        "visible_reranker_top1_exact_rate": (sum(1 for rank in exact_ranks if rank == 0) / cases) if cases else 0.0,
+        "visible_reranker_top4_exact_rate": (sum(1 for rank in exact_ranks if rank < 4) / cases) if cases else 0.0,
+        "avg_visible_reranker_exact_rank": (
+            sum(float(rank) for rank in exact_ranks) / len(exact_ranks) if exact_ranks else None
+        ),
+        "avg_candidate_count": (sum(float(count) for count in candidate_counts) / cases) if cases else 0.0,
+    }
+
+
+def calibrate_lattice_visible_reranker_on_visible_context(
+    *,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    guide: BigramGuide,
+    train_text: str,
+    visible_limit: int,
+    morphology_limit: int,
+    surface_limit: int,
+    suture_weight: float,
+    morphology_weight: float,
+    surface_weight: float,
+    default_prior_weight: float = 1.0,
+    default_surface_weight: float = 1.0,
+    weight_grid: list[float] | None = None,
+    calibration_cases: int = 12,
+    calibration_context_chars: int = 12,
+) -> dict[str, Any]:
+    example = parse_marked_infill(marked_text, tokenizer)
+    cases = visible_self_calibration_cases(
+        marked_text,
+        span_chars=len(example.hole),
+        context_chars=calibration_context_chars,
+        limit=calibration_cases,
+    )
+    grid = weight_grid or [0.0, 0.5, 1.0, 2.0]
+    if not cases or not grid:
+        return {
+            "enabled": True,
+            "status": "no_visible_reranker_calibration_cases",
+            "calibration_cases": len(cases),
+            "selected_weights": {
+                "prior_weight": float(default_prior_weight),
+                "surface_weight": float(default_surface_weight),
+            },
+            "grid_rows": [],
+            "claim_boundary": "visible-context reranker calibration is diagnostic unless predeclared for held-out cases",
+        }
+    rows: list[dict[str, Any]] = []
+    for prior_weight in grid:
+        for reranker_surface_weight in grid:
+            rows.append(
+                evaluate_visible_reranker_weight_combo(
+                    tokenizer=tokenizer,
+                    calibration_cases=cases,
+                    guide=guide,
+                    train_text=train_text,
+                    visible_limit=visible_limit,
+                    morphology_limit=morphology_limit,
+                    surface_limit=surface_limit,
+                    suture_weight=suture_weight,
+                    morphology_weight=morphology_weight,
+                    surface_weight=surface_weight,
+                    prior_weight=prior_weight,
+                    reranker_surface_weight=reranker_surface_weight,
+                )
+            )
+
+    def default_distance(row: dict[str, Any]) -> float:
+        return abs(float(row["prior_weight"]) - default_prior_weight) + abs(
+            float(row["surface_weight"]) - default_surface_weight
+        )
+
+    def row_key(row: dict[str, Any]) -> tuple[float, float, float, float, float]:
+        avg_rank = (
+            float(row["avg_visible_reranker_exact_rank"])
+            if row["avg_visible_reranker_exact_rank"] is not None
+            else 1e9
+        )
+        return (
+            float(row["oracle_exact_rate"]),
+            float(row["visible_reranker_top1_exact_rate"]),
+            float(row["visible_reranker_top4_exact_rate"]),
+            -avg_rank,
+            -default_distance(row),
+        )
+
+    selected = max(rows, key=row_key)
+    default_row = next(
+        (
+            row
+            for row in rows
+            if float(row["prior_weight"]) == float(default_prior_weight)
+            and float(row["surface_weight"]) == float(default_surface_weight)
+        ),
+        None,
+    )
+    return {
+        "enabled": True,
+        "status": "selected_visible_context_reranker_weights",
+        "calibration_cases": len(cases),
+        "selected_weights": {
+            "prior_weight": float(selected["prior_weight"]),
+            "surface_weight": float(selected["surface_weight"]),
+        },
+        "selected_summary": selected,
+        "default_summary": default_row,
+        "top_grid_rows": sorted(rows, key=row_key, reverse=True)[:8],
+        "claim_boundary": "visible-context reranker calibration is diagnostic unless predeclared for held-out cases",
     }
 
 
@@ -1249,7 +1500,7 @@ def select_lattice_row_with_margin(
 ) -> tuple[float, torch.Tensor, dict[str, Any], dict[str, Any]]:
     if not scored_options:
         raise RuntimeError("retrieval lattice produced no candidates")
-    if selector_anchor not in {"prior", "surface"}:
+    if selector_anchor not in {"prior", "surface", "visible_reranker"}:
         raise ValueError(f"unknown selector anchor: {selector_anchor}")
     raw_best = max(scored_options, key=lambda item: (item[0], -int(item[2]["prior_rank"]), str(item[2]["predicted_hole"])))
     if selector_anchor == "surface":
@@ -1257,6 +1508,15 @@ def select_lattice_row_with_margin(
             scored_options,
             key=lambda item: (
                 int(item[2].get("surface_verifier_rank", item[2]["prior_rank"])),
+                int(item[2]["prior_rank"]),
+                str(item[2]["predicted_hole"]),
+            ),
+        )
+    elif selector_anchor == "visible_reranker":
+        anchor = min(
+            scored_options,
+            key=lambda item: (
+                int(item[2].get("visible_reranker_rank", item[2]["prior_rank"])),
                 int(item[2]["prior_rank"]),
                 str(item[2]["predicted_hole"]),
             ),
@@ -1295,6 +1555,11 @@ def select_lattice_row_with_margin(
             "anchor_prior_rank": int(anchor[2]["prior_rank"]),
             "anchor_surface_verifier_rank": (
                 int(anchor[2]["surface_verifier_rank"]) if anchor[2].get("surface_verifier_rank") is not None else None
+            ),
+            "anchor_visible_reranker_rank": (
+                int(anchor[2]["visible_reranker_rank"])
+                if anchor[2].get("visible_reranker_rank") is not None
+                else None
             ),
         },
     )
@@ -1359,6 +1624,7 @@ def selector_margin_sweep_report(
                 "anchor_exact": bool(selector_report["anchor_exact"]),
                 "anchor_prior_rank": selector_report["anchor_prior_rank"],
                 "anchor_surface_verifier_rank": selector_report["anchor_surface_verifier_rank"],
+                "anchor_visible_reranker_rank": selector_report["anchor_visible_reranker_rank"],
             }
         )
     return report
@@ -1628,6 +1894,11 @@ def retrieval_lattice_case(
     apply_local_surface_anchor_calibration: bool = False,
     local_surface_anchor_calibration_cases: int = 12,
     local_surface_anchor_calibration_context_chars: int = 12,
+    visible_reranker_calibration: bool = False,
+    apply_visible_reranker_calibration: bool = False,
+    visible_reranker_weight_grid: list[float] | None = None,
+    visible_reranker_calibration_cases: int = 12,
+    visible_reranker_calibration_context_chars: int = 12,
     local_prior_calibration: bool = False,
     apply_local_prior_calibration: bool = False,
     prior_weight_grid: list[float] | None = None,
@@ -1638,11 +1909,14 @@ def retrieval_lattice_case(
     target = example.target[example.hole_start : example.hole_end]
     local_calibration_report: dict[str, Any] | None = None
     local_surface_anchor_report: dict[str, Any] | None = None
+    visible_reranker_report: dict[str, Any] | None = None
     local_calibration_suggested_rank: int | None = None
     effective_suture_weight = float(suture_weight)
     effective_morphology_weight = float(morphology_weight)
     effective_surface_weight = float(surface_weight)
     effective_selector_anchor = selector_anchor
+    visible_reranker_prior_weight = 1.0
+    visible_reranker_surface_weight = 1.0
     if local_prior_calibration:
         local_calibration_report = calibrate_lattice_prior_weights_on_visible_context(
             tokenizer=tokenizer,
@@ -1696,6 +1970,28 @@ def retrieval_lattice_case(
         local_surface_anchor_report["applied"] = bool(apply_local_surface_anchor_calibration)
         if apply_local_surface_anchor_calibration:
             effective_selector_anchor = str(local_surface_anchor_report["selected_selector_anchor"])
+    if visible_reranker_calibration:
+        visible_reranker_report = calibrate_lattice_visible_reranker_on_visible_context(
+            tokenizer=tokenizer,
+            marked_text=marked_text,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+            suture_weight=effective_suture_weight,
+            morphology_weight=effective_morphology_weight,
+            surface_weight=effective_surface_weight,
+            weight_grid=visible_reranker_weight_grid,
+            calibration_cases=visible_reranker_calibration_cases,
+            calibration_context_chars=visible_reranker_calibration_context_chars,
+        )
+        visible_reranker_report["applied"] = bool(apply_visible_reranker_calibration)
+        selected_weights = visible_reranker_report["selected_weights"]
+        visible_reranker_prior_weight = float(selected_weights["prior_weight"])
+        visible_reranker_surface_weight = float(selected_weights["surface_weight"])
+        if apply_visible_reranker_calibration:
+            effective_selector_anchor = "visible_reranker"
     ranked_candidates = rank_lattice_candidates_by_prior(
         build_lattice_candidate_rows(
             tokenizer=tokenizer,
@@ -1720,6 +2016,11 @@ def retrieval_lattice_case(
         ranked_candidates,
         marked_text=marked_text,
         train_text=train_text,
+    )
+    visible_candidate_report = visible_reranker_candidate_report(
+        _ranked_candidates_with_surface_report(ranked_candidates, surface_report),
+        prior_weight=visible_reranker_prior_weight,
+        surface_weight=visible_reranker_surface_weight,
     )
     exact_surface_ranks = [
         int(surface_report[tuple(int(token_id) for token_id in candidate["ids"])]["surface_verifier_rank"])
@@ -1755,6 +2056,7 @@ def retrieval_lattice_case(
         repaired = example.tokens.clone()
         repaired[example.hole_start : example.hole_end] = torch.tensor(candidate["ids"], dtype=torch.long)
         candidate_surface = surface_report[tuple(int(token_id) for token_id in candidate["ids"])]
+        candidate_visible_reranker = visible_candidate_report[tuple(int(token_id) for token_id in candidate["ids"])]
         score, verifier_scores = score_lattice_verifier(
             model=model,
             tokenizer=tokenizer,
@@ -1778,6 +2080,7 @@ def retrieval_lattice_case(
             "prior_score": candidate["prior_score"],
             "prior_source": candidate["prior_source"],
             **candidate_surface,
+            **candidate_visible_reranker,
             "diffusion_score": json_score(score),
             "verifier_mode": verifier_mode,
             "verifier_scores": verifier_scores,
@@ -1833,6 +2136,7 @@ def retrieval_lattice_case(
         "configured_selector_anchor": selector_anchor,
         "effective_selector_anchor": effective_selector_anchor,
         "local_surface_anchor_calibration": local_surface_anchor_report,
+        "visible_reranker_calibration": visible_reranker_report,
         "local_prior_calibration": local_calibration_report,
         "local_prior_calibration_suggested_prior_exact_rank": local_calibration_suggested_rank,
         "local_prior_calibration_suggested_prior_top4_exact": (
@@ -1859,6 +2163,7 @@ def retrieval_lattice_case(
                 "prior_score": candidate["prior_score"],
                 "prior_source": candidate["prior_source"],
                 **surface_report[tuple(int(token_id) for token_id in candidate["ids"])],
+                **visible_candidate_report[tuple(int(token_id) for token_id in candidate["ids"])],
                 "exact": bool(torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)),
             }
             for candidate in ranked_candidates
@@ -2497,6 +2802,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     selector_margin_sweep = parse_selector_margin_sweep(args.lattice_selector_margin_sweep)
     selector_anchor_sweep = parse_selector_anchor_sweep(args.lattice_selector_anchor_sweep)
     prior_weight_grid = parse_prior_weight_grid(args.lattice_prior_weight_grid)
+    visible_reranker_weight_grid = parse_prior_weight_grid(args.lattice_visible_reranker_weight_grid)
     for index, marked in enumerate(cases):
         unigram_rows.append(guide_only_case(tokenizer=tokenizer, marked_text=marked, guide=guide, strategy="unigram"))
         bridge = guide_only_case(tokenizer=tokenizer, marked_text=marked, guide=guide, strategy="bridge")
@@ -2529,6 +2835,11 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             apply_local_surface_anchor_calibration=args.lattice_apply_local_surface_anchor_calibration,
             local_surface_anchor_calibration_cases=args.lattice_local_surface_anchor_calibration_cases,
             local_surface_anchor_calibration_context_chars=args.lattice_local_surface_anchor_calibration_context_chars,
+            visible_reranker_calibration=args.lattice_visible_reranker_calibration,
+            apply_visible_reranker_calibration=args.lattice_apply_visible_reranker_calibration,
+            visible_reranker_weight_grid=visible_reranker_weight_grid,
+            visible_reranker_calibration_cases=args.lattice_visible_reranker_calibration_cases,
+            visible_reranker_calibration_context_chars=args.lattice_visible_reranker_calibration_context_chars,
             local_prior_calibration=args.lattice_local_prior_calibration,
             apply_local_prior_calibration=args.lattice_apply_local_prior_calibration,
             prior_weight_grid=prior_weight_grid,
@@ -2673,6 +2984,13 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_local_surface_anchor_calibration_context_chars": int(
                 args.lattice_local_surface_anchor_calibration_context_chars
             ),
+            "lattice_visible_reranker_calibration": bool(args.lattice_visible_reranker_calibration),
+            "lattice_apply_visible_reranker_calibration": bool(args.lattice_apply_visible_reranker_calibration),
+            "lattice_visible_reranker_weight_grid": visible_reranker_weight_grid,
+            "lattice_visible_reranker_calibration_cases": int(args.lattice_visible_reranker_calibration_cases),
+            "lattice_visible_reranker_calibration_context_chars": int(
+                args.lattice_visible_reranker_calibration_context_chars
+            ),
             "lattice_selector_margin_sweep": parse_selector_margin_sweep(args.lattice_selector_margin_sweep),
             "lattice_selector_anchor_sweep": selector_anchor_sweep,
             "lattice_local_prior_calibration": bool(args.lattice_local_prior_calibration),
@@ -2746,13 +3064,18 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--lattice-verifier-mode", choices=["suture_loo", "full_hole", "dual"], default="suture_loo")
     parser.add_argument("--lattice-verifier-top-k", type=int, default=0)
     parser.add_argument("--lattice-selector-margin", type=float, default=0.0)
-    parser.add_argument("--lattice-selector-anchor", choices=["prior", "surface"], default="prior")
+    parser.add_argument("--lattice-selector-anchor", choices=["prior", "surface", "visible_reranker"], default="prior")
     parser.add_argument("--lattice-selector-anchor-sweep", default="prior,surface")
     parser.add_argument("--lattice-selector-margin-sweep", default="0,1,2,3,5")
     parser.add_argument("--lattice-local-surface-anchor-calibration", action="store_true")
     parser.add_argument("--lattice-apply-local-surface-anchor-calibration", action="store_true")
     parser.add_argument("--lattice-local-surface-anchor-calibration-cases", type=int, default=12)
     parser.add_argument("--lattice-local-surface-anchor-calibration-context-chars", type=int, default=12)
+    parser.add_argument("--lattice-visible-reranker-calibration", action="store_true")
+    parser.add_argument("--lattice-apply-visible-reranker-calibration", action="store_true")
+    parser.add_argument("--lattice-visible-reranker-weight-grid", default="0,0.5,1,2")
+    parser.add_argument("--lattice-visible-reranker-calibration-cases", type=int, default=12)
+    parser.add_argument("--lattice-visible-reranker-calibration-context-chars", type=int, default=12)
     parser.add_argument("--lattice-local-prior-calibration", action="store_true")
     parser.add_argument("--lattice-apply-local-prior-calibration", action="store_true")
     parser.add_argument("--lattice-prior-weight-grid", default="0.5,1,2,4")

@@ -4,6 +4,7 @@ import torch
 
 from helixdiff.bench import (
     build_lattice_candidate_rows,
+    calibrate_lattice_visible_reranker_on_visible_context,
     calibrate_lattice_prior_weights_on_visible_context,
     calibrate_lattice_selector_anchor_on_visible_context,
     classify_retrieval_lattice_outcome,
@@ -33,6 +34,7 @@ from helixdiff.bench import (
     sha256_text,
     split_text,
     visible_self_calibration_cases,
+    visible_reranker_candidate_report,
     visible_suture_candidates,
 )
 from helixdiff.ngram import BigramGuide
@@ -246,6 +248,54 @@ class BenchTest(unittest.TestCase):
             report[wrong_key]["surface_verifier_rank"],
         )
         self.assertEqual(report[exact_key]["surface_verifier_features"]["speaker_label_count"], 2)
+
+    def test_visible_reranker_report_can_mix_prior_and_surface_scores(self) -> None:
+        tokenizer = ByteTokenizer()
+        prior = tuple(tokenizer.encode("xxxx", add_bos=False, add_eos=False))
+        surface = tuple(tokenizer.encode("lor:", add_bos=False, add_eos=False))
+        candidates = [
+            {
+                "ids": list(prior),
+                "predicted_hole": "xxxx",
+                "prior_rank": 0,
+                "prior_score": 5.0,
+                "surface_verifier_score": 0.0,
+            },
+            {
+                "ids": list(surface),
+                "predicted_hole": "lor:",
+                "prior_rank": 1,
+                "prior_score": 1.0,
+                "surface_verifier_score": 8.0,
+            },
+        ]
+        prior_only = visible_reranker_candidate_report(candidates, prior_weight=1.0, surface_weight=0.0)
+        surface_only = visible_reranker_candidate_report(candidates, prior_weight=0.0, surface_weight=1.0)
+        mixed = visible_reranker_candidate_report(candidates, prior_weight=1.0, surface_weight=1.0)
+
+        self.assertEqual(prior_only[prior]["visible_reranker_rank"], 0)
+        self.assertEqual(surface_only[surface]["visible_reranker_rank"], 0)
+        self.assertEqual(mixed[surface]["visible_reranker_rank"], 0)
+        self.assertEqual(mixed[surface]["visible_reranker_weights"], {"prior_weight": 1.0, "surface_weight": 1.0})
+
+    def test_visible_reranker_calibration_handles_no_visible_cases(self) -> None:
+        tokenizer = ByteTokenizer()
+        report = calibrate_lattice_visible_reranker_on_visible_context(
+            tokenizer=tokenizer,
+            marked_text="aa[[bb]]cc",
+            guide=BigramGuide.from_text("aa bb cc", tokenizer),
+            train_text="aa bb cc",
+            visible_limit=2,
+            morphology_limit=2,
+            surface_limit=2,
+            suture_weight=2.0,
+            morphology_weight=1.0,
+            surface_weight=1.0,
+            calibration_cases=4,
+            calibration_context_chars=12,
+        )
+        self.assertEqual(report["status"], "no_visible_reranker_calibration_cases")
+        self.assertEqual(report["selected_weights"], {"prior_weight": 1.0, "surface_weight": 1.0})
 
     def test_visible_anchor_recommendation_requires_surface_win_without_harm(self) -> None:
         rows = [
@@ -480,6 +530,56 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(report["anchor_prior_rank"], 1)
         self.assertEqual(report["anchor_surface_verifier_rank"], 0)
 
+    def test_selector_margin_can_use_visible_reranker_anchor(self) -> None:
+        prior_anchor = torch.tensor([1])
+        reranker_anchor = torch.tensor([2])
+        challenger = torch.tensor([3])
+        selected_score, selected_ids, selected_row, report = select_lattice_row_with_margin(
+            [
+                (
+                    1.0,
+                    prior_anchor,
+                    {
+                        "predicted_hole": "prior",
+                        "prior_rank": 0,
+                        "visible_reranker_rank": 3,
+                        "exact": False,
+                        "byte_accuracy": 0.0,
+                    },
+                ),
+                (
+                    1.2,
+                    reranker_anchor,
+                    {
+                        "predicted_hole": "reranker",
+                        "prior_rank": 1,
+                        "visible_reranker_rank": 0,
+                        "exact": True,
+                        "byte_accuracy": 1.0,
+                    },
+                ),
+                (
+                    1.5,
+                    challenger,
+                    {
+                        "predicted_hole": "challenger",
+                        "prior_rank": 2,
+                        "visible_reranker_rank": 1,
+                        "exact": False,
+                        "byte_accuracy": 0.0,
+                    },
+                ),
+            ],
+            selector_margin=0.5,
+            selector_anchor="visible_reranker",
+        )
+        self.assertEqual(selected_score, 1.2)
+        self.assertTrue(torch.equal(selected_ids, reranker_anchor))
+        self.assertEqual(selected_row["predicted_hole"], "reranker")
+        self.assertTrue(report["selector_margin_applied"])
+        self.assertEqual(report["selector_anchor"], "visible_reranker")
+        self.assertEqual(report["anchor_visible_reranker_rank"], 0)
+
     def test_selector_margin_sweep_reuses_scored_options(self) -> None:
         anchor = torch.tensor([1])
         challenger = torch.tensor([2])
@@ -551,7 +651,10 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(parse_selector_margin_sweep("3, 0,1,3,,2"), [0.0, 1.0, 2.0, 3.0])
 
     def test_parse_selector_anchor_sweep_dedupes_and_validates(self) -> None:
-        self.assertEqual(parse_selector_anchor_sweep("surface, prior, surface"), ["prior", "surface"])
+        self.assertEqual(
+            parse_selector_anchor_sweep("visible_reranker, surface, prior, surface"),
+            ["prior", "surface", "visible_reranker"],
+        )
         with self.assertRaises(ValueError):
             parse_selector_anchor_sweep("prior,weird")
 

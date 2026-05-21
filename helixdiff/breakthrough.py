@@ -81,11 +81,12 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
             "repo_move": (
                 "Use the calibrator's visible_hole_reranker receipt to confirm oracle-in-scored-set "
-                "with raw verifier misses, then train or calibrate a tiny visible-context verifier "
-                "for the structural-prior top-4 candidates."
+                "with raw verifier misses, then test the visible-context top-k reranker anchor "
+                "before spending compute on heavier model adaptation."
             ),
             "proof_commands": [
                 "uv run helixdiff-calibrate-selector proof/bench_prior_topk_dual_smoke.json --min-cases 1",
+                "uv run helixdiff-bench --help | rg 'visible-reranker|visible_reranker'",
                 "uv run helixdiff-bench --candidate-oracle-only --cases 8 --require-unseen-hole --json-out proof/lattice_oracle_next_8case.json",
                 "uv run helixdiff-calibrate-selector proof/bench_strict_repair_lattice_8case.json --json-out proof/selector_margin_calibration_strict_repair_8case.json",
             ],

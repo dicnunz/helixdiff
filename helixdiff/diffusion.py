@@ -31,7 +31,11 @@ def corrupt_batch(
     span_prob: float = 0.35,
     max_span_fraction: float = 0.18,
     ribbon_prob: float = 0.0,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    suture_prob: float = 0.0,
+    suture_min_span: int = 3,
+    suture_max_span: int = 12,
+    return_mode: bool = False,
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor] | tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     """Apply absorbing-mask corruption plus optional span and suffix shocks."""
 
     if tokens.ndim != 2:
@@ -48,6 +52,7 @@ def corrupt_batch(
     )
     base = torch.rand(tokens.shape, device=device) < rates[:, None]
     mask = base & valid
+    modes = torch.zeros(batch, dtype=torch.long, device=device)
 
     if span_prob > 0 and max_span_fraction > 0:
         for row in range(batch):
@@ -62,6 +67,7 @@ def corrupt_batch(
             start = int(valid_positions[start_index].item())
             end = min(seq_len, start + span_len)
             mask[row, start:end] = valid[row, start:end]
+            modes[row] = 1
 
     if ribbon_prob > 0:
         for row in range(batch):
@@ -73,6 +79,24 @@ def corrupt_batch(
             start_index = int(torch.randint(1, valid_positions.numel(), (), device=device).item())
             start = int(valid_positions[start_index].item())
             mask[row, start:] = mask[row, start:] | valid[row, start:]
+            modes[row] = 2
+
+    if suture_prob > 0:
+        for row in range(batch):
+            if torch.rand((), device=device).item() >= suture_prob:
+                continue
+            valid_positions = torch.nonzero(valid[row], as_tuple=False).flatten()
+            if valid_positions.numel() <= 4:
+                continue
+            max_span = min(max(int(suture_min_span), int(suture_max_span)), max(1, valid_positions.numel() - 2))
+            min_span = min(max(1, int(suture_min_span)), max_span)
+            span_len = int(torch.randint(min_span, max_span + 1, (), device=device).item())
+            start_slot = int(torch.randint(1, valid_positions.numel() - span_len, (), device=device).item())
+            start = int(valid_positions[start_slot].item())
+            end = int(valid_positions[start_slot + span_len - 1].item()) + 1
+            mask[row] = False
+            mask[row, start:end] = valid[row, start:end]
+            modes[row] = 3
 
     for row in range(batch):
         if not bool(mask[row].any().item()):
@@ -83,15 +107,44 @@ def corrupt_batch(
 
     corrupted = tokens.clone()
     corrupted[mask] = tokenizer.mask_token_id
+    if return_mode:
+        return corrupted, mask, rates, modes
     return corrupted, mask, rates
 
 
-def masked_cross_entropy(logits: torch.Tensor, targets: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+def masked_cross_entropy(
+    logits: torch.Tensor,
+    targets: torch.Tensor,
+    mask: torch.Tensor,
+    *,
+    weights: torch.Tensor | None = None,
+) -> torch.Tensor:
     if mask.sum().item() == 0:
         raise ValueError("masked_cross_entropy received an empty mask")
     flat_logits = logits[mask]
     flat_targets = targets[mask]
-    return F.cross_entropy(flat_logits, flat_targets)
+    losses = F.cross_entropy(flat_logits, flat_targets, reduction="none")
+    if weights is None:
+        return losses.mean()
+    flat_weights = weights[mask].to(dtype=losses.dtype)
+    return (losses * flat_weights).sum() / flat_weights.sum().clamp_min(1e-8)
+
+
+def suture_boundary_weights(mask: torch.Tensor, modes: torch.Tensor, *, boundary_weight: float = 2.0) -> torch.Tensor:
+    """Upweight the first and last masked tokens of bounded suture repairs."""
+
+    weights = torch.ones(mask.shape, dtype=torch.float32, device=mask.device)
+    if boundary_weight <= 1.0:
+        return weights
+    for row in range(mask.shape[0]):
+        if int(modes[row].item()) != 3:
+            continue
+        masked_positions = torch.nonzero(mask[row], as_tuple=False).flatten()
+        if masked_positions.numel() == 0:
+            continue
+        weights[row, masked_positions[0]] = float(boundary_weight)
+        weights[row, masked_positions[-1]] = float(boundary_weight)
+    return weights
 
 
 def restrict_logits_to_ids(logits: torch.Tensor, allowed_token_ids: list[int]) -> torch.Tensor:

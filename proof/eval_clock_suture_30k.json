@@ -1,0 +1,19 @@
+{
+  "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_ema.pt",
+  "checkpoint_sha256": "b93ff58e0a8b6651f747119c8fab4fd6c13e2b57092c45b0bac82b2c4b309cd3",
+  "checkpoint_step": 30000,
+  "loaded_state": "ema_model_state",
+  "state_migration": {
+    "missing_initialized": [],
+    "unexpected": []
+  },
+  "loss": 3.3271494110425315,
+  "masked_accuracy": 0.14725802093744278,
+  "mask_rate": 0.5,
+  "batches": 12,
+  "sample_elapsed_seconds": 15.479106207989389,
+  "sample_bytes_per_second": 6.137305263204841,
+  "sample_schedule": "ribbon",
+  "sample_scaffold": true,
+  "sample": "First Citizen:\nHer name be some to the banish your to chide you have and all be unto helps not "
+}

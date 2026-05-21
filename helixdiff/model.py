@@ -17,6 +17,8 @@ class ModelConfig:
     heads: int = 8
     ff_mult: int = 4
     dropout: float = 0.1
+    noise_buckets: int = 64
+    condition_modes: int = 4
 
     def to_dict(self) -> dict[str, int | float]:
         return asdict(self)
@@ -118,6 +120,8 @@ class DiffusionTransformer(nn.Module):
         self.token_emb = nn.Embedding(config.vocab_size, config.dim)
         self.pos_emb = nn.Embedding(config.seq_len, config.dim)
         self.time_emb = TimeEmbedding(config.dim)
+        self.noise_emb = nn.Embedding(config.noise_buckets, config.dim)
+        self.mode_emb = nn.Embedding(config.condition_modes, config.dim)
         self.blocks = nn.ModuleList([Block(config) for _ in range(config.layers)])
         self.norm = RMSNorm(config.dim)
         self.lm_head = nn.Linear(config.dim, config.vocab_size, bias=False)
@@ -132,14 +136,42 @@ class DiffusionTransformer(nn.Module):
         elif isinstance(module, nn.Embedding):
             nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, tokens: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        tokens: torch.Tensor,
+        t: torch.Tensor,
+        *,
+        corruption_mode: torch.Tensor | int | None = None,
+        mask_fraction: torch.Tensor | None = None,
+    ) -> torch.Tensor:
         if tokens.ndim != 2:
             raise ValueError("tokens must have shape [batch, seq]")
         batch, seq_len = tokens.shape
         if seq_len > self.config.seq_len:
             raise ValueError(f"sequence length {seq_len} exceeds config.seq_len {self.config.seq_len}")
+        if t.ndim == 0:
+            t = t.expand(batch)
+        if t.shape[0] != batch:
+            raise ValueError("t must have one value per batch row")
         positions = torch.arange(seq_len, device=tokens.device)
-        x = self.token_emb(tokens) + self.pos_emb(positions)[None, :, :] + self.time_emb(t)[:, None, :]
+        clock = torch.clamp(t if mask_fraction is None else mask_fraction, 0.0, 1.0)
+        noise_bucket = torch.round(clock * float(self.config.noise_buckets - 1)).long()
+        if corruption_mode is None:
+            mode_ids = torch.zeros(batch, dtype=torch.long, device=tokens.device)
+        elif isinstance(corruption_mode, int):
+            mode_ids = torch.full((batch,), int(corruption_mode), dtype=torch.long, device=tokens.device)
+        else:
+            mode_ids = corruption_mode.to(device=tokens.device, dtype=torch.long)
+            if mode_ids.ndim == 0:
+                mode_ids = mode_ids.expand(batch)
+        mode_ids = torch.clamp(mode_ids, 0, self.config.condition_modes - 1)
+        x = (
+            self.token_emb(tokens)
+            + self.pos_emb(positions)[None, :, :]
+            + self.time_emb(t)[:, None, :]
+            + self.noise_emb(noise_bucket)[:, None, :]
+            + self.mode_emb(mode_ids)[:, None, :]
+        )
         key_padding_mask = tokens == self.pad_token_id
         for block in self.blocks:
             x = block(x, key_padding_mask=key_padding_mask)
@@ -148,4 +180,3 @@ class DiffusionTransformer(nn.Module):
 
 def count_parameters(model: nn.Module) -> int:
     return sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
-

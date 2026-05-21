@@ -1,0 +1,508 @@
+{
+  "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_4k.pt",
+  "checkpoint_step": 4000,
+  "parameters": 433440,
+  "data": "data/tinyshakespeare.txt",
+  "data_bytes": 1115394,
+  "val_fraction": 0.08,
+  "guide_scope": "training_split_only",
+  "case_filter": {
+    "require_unseen_hole": true,
+    "candidate_count": 4
+  },
+  "masked_eval": {
+    "loss": 3.3574255108833313,
+    "masked_accuracy": 0.15266582369804382,
+    "mask_rate": 0.5,
+    "batches": 4,
+    "batch_size": 24
+  },
+  "infill": {
+    "case_source": "validation_split",
+    "span_chars": 10,
+    "context_chars": 36,
+    "unigram_baseline": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.2000000048428774,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": ", that Caliban\nWhom now I keep in se[[rvice. Tho]]u best know'st\nWhat torment I did fi",
+          "target_hole": "rvice. Tho",
+          "predicted_hole": "          ",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.10000000149011612,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        },
+        {
+          "marked_text": "ow:\nYour husband, being troubled wit[[h a shrew,]]\nMeasures my husband's sorrow by his",
+          "target_hole": "h a shrew,",
+          "predicted_hole": "          ",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.20000000298023224,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        },
+        {
+          "marked_text": "st away to-day, before night come:\nM[[ake it no ]]wonder; if you knew my business,\nYou",
+          "target_hole": "ake it no ",
+          "predicted_hole": "          ",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.30000001192092896,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        },
+        {
+          "marked_text": "oose.\nCome away, servant, come. I am[[ ready now]].\nApproach, my Ariel, come.\n\nARIEL:\n",
+          "target_hole": " ready now",
+          "predicted_hole": "          ",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.20000000298023224,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        }
+      ]
+    },
+    "bridge_only_baseline": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.15000000223517418,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": ", that Caliban\nWhom now I keep in se[[rvice. Tho]]u best know'st\nWhat torment I did fi",
+          "target_hole": "rvice. Tho",
+          "predicted_hole": "e the the ",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.10000000149011612,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "ow:\nYour husband, being troubled wit[[h a shrew,]]\nMeasures my husband's sorrow by his",
+          "target_hole": "h a shrew,",
+          "predicted_hole": "h the thee",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.20000000298023224,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "st away to-day, before night come:\nM[[ake it no ]]wonder; if you knew my business,\nYou",
+          "target_hole": "ake it no ",
+          "predicted_hole": "arry the o",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.20000000298023224,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "oose.\nCome away, servant, come. I am[[ ready now]].\nApproach, my Ariel, come.\n\nARIEL:\n",
+          "target_hole": " ready now",
+          "predicted_hole": " the the t",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.10000000149011612,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "unguided": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.1750000026077032,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": ", that Caliban\nWhom now I keep in se[[rvice. Tho]]u best know'st\nWhat torment I did fi",
+          "target_hole": "rvice. Tho",
+          "predicted_hole": "e t e    t",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.20000000298023224,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 10,
+          "candidates": 4,
+          "selected_candidate_score": -1.415339469909668,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -2.2987771034240723,
+              "predicted_hole": "aol ese  t",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            },
+            {
+              "seed": 102,
+              "score": -2.1252822875976562,
+              "predicted_hole": "o o  teeos",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 103,
+              "score": -2.7324719429016113,
+              "predicted_hole": "t sm\n ha o",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            },
+            {
+              "seed": 104,
+              "score": -1.415339469909668,
+              "predicted_hole": "e t e    t",
+              "byte_accuracy": 0.20000000298023224,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.9867232910182793
+        },
+        {
+          "marked_text": "ow:\nYour husband, being troubled wit[[h a shrew,]]\nMeasures my husband's sorrow by his",
+          "target_hole": "h a shrew,",
+          "predicted_hole": "e t e    t",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.20000000298023224,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 10,
+          "candidates": 4,
+          "selected_candidate_score": -1.415336012840271,
+          "candidate_summaries": [
+            {
+              "seed": 102,
+              "score": -2.1252849102020264,
+              "predicted_hole": "o o  teeos",
+              "byte_accuracy": 0.30000001192092896,
+              "exact": false
+            },
+            {
+              "seed": 103,
+              "score": -2.732471466064453,
+              "predicted_hole": "t sm\n ha o",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            },
+            {
+              "seed": 104,
+              "score": -1.415336012840271,
+              "predicted_hole": "e t e    t",
+              "byte_accuracy": 0.20000000298023224,
+              "exact": false
+            },
+            {
+              "seed": 105,
+              "score": -2.6393628120422363,
+              "predicted_hole": "  nddli a ",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.516130832984345
+        },
+        {
+          "marked_text": "st away to-day, before night come:\nM[[ake it no ]]wonder; if you knew my business,\nYou",
+          "target_hole": "ake it no ",
+          "predicted_hole": "e t e    t",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.20000000298023224,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 10,
+          "candidates": 4,
+          "selected_candidate_score": -1.4153355360031128,
+          "candidate_summaries": [
+            {
+              "seed": 103,
+              "score": -2.732468843460083,
+              "predicted_hole": "t sm\n ha o",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 104,
+              "score": -1.4153355360031128,
+              "predicted_hole": "e t e    t",
+              "byte_accuracy": 0.20000000298023224,
+              "exact": false
+            },
+            {
+              "seed": 105,
+              "score": -2.6393628120422363,
+              "predicted_hole": "  nddli a ",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            },
+            {
+              "seed": 106,
+              "score": -2.4923043251037598,
+              "predicted_hole": "ot hde  ni",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.4224503330187872
+        },
+        {
+          "marked_text": "oose.\nCome away, servant, come. I am[[ ready now]].\nApproach, my Ariel, come.\n\nARIEL:\n",
+          "target_hole": " ready now",
+          "predicted_hole": " e    h   ",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.10000000149011612,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 10,
+          "candidates": 4,
+          "selected_candidate_score": -1.1265796422958374,
+          "candidate_summaries": [
+            {
+              "seed": 104,
+              "score": -1.415334701538086,
+              "predicted_hole": "e t e    t",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            },
+            {
+              "seed": 105,
+              "score": -2.639364004135132,
+              "predicted_hole": "  nddli a ",
+              "byte_accuracy": 0.20000000298023224,
+              "exact": false
+            },
+            {
+              "seed": 106,
+              "score": -2.4923057556152344,
+              "predicted_hole": "ot hde  ni",
+              "byte_accuracy": 0.20000000298023224,
+              "exact": false
+            },
+            {
+              "seed": 107,
+              "score": -1.1265796422958374,
+              "predicted_hole": " e    h   ",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.40278908298932947
+        }
+      ]
+    },
+    "bridge_guided": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.1250000037252903,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": ", that Caliban\nWhom now I keep in se[[rvice. Tho]]u best know'st\nWhat torment I did fi",
+          "target_hole": "rvice. Tho",
+          "predicted_hole": "t a tear t",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 10,
+          "candidates": 4,
+          "selected_candidate_score": -2.2596609592437744,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -2.2596609592437744,
+              "predicted_hole": "t a tear t",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 102,
+              "score": -2.7268409729003906,
+              "predicted_hole": "e old terr",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 103,
+              "score": -2.386457920074463,
+              "predicted_hole": "t at than ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 104,
+              "score": -2.4227499961853027,
+              "predicted_hole": "e the ensh",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 20.71657962500467,
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "ow:\nYour husband, being troubled wit[[h a shrew,]]\nMeasures my husband's sorrow by his",
+          "target_hole": "h a shrew,",
+          "predicted_hole": " to deer t",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.10000000149011612,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 10,
+          "candidates": 4,
+          "selected_candidate_score": -2.259784460067749,
+          "candidate_summaries": [
+            {
+              "seed": 102,
+              "score": -2.302520751953125,
+              "predicted_hole": "h othere s",
+              "byte_accuracy": 0.4000000059604645,
+              "exact": false
+            },
+            {
+              "seed": 103,
+              "score": -2.2836060523986816,
+              "predicted_hole": " is the ne",
+              "byte_accuracy": 0.20000000298023224,
+              "exact": false
+            },
+            {
+              "seed": 104,
+              "score": -2.317302703857422,
+              "predicted_hole": " to teeth ",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            },
+            {
+              "seed": 105,
+              "score": -2.259784460067749,
+              "predicted_hole": " to deer t",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 18.844044166995445,
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "st away to-day, before night come:\nM[[ake it no ]]wonder; if you knew my business,\nYou",
+          "target_hole": "ake it no ",
+          "predicted_hole": "othere to ",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.30000001192092896,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 10,
+          "candidates": 4,
+          "selected_candidate_score": -2.2974636554718018,
+          "candidate_summaries": [
+            {
+              "seed": 103,
+              "score": -2.54591703414917,
+              "predicted_hole": "o steed no",
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "seed": 104,
+              "score": -2.5573203563690186,
+              "predicted_hole": "aste te co",
+              "byte_accuracy": 0.20000000298023224,
+              "exact": false
+            },
+            {
+              "seed": 105,
+              "score": -2.932513952255249,
+              "predicted_hole": "ontail a t",
+              "byte_accuracy": 0.20000000298023224,
+              "exact": false
+            },
+            {
+              "seed": 106,
+              "score": -2.2974636554718018,
+              "predicted_hole": "othere to ",
+              "byte_accuracy": 0.30000001192092896,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 15.694110999989789,
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "oose.\nCome away, servant, come. I am[[ ready now]].\nApproach, my Ariel, come.\n\nARIEL:\n",
+          "target_hole": " ready now",
+          "predicted_hole": " the eat e",
+          "hole_length_bytes": 10,
+          "byte_accuracy": 0.10000000149011612,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 10,
+          "candidates": 4,
+          "selected_candidate_score": -1.9273983240127563,
+          "candidate_summaries": [
+            {
+              "seed": 104,
+              "score": -2.1388745307922363,
+              "predicted_hole": " to teethe",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            },
+            {
+              "seed": 105,
+              "score": -2.9761407375335693,
+              "predicted_hole": " and leans",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            },
+            {
+              "seed": 106,
+              "score": -1.9273983240127563,
+              "predicted_hole": " the eat e",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            },
+            {
+              "seed": 107,
+              "score": -2.2234935760498047,
+              "predicted_hole": " to eat ar",
+              "byte_accuracy": 0.10000000149011612,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 18.764066540985368,
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "bridge_guided_minus_bridge_only_byte_accuracy": -0.02499999850988388
+  },
+  "quality_label": "mechanism_checkpoint",
+  "ten_out_of_ten_gate": {
+    "artifact": "pass_if_tests_verifier_docs_and_benchmarks_pass",
+    "actual_model": "requires strong_laptop_checkpoint or better; otherwise do not claim 10/10 model quality",
+    "public_wow": "requires visible infill trace plus non-leaky heldout benchmark"
+  }
+}

@@ -25,12 +25,27 @@ def choose_device(requested: str = "auto") -> torch.device:
     return torch.device("cpu")
 
 
-def load_checkpoint(path: str | Path, device: torch.device | str = "cpu") -> tuple[DiffusionTransformer, ByteTokenizer, dict]:
+def load_checkpoint(
+    path: str | Path,
+    device: torch.device | str = "cpu",
+    *,
+    use_ema: bool = True,
+) -> tuple[DiffusionTransformer, ByteTokenizer, dict]:
     payload = torch.load(Path(path), map_location=device, weights_only=False)
     tokenizer = ByteTokenizer()
     config = ModelConfig(**payload["model_config"])
     model = DiffusionTransformer(config, pad_token_id=tokenizer.pad_token_id).to(device)
-    model.load_state_dict(payload["model_state"])
+    state_key = "ema_model_state" if use_ema and payload.get("ema_model_state") else "model_state"
+    missing, unexpected = model.load_state_dict(payload[state_key], strict=False)
+    allowed_missing = tuple(name for name in missing if name.startswith(("noise_emb.", "mode_emb.")))
+    if unexpected or len(allowed_missing) != len(missing):
+        raise RuntimeError(f"checkpoint state mismatch: missing={missing}, unexpected={unexpected}")
+    if any(name.startswith("noise_emb.") for name in missing):
+        model.noise_emb.weight.data.zero_()
+    if any(name.startswith("mode_emb.") for name in missing):
+        model.mode_emb.weight.data.zero_()
+    payload["loaded_state"] = state_key
+    payload["state_migration"] = {"missing_initialized": list(missing), "unexpected": list(unexpected)}
     model.allowed_token_ids = payload.get("sample_token_ids")
     model.eval()
     return model, tokenizer, payload
@@ -111,6 +126,7 @@ def denoise_ids(
     return_trace: bool = False,
     trace_preview: bool = False,
     max_reveal_per_step: int | None = None,
+    corruption_mode: int | None = None,
 ) -> torch.Tensor | tuple[torch.Tensor, list[dict[str, Any]]]:
     if steps < 1:
         raise ValueError("steps must be >= 1")
@@ -140,7 +156,11 @@ def denoise_ids(
     for step in range(steps):
         remaining_steps = steps - step
         t = torch.full((1,), remaining_steps / steps, device=device)
-        logits = model(tokens, t)
+        mask_fraction = (tokens == tokenizer.mask_token_id).float().mean(dim=1)
+        mode_id = corruption_mode
+        if mode_id is None:
+            mode_id = 2 if schedule == "ribbon" else 0
+        logits = model(tokens, t, corruption_mode=mode_id, mask_fraction=mask_fraction)
         if guide is not None and guidance > 0:
             logits = logits + guidance * guide.logits(tokens, tokenizer)
         logits = _filter_logits(
@@ -269,6 +289,7 @@ def generate_ids(
         guidance=guidance,
         schedule=schedule,
         seed=seed,
+        corruption_mode=2 if schedule == "ribbon" else 0,
     )
     return result if isinstance(result, torch.Tensor) else result[0]
 
@@ -298,11 +319,12 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--scaffold-remask", type=float, default=0.18)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--device", default="auto")
+    parser.add_argument("--raw-weights", action="store_true", help="Use raw model weights even when EMA weights exist.")
     parser.add_argument("--json-out")
     args = parser.parse_args(argv)
 
     device = choose_device(args.device)
-    model, tokenizer, payload = load_checkpoint(args.checkpoint, device=device)
+    model, tokenizer, payload = load_checkpoint(args.checkpoint, device=device, use_ema=not args.raw_weights)
     guide = None
     if args.guide_data and (args.guidance > 0 or args.scaffold):
         guide = BigramGuide.from_text(load_text(args.guide_data), tokenizer).to_device(device)
@@ -342,6 +364,7 @@ def main(argv: list[str] | None = None) -> None:
                     "scaffold": args.scaffold,
                     "scaffold_remask": args.scaffold_remask,
                     "checkpoint_step": payload.get("step"),
+                    "loaded_state": payload.get("loaded_state"),
                     "text": text,
                 },
                 indent=2,

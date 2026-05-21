@@ -15,5 +15,8 @@
   "max_mask_rate": 0.98,
   "span_prob": 0.3,
   "max_span_fraction": 0.16,
-  "ribbon_prob": 0.2
+  "ribbon_prob": 0.2,
+  "suture_prob": 0.18,
+  "suture_min_span": 4,
+  "suture_max_span": 24
 }

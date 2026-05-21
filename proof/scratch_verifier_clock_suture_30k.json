@@ -1,0 +1,14 @@
+{
+  "root": "/Users/nicdunz/Documents/Codex/2026-05-20/goal-make-your-own-diffusion-large",
+  "banned_snippet_findings": [],
+  "checkpoint": {
+    "checked": true,
+    "path": "/Users/nicdunz/Documents/Codex/2026-05-20/goal-make-your-own-diffusion-large/checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_ema.pt",
+    "scratch_only": true,
+    "pretrained_weights": false,
+    "hosted_model_calls": false,
+    "checkpoint_step": 30000,
+    "ok": true
+  },
+  "ok": true
+}

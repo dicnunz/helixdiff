@@ -1,0 +1,22 @@
+{
+  "name": "helixdiff-mac-sota",
+  "seq_len": 256,
+  "dim": 256,
+  "layers": 8,
+  "heads": 8,
+  "ff_mult": 4,
+  "dropout": 0.08,
+  "batch_size": 32,
+  "learning_rate": 0.00045,
+  "min_lr_ratio": 0.08,
+  "weight_decay": 0.08,
+  "warmup_steps": 1000,
+  "min_mask_rate": 0.04,
+  "max_mask_rate": 0.96,
+  "span_prob": 0.4,
+  "max_span_fraction": 0.2,
+  "ribbon_prob": 0.3,
+  "suture_prob": 0.25,
+  "suture_min_span": 4,
+  "suture_max_span": 18
+}

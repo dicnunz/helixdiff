@@ -21,6 +21,9 @@ helixdiff-train = "helixdiff.train:main"
 helixdiff-sample = "helixdiff.sample:main"
 helixdiff-eval = "helixdiff.eval:main"
 helixdiff-infill = "helixdiff.infill:main"
+helixdiff-bench = "helixdiff.bench:main"
+helixdiff-export = "helixdiff.export:main"
+helixdiff-gate = "helixdiff.gate:main"
 helixdiff-verify-scratch = "helixdiff.verify_scratch:main"
 
 [tool.setuptools.packages.find]

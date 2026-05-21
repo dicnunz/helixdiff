@@ -1,0 +1,23 @@
+{
+  "name": "helixdiff-tiny-suture-curriculum",
+  "seq_len": 96,
+  "dim": 96,
+  "layers": 3,
+  "heads": 4,
+  "ff_mult": 3,
+  "dropout": 0.05,
+  "batch_size": 24,
+  "learning_rate": 0.00025,
+  "min_lr_ratio": 0.12,
+  "weight_decay": 0.05,
+  "warmup_steps": 40,
+  "min_mask_rate": 0.08,
+  "max_mask_rate": 0.65,
+  "span_prob": 0.25,
+  "max_span_fraction": 0.18,
+  "ribbon_prob": 0.1,
+  "suture_prob": 0.45,
+  "suture_min_span": 4,
+  "suture_max_span": 14,
+  "suture_boundary_weight": 2.0
+}

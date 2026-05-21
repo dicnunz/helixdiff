@@ -1,0 +1,19 @@
+{
+  "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt",
+  "checkpoint_sha256": "3d1ae0b04275291f44c17660eeef12c627ed0d8f96132eba3b8caff27bedd9bf",
+  "checkpoint_step": 30000,
+  "loaded_state": "model_state",
+  "state_migration": {
+    "missing_initialized": [],
+    "unexpected": []
+  },
+  "loss": 3.316143274307251,
+  "masked_accuracy": 0.14513787627220154,
+  "mask_rate": 0.5,
+  "batches": 1,
+  "sample_elapsed_seconds": 0.24001866701291874,
+  "sample_bytes_per_second": 129.15662096536624,
+  "sample_schedule": "entropy",
+  "sample_scaffold": false,
+  "sample": "First Citizen:e e  eeeee  o    "
+}

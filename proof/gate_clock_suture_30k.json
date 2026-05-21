@@ -1,0 +1,35 @@
+{
+  "passed": false,
+  "claim_boundary": "mechanism_only_claim_required_do_not_call_model_sota",
+  "baseline": {
+    "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_4k.pt",
+    "masked_loss": 3.3574255108833313,
+    "masked_accuracy": 0.15266582369804382
+  },
+  "current": {
+    "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_ema.pt",
+    "masked_loss": 3.3491259813308716,
+    "masked_accuracy": 0.1518559604883194,
+    "quality_label": "mechanism_checkpoint",
+    "bridge_only_byte_accuracy": 0.15000000223517418,
+    "unguided_byte_accuracy": 0.20000000298023224,
+    "bridge_guided_byte_accuracy": 0.20000000298023224
+  },
+  "deltas": {
+    "masked_loss_delta": -0.008299529552459717,
+    "masked_accuracy_gain": -0.0008098632097244263,
+    "unguided_minus_bridge_only_byte_accuracy": 0.05000000074505806,
+    "bridge_guided_minus_bridge_only_byte_accuracy": 0.05000000074505806
+  },
+  "thresholds": {
+    "min_masked_accuracy_gain": 0.015,
+    "min_infill_lift": 0.0
+  },
+  "checks": {
+    "masked_ce_improved": true,
+    "masked_accuracy_gain_met": false,
+    "model_only_beats_bridge_only": true,
+    "bridge_guided_beats_bridge_only": true,
+    "frozen_context_preserved": true
+  }
+}

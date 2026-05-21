@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -11,6 +12,14 @@ from .data import ByteStream, load_text
 from .diffusion import corrupt_batch, masked_accuracy, masked_cross_entropy, restrict_logits_to_ids
 from .ngram import BigramGuide
 from .sample import choose_device, generate_text, load_checkpoint
+
+
+def _sha256_file(path: str | Path) -> str:
+    hasher = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
 
 
 @torch.no_grad()
@@ -34,7 +43,11 @@ def evaluate(args: argparse.Namespace) -> dict[str, float | int | str]:
             span_prob=0.0,
             max_span_fraction=0.0,
         )
-        logits = restrict_logits_to_ids(model(corrupted, rates), payload.get("sample_token_ids", list(range(model.config.vocab_size))))
+        mask_fraction = mask.float().mean(dim=1)
+        logits = restrict_logits_to_ids(
+            model(corrupted, rates, corruption_mode=0, mask_fraction=mask_fraction),
+            payload.get("sample_token_ids", list(range(model.config.vocab_size))),
+        )
         losses.append(float(masked_cross_entropy(logits, clean, mask).item()))
         accs.append(masked_accuracy(logits, clean, mask))
     start = time.perf_counter()
@@ -60,7 +73,10 @@ def evaluate(args: argparse.Namespace) -> dict[str, float | int | str]:
     elapsed = time.perf_counter() - start
     return {
         "checkpoint": str(args.checkpoint),
+        "checkpoint_sha256": _sha256_file(args.checkpoint),
         "checkpoint_step": int(payload.get("step", 0)),
+        "loaded_state": payload.get("loaded_state"),
+        "state_migration": payload.get("state_migration"),
         "loss": sum(losses) / len(losses),
         "masked_accuracy": sum(accs) / len(accs),
         "mask_rate": args.mask_rate,

@@ -1,0 +1,46 @@
+import unittest
+
+from helixdiff.bench import make_marked_cases, model_quality_label, sha256_text, split_text
+
+
+class BenchTest(unittest.TestCase):
+    def test_split_text_keeps_validation_tail(self) -> None:
+        train, val = split_text("abcdefghij", val_fraction=0.2)
+        self.assertEqual(train, "abcdefgh")
+        self.assertEqual(val, "ij")
+
+    def test_sha256_text_is_stable(self) -> None:
+        self.assertEqual(
+            sha256_text("helix"),
+            "54a85d2ae7b0a4d8005ab5cf466d4e582c6ea9aa5060b261241ec65a0ea58506",
+        )
+
+    def test_make_marked_cases_builds_single_hole(self) -> None:
+        text = "abcdefghijklmnopqrstuvwxyz " * 20
+        cases = make_marked_cases(text, cases=3, span_chars=4, context_chars=8, seed=1)
+        self.assertEqual(len(cases), 3)
+        for case in cases:
+            self.assertEqual(case.count("[["), 1)
+            self.assertEqual(case.count("]]"), 1)
+
+    def test_make_marked_cases_can_require_unseen_holes(self) -> None:
+        text = "abcdefgh uniquehole zyxwvuts " * 8
+        cases = make_marked_cases(
+            text,
+            cases=1,
+            span_chars=10,
+            context_chars=8,
+            seed=3,
+            forbidden_text="abcdefgh zyxwvuts",
+            require_unseen_hole=True,
+        )
+        self.assertEqual(len(cases), 1)
+        self.assertNotIn("[[abcdefgh]]", cases[0])
+
+    def test_quality_label_refuses_weak_model_as_strong(self) -> None:
+        self.assertEqual(model_quality_label(0.14, 0.02, 0.1), "mechanism_checkpoint")
+        self.assertEqual(model_quality_label(0.5, 0.3, 0.6), "strong_laptop_checkpoint")
+
+
+if __name__ == "__main__":
+    unittest.main()

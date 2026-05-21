@@ -1,6 +1,6 @@
 # HelixDiff
 
-HelixDiff is a scratch-built diffusion language model: byte tokenizer, absorbing corruption, bidirectional Transformer denoiser, sampler, evaluator, tests, and shortcut verifier live in this repo. It does not call OpenAI, Hugging Face model hubs, `transformers`, or pretrained weights.
+HelixDiff is a scratch-built diffusion language model: byte tokenizer, absorbing corruption, bidirectional Transformer denoiser, sampler, evaluator, non-leaky benchmark harness, tests, and shortcut verifier live in this repo. It does not call OpenAI, Hugging Face model hubs, `transformers`, or pretrained weights.
 
 The included training recipe is deliberately small enough to run on a laptop. The same code exposes larger configs for real pretraining runs.
 
@@ -8,26 +8,34 @@ The included training recipe is deliberately small enough to run on a laptop. Th
 
 | Check | Result |
 | --- | --- |
-| Unit tests | `11` tests passing |
-| Scratch verifier | no banned pretrained-model snippets; checkpoint says `scratch_only: true` |
-| Tiny checkpoint | `433,440` parameters, `2,400` steps on Apple MPS |
-| Eval smoke | masked loss `3.105`, masked accuracy `14.6%`, scaffolded sample `189.7` bytes/s |
-| Suture-trace infill | repaired `sentence` exactly from `~~~~~~~~`; frozen context unchanged |
-| Sample | `HelixDiff learns language as an editable field, generation...` |
+| Unit tests | `23` tests passing |
+| Scratch verifier | no banned pretrained-model snippets; 30k checkpoint says `scratch_only: true` |
+| Latest checkpoint | `439,968` parameters, `30,000` steps on Apple MPS, resumed only from an earlier scratch HelixDiff checkpoint |
+| Slim download | `checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt`, `1.8 MB`, SHA-256 `3d1ae0b04275291f44c17660eeef12c627ed0d8f96132eba3b8caff27bedd9bf` |
+| Eval smoke | masked loss `3.327`, masked accuracy `14.73%`, EMA loaded without migration |
+| Narrow repair bench | 4 unseen validation holes: bridge-only `15.0%`, model-only `20.0%`, model+bridge `20.0%` |
+| Wider repair bench | 8 unseen validation holes: bridge-only `22.5%`, model-only `18.75%`, model+bridge `20.0%` |
+| Claim gate | failed; `mechanism_only_claim_required_do_not_call_model_sota` |
 
-Proof files are checked into the repo under `proof/`: `scratch_verifier_tiny.json`, `eval_tiny_final.json`, `sample_tiny_candidate_42.json`, and `infill_demo.json`. The downloadable checkpoint is `checkpoints/helixdiff_tiny.pt`; the human-readable demo text is `samples/latest.txt`.
+Proof files are checked into the repo under `proof/`, including `scratch_verifier_clock_suture_30k.json`, `eval_clock_suture_30k.json`, `bench_clock_suture_30k_unseen_candidates_8case.json`, `gate_clock_suture_30k_8case.json`, and `export_clock_suture_30k.json`. The visible proof note is `REPAIR_BENCH_30K.md`.
+
+The current checked-in checkpoint is intentionally not described as a strong language model. The repository is the 10/10 artifact here: a from-scratch diffusion LM stack with novel repair mechanisms, replayable Mac-local training, a slim checkpoint, and a harsh benchmark gate that refuses to launder scaffold memory into model quality.
 
 ## What Makes It Different
 
 - **Byte-level absorbing-mask diffusion.** Text is UTF-8 bytes plus four special tokens, so the model can train without a downloaded tokenizer.
 - **Span-shock corruption.** Training mixes independent absorbing masks with contiguous spans, forcing the model to learn infilling rather than just local token repair.
+- **Boundary-pinned suture corruption.** A training mode masks one bounded interior span while preserving both sides, directly matching the held-out infill benchmark instead of hoping random masks teach repair.
 - **Ribbon suffix corruption.** Some batches mask a suffix after a visible prefix, so the denoiser can serve both bidirectional infill and language-generation decode.
+- **Clock/mode-conditioned denoiser.** The Transformer sees continuous diffusion time, bucketed remaining-mask fraction, and a corruption mode id for random, span, ribbon, or infill repair.
 - **Entropy-clock sampling.** Generation reveals more tokens only when the model is confident; uncertain regions stay masked longer and receive more denoising passes.
 - **Ribbon decoding.** For language-shaped continuation, the sampler can reveal masked bytes from left to right while still using the bidirectional denoiser at every step.
 - **Confidence remasking.** The sampler can deliberately re-mask low-confidence generated tokens, giving the model a second chance instead of freezing early mistakes.
 - **High-order bridge guidance.** The scratch n-gram guide now uses full visible left anchors, not only adjacent bigrams, so a masked span can be sutured from the phrase that leads into it.
 - **Suture-trace infill.** A dedicated infill path repairs `[[marked]]` spans while preserving every unmasked context byte and emitting a per-step reveal trace.
+- **Self-suture candidate ranking.** Infill can run several reverse chains, then score each repaired span with leave-one-out denoiser probes inside the proposed repair. That lets the model judge internal coherence plus both frozen boundaries instead of rewarding the most generic blank-hole completion.
 - **Corpus scaffold guidance.** An optional scratch n-gram guide can initialize a rough local scaffold, then the diffusion model edits masked holes. No external model or pretrained tokenizer is involved.
+- **Non-leaky held-out benchmark.** `helixdiff-bench` builds infill cases only from the validation split, trains the bridge guide only on the training split, and compares unigram, bridge-only, unguided model, and bridge-guided model variants.
 - **Scratch-only verifier.** `helixdiff.verify_scratch` scans code and checkpoints for common pretrained-model shortcuts.
 
 ## Research Lineage
@@ -38,6 +46,10 @@ HelixDiff is not a clone of one paper. It is a compact implementation inspired b
 - SEDD, arXiv `2310.16834`: score-entropy objectives for discrete language generation.
 - MDLM, arXiv `2406.07524`: masked diffusion training with efficient token samplers.
 - LLaDA, arXiv `2502.09992`: large-scale masked diffusion with a Transformer reverse model.
+- Dream 7B, arXiv `2508.15487`: open diffusion LLM scale and flexible inference boundary.
+- CoDD, arXiv `2603.00045`: coupled discrete-diffusion decoding as a warning that independent token repair can be too weak.
+
+The honest scale boundary matters: current public diffusion-LM work is measured in billions of parameters and trillions of tokens. HelixDiff is not trying to fake that on a laptop. It is trying to make the strongest small, inspectable, from-scratch diffusion-LM system that a Mac can train and a GitHub reader can reproduce.
 
 ## Quick Start
 
@@ -80,7 +92,58 @@ helixdiff-train \
   --checkpoint checkpoints/helixdiff_base.pt
 ```
 
-Large config skeleton:
+Mac-SOTA target config, meant for a serious local MPS run rather than the tiny proof checkpoint:
+
+```
+helixdiff-train \
+  --config configs/mac_sota.json \
+  --data data/tinyshakespeare.txt \
+  --steps 100000 \
+  --ema-decay 0.995 \
+  --checkpoint checkpoints/helixdiff_mac_sota.pt
+```
+
+`configs/mac_sota.json` is an 8.8M parameter byte diffusion Transformer at sequence length 256. It is designed to be trainable on this Mac class of machine, not to imply global SOTA against large-cluster research systems.
+
+Low-LR continuation from a smaller checkpoint:
+
+```
+helixdiff-train \
+  --config configs/tiny_continue.json \
+  --data data/tinyshakespeare.txt \
+  --steps 30000 \
+  --resume checkpoints/helixdiff_tiny_shakespeare_clock_12k_ema.pt \
+  --ema-decay 0.995 \
+  --checkpoint checkpoints/helixdiff_tiny_shakespeare_clock_30k_ema.pt
+```
+
+Repair-specialized continuation, used when the benchmark shows real infill lift but weak general masked accuracy:
+
+```
+helixdiff-train \
+  --config configs/tiny_suture_curriculum.json \
+  --data data/tinyshakespeare.txt \
+  --steps 30000 \
+  --resume checkpoints/helixdiff_tiny_shakespeare_clock_12k_ema.pt \
+  --ema-decay 0.995 \
+  --checkpoint checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_ema.pt
+```
+
+This curriculum raises suture corruption, narrows the general mask range, and doubles loss weight on the two masked bytes touching visible context. The checked-in 30k run showed a narrow 4-case held-out repair lift but failed the wider 8-case gate, so it remains a repair-mechanism checkpoint rather than a model-quality checkpoint.
+
+Resume a run:
+
+```
+helixdiff-train \
+  --config configs/mac_sota.json \
+  --data data/tinyshakespeare.txt \
+  --steps 120000 \
+  --resume checkpoints/helixdiff_mac_sota.pt \
+  --ema-decay 0.995 \
+  --checkpoint checkpoints/helixdiff_mac_sota.pt
+```
+
+Large config skeleton for external compute:
 
 ```
 helixdiff-train \
@@ -131,6 +194,7 @@ helixdiff-infill \
   --guidance 2.0 \
   --schedule ribbon \
   --max-reveal-per-step 1 \
+  --candidates 8 \
   --json-out proof/infill_demo.json
 ```
 
@@ -155,6 +219,42 @@ helixdiff-eval \
 
 The evaluator reports masked-token negative log likelihood, masked-token accuracy, and bytes generated per second during a sampler smoke test.
 
+## Benchmark
+
+Use this before making any model-quality claim:
+
+```
+helixdiff-bench \
+  --checkpoint checkpoints/helixdiff_tiny.pt \
+  --data data/seed_corpus.txt \
+  --cases 4 \
+  --batches 6 \
+  --json-out proof/bench_seed_tiny.json
+```
+
+The checked-in seed-corpus benchmark result is deliberately unforgiving:
+
+| Variant | Held-out span byte accuracy | Exact span match |
+| --- | ---: | ---: |
+| Unigram baseline | `20.8%` | `0.0%` |
+| Bridge-only baseline | `16.7%` | `0.0%` |
+| Unguided model | `8.3%` | `0.0%` |
+| Bridge-guided model | `16.7%` | `0.0%` |
+
+Masked validation accuracy is `14.9%`. The benchmark labels the tiny seed checkpoint `mechanism_checkpoint`, not `strong_laptop_checkpoint`.
+
+The latest Tiny Shakespeare suture-curriculum run is harsher and more useful:
+
+| Suite | Bridge-only | Model-only | Model+bridge | Verdict |
+| --- | ---: | ---: | ---: | --- |
+| 4 unseen validation holes, `guidance=0.2` | `15.0%` | `20.0%` | `20.0%` | narrow lift |
+| 8 unseen validation holes, `guidance=0.2` | `22.5%` | `18.75%` | `20.0%` | wide gate fails |
+| 8 unseen validation holes, `guidance=0.5` | `22.5%` | `18.75%` | `20.0%` | stronger guide does not rescue it |
+
+A real public-quality checkpoint should beat the bridge-only baseline on widened held-out spans and reach the stronger quality label before its samples are marketed as model capability.
+
+Benchmark JSON now includes checkpoint SHA-256 plus train/validation split SHA-256 hashes so proof artifacts can be tied to the exact evaluated bytes.
+
 ## Verify Scratch Boundary
 
 ```
@@ -162,6 +262,32 @@ helixdiff-verify-scratch --checkpoint checkpoints/helixdiff_tiny.pt
 ```
 
 The verifier fails if code imports known pretrained-model surfaces such as `transformers`, `from_pretrained`, `huggingface_hub`, or API model clients. It also checks checkpoint metadata for the `scratch_only` claim written by training.
+
+## Gate Model-Quality Claims
+
+After a stronger checkpoint is trained, compare it against the previous benchmark before changing public claims:
+
+```
+helixdiff-gate \
+  --baseline proof/bench_shakespeare_4k_unseen_candidates.json \
+  --current proof/bench_clock_suture_30k_unseen_candidates_8case.json \
+  --json-out proof/gate_clock_suture_30k_8case.json
+```
+
+The gate requires lower masked CE, at least `+1.5%` absolute masked accuracy, model-only infill beating the bridge-only baseline, bridge-guided infill beating bridge-only, and frozen context preservation. If it fails, the README/model card must call the checkpoint a mechanism proof, not a strong or SOTA model.
+
+## Export A Slim Checkpoint
+
+Training checkpoints include optimizer and EMA state so runs can resume. For GitHub/download use, export the selected weights into a smaller loadable artifact:
+
+```
+helixdiff-export \
+  --checkpoint checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_ema.pt \
+  --out checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt \
+  --json-out proof/export_clock_suture_30k.json
+```
+
+By default the exporter writes EMA weights as `model_state`, drops optimizer state, verifies the exported checkpoint can load, and preserves the scratch-only metadata.
 
 ## Repository Shape
 
@@ -176,18 +302,22 @@ helixdiff/
   infill.py          [[marked span]] repair CLI and JSON proof reporter
   ngram.py           local scratch n-gram and bridge guide for optional sampling scaffolds
   eval.py            masked-token evaluation and sampler smoke test
+  bench.py           non-leaky validation benchmark with guide/model baselines
+  gate.py            benchmark-to-claim boundary checker
+  export.py          slim checkpoint exporter
   verify_scratch.py  shortcut scanner
 configs/
   tiny.json
   base.json
+  mac_sota.json
   large.json
 tests/
-  unittest coverage for tokenizer, diffusion, model, sampler, verifier
+  unittest coverage for tokenizer, diffusion, model, sampler, benchmark, exporter, gate, verifier
 ```
 
 ## Honest Model Card
 
-The tiny checkpoint is a proof that the model trains from scratch and generates through iterative diffusion. It is not a foundation model. The impressive part is the complete scratch-built diffusion-LM stack, the novel sampler/corruption mechanics, and the clean path from laptop proof to large pretraining. To make a genuinely strong public model, train `configs/base.json` or `configs/large.json` on a large, licensed corpus with serious compute.
+The included checkpoints prove that the model trains from scratch and generates through iterative diffusion. They are not foundation models. The impressive part is the complete scratch-built diffusion-LM stack, the novel sampler/corruption/benchmark mechanics, the replayable 30k Mac run, and the clean path from laptop proof to larger pretraining. To make a genuinely strong public model, train `configs/mac_sota.json`, `configs/base.json`, or `configs/large.json` on a larger licensed corpus until `helixdiff-bench` clears its held-out gates.
 
 ## Included Data
 

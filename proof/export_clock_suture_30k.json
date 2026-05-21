@@ -1,0 +1,23 @@
+{
+  "source": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_ema.pt",
+  "source_sha256": "b93ff58e0a8b6651f747119c8fab4fd6c13e2b57092c45b0bac82b2c4b309cd3",
+  "out": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt",
+  "out_sha256": "3d1ae0b04275291f44c17660eeef12c627ed0d8f96132eba3b8caff27bedd9bf",
+  "checkpoint_step": 30000,
+  "exported_state": "ema_model_state",
+  "bytes": 1874341,
+  "mechanisms": [
+    "span_shock_corruption",
+    "ribbon_suffix_corruption",
+    "entropy_clock_sampling",
+    "ribbon_decode_sampling",
+    "confidence_remasking",
+    "corpus_ngram_scaffold_sampling",
+    "suture_trace_infill",
+    "high_order_bridge_guidance",
+    "boundary_pinned_suture_corruption",
+    "clock_conditioned_denoiser",
+    "corruption_mode_conditioned_denoiser"
+  ],
+  "verify_load": true
+}

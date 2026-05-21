@@ -1,0 +1,348 @@
+{
+  "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_ema.pt",
+  "checkpoint_sha256": "b93ff58e0a8b6651f747119c8fab4fd6c13e2b57092c45b0bac82b2c4b309cd3",
+  "checkpoint_step": 30000,
+  "loaded_state": "ema_model_state",
+  "state_migration": {
+    "missing_initialized": [],
+    "unexpected": []
+  },
+  "parameters": 439968,
+  "data": "data/tinyshakespeare.txt",
+  "data_bytes": 1115394,
+  "val_fraction": 0.08,
+  "train_split_sha256": "3bcee3c77095c0828e0bca96a9d3e56860063e4af1f1a4eb38486fac22f6aa16",
+  "validation_split_sha256": "8d0f7b33b39afc4bc3c80c8060f53b652a90e496a11a81c642cee37f1e028638",
+  "guide_scope": "training_split_only",
+  "case_filter": {
+    "require_unseen_hole": false,
+    "candidate_count": 1
+  },
+  "masked_eval": {
+    "loss": 3.3426307837168374,
+    "masked_accuracy": 0.14961819599072138,
+    "mask_rate": 0.5,
+    "batches": 6,
+    "batch_size": 24
+  },
+  "infill": {
+    "case_source": "validation_split",
+    "span_chars": 6,
+    "context_chars": 36,
+    "unigram_baseline": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.1666666716337204,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": "eest\nWas in the wreck; and, but he's[[ somet]]hing stain'd\nWith grief that's beaut",
+          "target_hole": " somet",
+          "predicted_hole": "      ",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.1666666716337204,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        },
+        {
+          "marked_text": ", that Caliban\nWhom now I keep in se[[rvice.]] Thou best know'st\nWhat torment I di",
+          "target_hole": "rvice.",
+          "predicted_hole": "      ",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        },
+        {
+          "marked_text": "ow:\nYour husband, being troubled wit[[h a sh]]rew,\nMeasures my husband's sorrow by",
+          "target_hole": "h a sh",
+          "predicted_hole": "      ",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.3333333432674408,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        },
+        {
+          "marked_text": "e creatures that were mine, I say, o[[r chan]]ged 'em,\nOr else new form'd 'em; hav",
+          "target_hole": "r chan",
+          "predicted_hole": "      ",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.1666666716337204,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        }
+      ]
+    },
+    "bridge_only_baseline": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.3333333395421505,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": "eest\nWas in the wreck; and, but he's[[ somet]]hing stain'd\nWith grief that's beaut",
+          "target_hole": " somet",
+          "predicted_hole": " the t",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.3333333432674408,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": true
+        },
+        {
+          "marked_text": ", that Caliban\nWhom now I keep in se[[rvice.]] Thou best know'st\nWhat torment I di",
+          "target_hole": "rvice.",
+          "predicted_hole": "e thee",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.1666666716337204,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": true
+        },
+        {
+          "marked_text": "ow:\nYour husband, being troubled wit[[h a sh]]rew,\nMeasures my husband's sorrow by",
+          "target_hole": "h a sh",
+          "predicted_hole": "h the ",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.3333333432674408,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": true
+        },
+        {
+          "marked_text": "e creatures that were mine, I say, o[[r chan]]ged 'em,\nOr else new form'd 'em; hav",
+          "target_hole": "r chan",
+          "predicted_hole": "r the ",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.5,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": true
+        }
+      ]
+    },
+    "unguided": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.1250000037252903,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": "eest\nWas in the wreck; and, but he's[[ somet]]hing stain'd\nWith grief that's beaut",
+          "target_hole": " somet",
+          "predicted_hole": "a  h  ",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 6,
+          "candidates": 1,
+          "selected_candidate_score": -1.7126455307006836,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -1.7126455307006836,
+              "predicted_hole": "a  h  ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.8720069580012932
+        },
+        {
+          "marked_text": ", that Caliban\nWhom now I keep in se[[rvice.]] Thou best know'st\nWhat torment I di",
+          "target_hole": "rvice.",
+          "predicted_hole": "ohrla ",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 6,
+          "candidates": 1,
+          "selected_candidate_score": -2.866222381591797,
+          "candidate_summaries": [
+            {
+              "seed": 102,
+              "score": -2.866222381591797,
+              "predicted_hole": "ohrla ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.072007750015473
+        },
+        {
+          "marked_text": "ow:\nYour husband, being troubled wit[[h a sh]]rew,\nMeasures my husband's sorrow by",
+          "target_hole": "h a sh",
+          "predicted_hole": "t e de",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.3333333432674408,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 6,
+          "candidates": 1,
+          "selected_candidate_score": -2.160369873046875,
+          "candidate_summaries": [
+            {
+              "seed": 103,
+              "score": -2.160369873046875,
+              "predicted_hole": "t e de",
+              "byte_accuracy": 0.3333333432674408,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.06526429200312123
+        },
+        {
+          "marked_text": "e creatures that were mine, I say, o[[r chan]]ged 'em,\nOr else new form'd 'em; hav",
+          "target_hole": "r chan",
+          "predicted_hole": "e  dr ",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.1666666716337204,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 6,
+          "candidates": 1,
+          "selected_candidate_score": -2.0761373043060303,
+          "candidate_summaries": [
+            {
+              "seed": 104,
+              "score": -2.0761373043060303,
+              "predicted_hole": "e  dr ",
+              "byte_accuracy": 0.1666666716337204,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.07874829199863598
+        }
+      ]
+    },
+    "bridge_guided": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.3333333395421505,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": "eest\nWas in the wreck; and, but he's[[ somet]]hing stain'd\nWith grief that's beaut",
+          "target_hole": " somet",
+          "predicted_hole": " the t",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.3333333432674408,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 6,
+          "candidates": 1,
+          "selected_candidate_score": -0.00016800234152469784,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -0.00016800234152469784,
+              "predicted_hole": " the t",
+              "byte_accuracy": 0.3333333432674408,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 2.4990249999973457,
+          "target_hole_seen_in_train_split": true
+        },
+        {
+          "marked_text": ", that Caliban\nWhom now I keep in se[[rvice.]] Thou best know'st\nWhat torment I di",
+          "target_hole": "rvice.",
+          "predicted_hole": "e thee",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.1666666716337204,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 6,
+          "candidates": 1,
+          "selected_candidate_score": -0.006760358344763517,
+          "candidate_summaries": [
+            {
+              "seed": 102,
+              "score": -0.006760358344763517,
+              "predicted_hole": "e thee",
+              "byte_accuracy": 0.1666666716337204,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 2.484312458022032,
+          "target_hole_seen_in_train_split": true
+        },
+        {
+          "marked_text": "ow:\nYour husband, being troubled wit[[h a sh]]rew,\nMeasures my husband's sorrow by",
+          "target_hole": "h a sh",
+          "predicted_hole": "h the ",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.3333333432674408,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 6,
+          "candidates": 1,
+          "selected_candidate_score": -1.9052708012168296e-05,
+          "candidate_summaries": [
+            {
+              "seed": 103,
+              "score": -1.9052708012168296e-05,
+              "predicted_hole": "h the ",
+              "byte_accuracy": 0.3333333432674408,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 2.4268393749953248,
+          "target_hole_seen_in_train_split": true
+        },
+        {
+          "marked_text": "e creatures that were mine, I say, o[[r chan]]ged 'em,\nOr else new form'd 'em; hav",
+          "target_hole": "r chan",
+          "predicted_hole": "r the ",
+          "hole_length_bytes": 6,
+          "byte_accuracy": 0.5,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 6,
+          "candidates": 1,
+          "selected_candidate_score": -0.0029076701030135155,
+          "candidate_summaries": [
+            {
+              "seed": 104,
+              "score": -0.0029076701030135155,
+              "predicted_hole": "r the ",
+              "byte_accuracy": 0.5,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 2.836505874991417,
+          "target_hole_seen_in_train_split": true
+        }
+      ]
+    },
+    "bridge_guided_minus_bridge_only_byte_accuracy": 0.0
+  },
+  "quality_label": "mechanism_checkpoint",
+  "ten_out_of_ten_gate": {
+    "artifact": "pass_if_tests_verifier_docs_and_benchmarks_pass",
+    "actual_model": "requires strong_laptop_checkpoint or better; otherwise do not claim 10/10 model quality",
+    "public_wow": "requires visible infill trace plus non-leaky heldout benchmark"
+  }
+}

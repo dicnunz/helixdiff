@@ -1,5 +1,5 @@
 {
-  "name": "helixdiff-tiny",
+  "name": "helixdiff-tiny-continue",
   "seq_len": 96,
   "dim": 96,
   "layers": 3,
@@ -7,8 +7,8 @@
   "ff_mult": 3,
   "dropout": 0.05,
   "batch_size": 24,
-  "learning_rate": 0.0008,
-  "min_lr_ratio": 0.05,
+  "learning_rate": 0.00025,
+  "min_lr_ratio": 0.2,
   "weight_decay": 0.05,
   "warmup_steps": 40,
   "min_mask_rate": 0.08,

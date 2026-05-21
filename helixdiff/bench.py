@@ -534,18 +534,17 @@ def lattice_candidate_prior_score(
     return max(scored, key=lambda item: (item[0], item[1]))
 
 
-def lattice_oracle_case(
+def build_lattice_candidate_rows(
     *,
     tokenizer: ByteTokenizer,
     marked_text: str,
     guide: BigramGuide,
-    train_text: str,
+    train_text: str = "",
     visible_limit: int = 8,
     morphology_limit: int = 64,
     surface_limit: int = 64,
-) -> dict[str, Any]:
+) -> list[dict[str, Any]]:
     example = parse_marked_infill(marked_text, tokenizer)
-    target = example.target[example.hole_start : example.hole_end]
     candidate_rows: list[dict[str, Any]] = []
 
     for rank, row in enumerate(visible_suture_candidates(tokenizer=tokenizer, marked_text=marked_text, limit=visible_limit)):
@@ -559,42 +558,43 @@ def lattice_oracle_case(
                 "surface_score": None,
             }
         )
-    for rank, row in enumerate(
-        morphology_candidates(
-            tokenizer=tokenizer,
-            marked_text=marked_text,
-            train_text=train_text,
-            limit=morphology_limit,
-        )
-    ):
-        candidate_rows.append(
-            {
-                "ids": [int(token_id) for token_id in row["ids"]],
-                "source": row["source"],
-                "rank": rank,
-                "suture_score": None,
-                "morphology_score": float(row["morphology_score"]),
-                "surface_score": None,
-            }
-        )
-    for rank, row in enumerate(
-        surface_splice_candidates(
-            tokenizer=tokenizer,
-            marked_text=marked_text,
-            train_text=train_text,
-            limit=surface_limit,
-        )
-    ):
-        candidate_rows.append(
-            {
-                "ids": [int(token_id) for token_id in row["ids"]],
-                "source": row["source"],
-                "rank": rank,
-                "suture_score": None,
-                "morphology_score": None,
-                "surface_score": float(row["surface_score"]),
-            }
-        )
+    if train_text:
+        for rank, row in enumerate(
+            morphology_candidates(
+                tokenizer=tokenizer,
+                marked_text=marked_text,
+                train_text=train_text,
+                limit=morphology_limit,
+            )
+        ):
+            candidate_rows.append(
+                {
+                    "ids": [int(token_id) for token_id in row["ids"]],
+                    "source": row["source"],
+                    "rank": rank,
+                    "suture_score": None,
+                    "morphology_score": float(row["morphology_score"]),
+                    "surface_score": None,
+                }
+            )
+        for rank, row in enumerate(
+            surface_splice_candidates(
+                tokenizer=tokenizer,
+                marked_text=marked_text,
+                train_text=train_text,
+                limit=surface_limit,
+            )
+        ):
+            candidate_rows.append(
+                {
+                    "ids": [int(token_id) for token_id in row["ids"]],
+                    "source": row["source"],
+                    "rank": rank,
+                    "suture_score": None,
+                    "morphology_score": None,
+                    "surface_score": float(row["surface_score"]),
+                }
+            )
     for strategy in ("unigram", "bridge"):
         row = guide_only_case(tokenizer=tokenizer, marked_text=marked_text, guide=guide, strategy=strategy)
         ids = tokenizer.encode(row["predicted_hole"], add_bos=False, add_eos=False)
@@ -629,36 +629,85 @@ def lattice_oracle_case(
             }
         else:
             deduped[key]["sources"].append(source)
+    return list(deduped.values())
 
+
+def rank_lattice_candidates_by_prior(
+    candidates: list[dict[str, Any]],
+    *,
+    suture_weight: float = 2.0,
+    morphology_weight: float = 1.0,
+    surface_weight: float = 1.0,
+) -> list[dict[str, Any]]:
+    ranked: list[dict[str, Any]] = []
+    for candidate in candidates:
+        prior_score, prior_source = lattice_candidate_prior_score(
+            candidate["sources"],
+            suture_weight=suture_weight,
+            morphology_weight=morphology_weight,
+            surface_weight=surface_weight,
+        )
+        ranked.append(
+            {
+                **candidate,
+                "prior_score": json_score(prior_score),
+                "prior_source": prior_source,
+            }
+        )
+    ranked.sort(
+        key=lambda row: (
+            -(float(row["prior_score"]) if row["prior_score"] is not None else float("-inf")),
+            str(row["predicted_hole"]),
+        )
+    )
+    for rank, row in enumerate(ranked):
+        row["prior_rank"] = rank
+    return ranked
+
+
+def lattice_oracle_case(
+    *,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    guide: BigramGuide,
+    train_text: str,
+    visible_limit: int = 8,
+    morphology_limit: int = 64,
+    surface_limit: int = 64,
+) -> dict[str, Any]:
+    example = parse_marked_infill(marked_text, tokenizer)
+    target = example.target[example.hole_start : example.hole_end]
     summaries: list[dict[str, Any]] = []
     exact_sources: list[str] = []
-    for candidate in deduped.values():
+    ranked_candidates = rank_lattice_candidates_by_prior(
+        build_lattice_candidate_rows(
+            tokenizer=tokenizer,
+            marked_text=marked_text,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+        )
+    )
+    for candidate in ranked_candidates:
         pred = torch.tensor(candidate["ids"], dtype=torch.long)
         exact = bool(torch.equal(pred, target))
         sources = candidate["sources"]
-        prior_score, prior_source = lattice_candidate_prior_score(sources)
         if exact:
             exact_sources.extend(str(source["source"]) for source in sources)
         summaries.append(
             {
                 "predicted_hole": candidate["predicted_hole"],
                 "sources": sources,
-                "prior_score": json_score(prior_score),
-                "prior_source": prior_source,
+                "prior_score": candidate["prior_score"],
+                "prior_source": candidate["prior_source"],
                 "exact": exact,
+                "prior_rank": candidate["prior_rank"],
             }
         )
-    ranked_summaries = sorted(
-        summaries,
-        key=lambda row: (
-            -(float(row["prior_score"]) if row["prior_score"] is not None else float("-inf")),
-            str(row["predicted_hole"]),
-        ),
-    )
-    for rank, row in enumerate(ranked_summaries):
-        row["prior_rank"] = rank
-    prior_selected = ranked_summaries[0] if ranked_summaries else None
-    exact_prior_ranks = [int(row["prior_rank"]) for row in ranked_summaries if row["exact"]]
+    prior_selected = summaries[0] if summaries else None
+    exact_prior_ranks = [int(row["prior_rank"]) for row in summaries if row["exact"]]
     best_exact_prior_rank = min(exact_prior_ranks) if exact_prior_ranks else None
 
     return {
@@ -681,7 +730,7 @@ def lattice_oracle_case(
         "prior_exact_in_top8": best_exact_prior_rank is not None and best_exact_prior_rank < 8,
         "prior_selector": "max_structural_source_prior_without_model",
         "exact_candidate_sources": sorted(set(exact_sources)),
-        "candidate_summaries": ranked_summaries,
+        "candidate_summaries": summaries,
     }
 
 
@@ -738,80 +787,43 @@ def retrieval_lattice_case(
     morphology_weight: float = 1.0,
     surface_limit: int = 64,
     surface_weight: float = 1.0,
+    prior_rerank_top_k: int = 0,
 ) -> dict[str, Any]:
     example = parse_marked_infill(marked_text, tokenizer)
-    candidates: list[dict[str, Any]] = []
-    for row in visible_suture_candidates(tokenizer=tokenizer, marked_text=marked_text, limit=visible_limit):
-        candidates.append(
-            {
-                "ids": [int(token_id) for token_id in row["ids"]],
-                "source": f"visible_{row['source']}",
-                "predicted_hole": row["predicted_hole"],
-                "suture_score": int(row["score"]),
-                "morphology_score": None,
-                "surface_score": None,
-            }
-        )
-    if train_text:
-        for row in morphology_candidates(
+    target = example.target[example.hole_start : example.hole_end]
+    ranked_candidates = rank_lattice_candidates_by_prior(
+        build_lattice_candidate_rows(
             tokenizer=tokenizer,
             marked_text=marked_text,
+            guide=guide,
             train_text=train_text,
-            limit=morphology_limit,
-        ):
-            candidates.append(
-                {
-                    "ids": [int(token_id) for token_id in row["ids"]],
-                    "source": row["source"],
-                    "predicted_hole": row["predicted_hole"],
-                    "suture_score": None,
-                    "morphology_score": float(row["morphology_score"]),
-                    "surface_score": None,
-                }
-            )
-    if train_text:
-        for row in surface_splice_candidates(
-            tokenizer=tokenizer,
-            marked_text=marked_text,
-            train_text=train_text,
-            limit=surface_limit,
-        ):
-            candidates.append(
-                {
-                    "ids": [int(token_id) for token_id in row["ids"]],
-                    "source": row["source"],
-                    "predicted_hole": row["predicted_hole"],
-                    "suture_score": None,
-                    "morphology_score": None,
-                    "surface_score": float(row["surface_score"]),
-                }
-            )
-    for strategy in ("unigram", "bridge"):
-        row = guide_only_case(tokenizer=tokenizer, marked_text=marked_text, guide=guide, strategy=strategy)
-        ids = tokenizer.encode(row["predicted_hole"], add_bos=False, add_eos=False)
-        if len(ids) != example.hole_length:
-            ids = (ids + [tokenizer.byte_offset + ord(" ")] * example.hole_length)[: example.hole_length]
-        candidates.append(
-            {
-                "ids": [int(token_id) for token_id in ids],
-                "source": strategy,
-                "predicted_hole": tokenizer.decode(ids),
-                "suture_score": None,
-                "morphology_score": None,
-                "surface_score": None,
-            }
-        )
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+        ),
+        suture_weight=suture_weight,
+        morphology_weight=morphology_weight,
+        surface_weight=surface_weight,
+    )
+    exact_prior_ranks = [
+        int(candidate["prior_rank"])
+        for candidate in ranked_candidates
+        if torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)
+    ]
+    prior_exact_rank = min(exact_prior_ranks) if exact_prior_ranks else None
+    if prior_rerank_top_k > 0:
+        candidates_to_score = ranked_candidates[:prior_rerank_top_k]
+    else:
+        candidates_to_score = ranked_candidates
+    rerank_limit = int(prior_rerank_top_k) if prior_rerank_top_k > 0 else len(ranked_candidates)
+    oracle_exact_in_scored_set = prior_exact_rank is not None and prior_exact_rank < rerank_limit
+    scored_candidate_ids = {tuple(int(token_id) for token_id in candidate["ids"]) for candidate in candidates_to_score}
 
-    deduped: dict[tuple[int, ...], dict[str, Any]] = {}
-    for candidate in candidates:
-        key = tuple(int(token_id) for token_id in candidate["ids"])
-        if key not in deduped:
-            deduped[key] = candidate
     scored_rows: list[dict[str, Any]] = []
     best_score = float("-inf")
     best_repaired: torch.Tensor | None = None
     best_row: dict[str, Any] | None = None
-    for candidate in deduped.values():
+    for candidate in candidates_to_score:
         repaired = example.tokens.clone()
         repaired[example.hole_start : example.hole_end] = torch.tensor(candidate["ids"], dtype=torch.long)
         score = score_repair(
@@ -826,22 +838,15 @@ def retrieval_lattice_case(
             top_k=top_k,
         )
         pred = repaired[example.hole_start : example.hole_end]
-        target = example.target[example.hole_start : example.hole_end]
-        suture_score = candidate["suture_score"]
-        morphology_score = candidate["morphology_score"]
-        surface_score = candidate["surface_score"]
-        combined_score = (
-            score
-            + (float(suture_score) * suture_weight if suture_score is not None else 0.0)
-            + (float(morphology_score) * morphology_weight if morphology_score is not None else 0.0)
-            + (float(surface_score) * surface_weight if surface_score is not None else 0.0)
-        )
+        prior_score = float(candidate["prior_score"]) if candidate["prior_score"] is not None else float("-inf")
+        combined_score = score + prior_score
         row = {
-            "source": candidate["source"],
+            "source": candidate["prior_source"],
             "predicted_hole": tokenizer.decode(pred),
-            "suture_score": suture_score,
-            "morphology_score": morphology_score,
-            "surface_score": surface_score,
+            "sources": candidate["sources"],
+            "prior_rank": int(candidate["prior_rank"]),
+            "prior_score": candidate["prior_score"],
+            "prior_source": candidate["prior_source"],
             "diffusion_score": json_score(score),
             "diffusion_score_is_finite": math.isfinite(score),
             "combined_score": json_score(combined_score),
@@ -856,7 +861,6 @@ def retrieval_lattice_case(
     if best_repaired is None or best_row is None:
         raise RuntimeError("retrieval lattice produced no candidates")
     pred = best_repaired[example.hole_start : example.hole_end]
-    target = example.target[example.hole_start : example.hole_end]
     return {
         "marked_text": marked_text,
         "target_hole": example.hole,
@@ -869,15 +873,33 @@ def retrieval_lattice_case(
         "selected_source": best_row["source"],
         "selected_candidate_score": json_score(best_score),
         "selected_candidate_score_is_finite": math.isfinite(best_score),
-        "selector": "diffusion_score_plus_suture_morphology_and_surface_score",
+        "selector": "diffusion_score_plus_structural_prior_topk",
         "lattice_suture_weight": float(suture_weight),
         "lattice_morphology_weight": float(morphology_weight),
         "lattice_surface_weight": float(surface_weight),
+        "candidate_count": len(ranked_candidates),
+        "scored_candidate_count": len(candidates_to_score),
+        "prior_rerank_top_k": int(prior_rerank_top_k),
+        "prior_exact_rank": prior_exact_rank,
+        "prior_exact_in_rerank_set": oracle_exact_in_scored_set,
+        "prior_selected_hole": ranked_candidates[0]["predicted_hole"] if ranked_candidates else None,
+        "prior_selected_exact": bool(prior_exact_rank == 0),
         "candidate_summaries": scored_rows,
-        "oracle_candidate_exact": any(bool(row["exact"]) for row in scored_rows),
+        "unscored_prior_candidate_summaries": [
+            {
+                "predicted_hole": candidate["predicted_hole"],
+                "sources": candidate["sources"],
+                "prior_rank": int(candidate["prior_rank"]),
+                "prior_score": candidate["prior_score"],
+                "prior_source": candidate["prior_source"],
+                "exact": bool(torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)),
+            }
+            for candidate in ranked_candidates
+            if tuple(int(token_id) for token_id in candidate["ids"]) not in scored_candidate_ids
+        ],
+        "oracle_candidate_exact": prior_exact_rank is not None,
+        "oracle_candidate_exact_in_scored_set": oracle_exact_in_scored_set,
     }
-
-
 @torch.no_grad()
 def infill_case(
     *,
@@ -1151,6 +1173,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             morphology_weight=args.lattice_morphology_weight,
             surface_limit=args.lattice_surface_candidates,
             surface_weight=args.lattice_surface_weight,
+            prior_rerank_top_k=args.lattice_prior_rerank_top_k,
         )
         lattice["target_hole_seen_in_train_split"] = lattice["target_hole"] in train_text
         retrieval_lattice_rows.append(lattice)
@@ -1279,6 +1302,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_suture_weight": float(args.lattice_suture_weight),
             "lattice_morphology_weight": float(args.lattice_morphology_weight),
             "lattice_surface_weight": float(args.lattice_surface_weight),
+            "lattice_prior_rerank_top_k": int(args.lattice_prior_rerank_top_k),
             "visible_context_adaptation_steps": int(args.adapt_visible_steps),
         },
         "masked_eval": masked,
@@ -1341,6 +1365,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--lattice-suture-weight", type=float, default=2.0)
     parser.add_argument("--lattice-morphology-weight", type=float, default=1.0)
     parser.add_argument("--lattice-surface-weight", type=float, default=1.0)
+    parser.add_argument("--lattice-prior-rerank-top-k", type=int, default=0)
     parser.add_argument("--adapt-visible-steps", type=int, default=0)
     parser.add_argument("--adapt-batch-size", type=int, default=8)
     parser.add_argument("--adapt-learning-rate", type=float, default=1e-4)

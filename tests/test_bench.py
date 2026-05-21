@@ -1,11 +1,13 @@
 import unittest
 
 from helixdiff.bench import (
+    build_lattice_candidate_rows,
     lattice_oracle_case,
     make_marked_cases,
     model_quality_label,
     morphology_candidates,
     nearest_visible_case,
+    rank_lattice_candidates_by_prior,
     surface_splice_candidates,
     summarize_lattice_oracle,
     sha256_text,
@@ -189,6 +191,26 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(row["candidate_summaries"][0]["prior_rank"], 0)
         self.assertEqual(row["prior_exact_rank"], 0)
         self.assertTrue(row["prior_exact_in_top4"])
+
+    def test_prior_topk_can_isolate_reranker_candidates_without_model(self) -> None:
+        tokenizer = ByteTokenizer()
+        train_text = "sleep sleeper die fie lie."
+        marked_text = "Thou let'st thy fortune slee[[p--d]]ie, rather;"
+        ranked = rank_lattice_candidates_by_prior(
+            build_lattice_candidate_rows(
+                tokenizer=tokenizer,
+                marked_text=marked_text,
+                guide=BigramGuide.from_text(train_text, tokenizer),
+                train_text=train_text,
+                visible_limit=4,
+                morphology_limit=32,
+                surface_limit=4,
+            )
+        )
+        exact = [row for row in ranked if row["predicted_hole"] == "p--d"]
+        self.assertEqual(len(exact), 1)
+        self.assertLess(exact[0]["prior_rank"], 4)
+        self.assertEqual([row["prior_rank"] for row in ranked[:4]], [0, 1, 2, 3])
 
     def test_lattice_oracle_summary_splits_sources(self) -> None:
         rows = [

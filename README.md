@@ -282,6 +282,8 @@ helixdiff-bench \
   --json-out proof/lattice_oracle_4case.json
 ```
 
+For the next model-scored run, use `--lattice-prior-rerank-top-k 4` to score only the small structural-prior set that the oracle proved contains the answer on this slice. That turns the benchmark into the intended verifier test instead of making the model spend CPU on every low-prior lattice candidate.
+
 The checked-in seed-corpus benchmark result is deliberately unforgiving:
 
 | Variant | Held-out span byte accuracy | Exact span match |
@@ -302,7 +304,7 @@ The latest Tiny Shakespeare suture-curriculum runs are harsher and more useful:
 | 8-case repeat with `guidance=0.5` | `22.5%` | not yet measured | not yet measured | `18.75%` | not yet measured | stronger guide does not rescue it |
 | 4 unseen validation gaps, leak-hardened Suture TTA, `guidance=0.5` | `6.25%` | `50.0%` | `50.0%` | `0.0%` | `0.0%` | lattice matches retrieval; non-visible holes remain unsolved |
 
-Candidate-oracle coverage on the same 4-case seed is now `100.0%`: `Gabr`, `p--d`, `lor:`, and `y-ca` all enter the lattice through morphology/factor candidates in `proof/lattice_oracle_4case.json`. The fixed structural prior puts the exact span in the top-4 for `4/4` cases, with average exact rank `1.5`, but only selects the exact top-1 candidate in `1/4` cases. That is a useful bottleneck flip, not a model win. The next real target is a learned diffusion verifier that reranks this small top-k set and beats both bridge-only and nearest-visible baselines on widened held-out spans before any sample is marketed as model capability.
+Candidate-oracle coverage on the same 4-case seed is now `100.0%`: `Gabr`, `p--d`, `lor:`, and `y-ca` all enter the lattice through morphology/factor candidates in `proof/lattice_oracle_4case.json`. The fixed structural prior puts the exact span in the top-4 for `4/4` cases, with average exact rank `1.5`, but only selects the exact top-1 candidate in `1/4` cases. The benchmark now has a top-k verifier lane via `--lattice-prior-rerank-top-k 4`, so the next heavy run can test whether diffusion scoring can pick the exact span from that compact set. That is a useful bottleneck flip, not a model win. The next real target is a learned diffusion verifier that reranks this small top-k set and beats both bridge-only and nearest-visible baselines on widened held-out spans before any sample is marketed as model capability.
 
 Benchmark JSON now includes checkpoint SHA-256 plus train/validation split SHA-256 hashes so proof artifacts can be tied to the exact evaluated bytes.
 

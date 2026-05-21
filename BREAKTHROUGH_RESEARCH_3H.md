@@ -136,6 +136,8 @@ The first retrieval-lattice probe exposed a sharper split. Pure diffusion scorin
 
 Next patch landed and got a cheap proof without loading the model: `helixdiff-bench --candidate-oracle-only` now measures whether the repair lattice contains the hidden span before diffusion scoring spends CPU. On the same 4-case unseen validation slice that previously exposed missing candidates, `proof/lattice_oracle_4case.json` reports `oracle_exact_rate: 1.0`. The exact hits are `Gabr` from a name-stem prior, `p--d` and `y-ca` from dash/morpheme bridges, and `lor:` from speaker-label completion.
 
+The follow-up selector audit makes the bottleneck sharper. A fixed structural prior ranks the exact candidate in the top-4 for `4/4` cases and top-8 for `4/4`, with average exact rank `1.5`, but only selects it top-1 in `1/4`. So candidate generation is no longer the first local blocker on this slice. The next breakthrough attempt should spend compute on a learned top-k verifier/reranker, not on growing a wider candidate soup.
+
 That does not prove accuracy. It proves the bottleneck moved. Before this patch, the system could not select missing answers. After this patch, the next hard problem is selecting/verifying the right candidate without laundering a hand-built lattice into a model-quality claim.
 
 That kills the naive version of the breakthrough. Raw visible-context adaptation is not enough. The promising mutation is:
@@ -221,10 +223,10 @@ Under 700 words. Ranked moves only. No encouragement. Include the public claim b
 
 ## Current Call
 
-Suture TTA shipped and did not clear the stronger gate. Retrieval-lattice selection now matches nearest-visible but does not beat it. Do not spend the next loop pretending more raw micro-steps are the breakthrough. Finish proving the missing candidate generators next:
+Suture TTA shipped and did not clear the stronger gate. Retrieval-lattice selection now matches nearest-visible but does not beat it. The candidate oracle now proves the exact answer enters a reranker-sized top-4 set on the 4-case slice, while the fixed structural prior only picks top-1 once. Do not spend the next loop pretending more raw micro-steps or wider candidate generation are the breakthrough. Build the verifier/reranker next:
 
-1. rerun the 4-case proof benchmark when the machine is cool enough;
-2. add byte-class/name-suffix candidates for partial words like `Gabr[[iel']]s`;
-3. report oracle-in-lattice, selected accuracy, and failure category per case.
+1. train or calibrate a tiny diffusion verifier on synthetic visible-document holes;
+2. rerank only the structural-prior top-4 candidates;
+3. report oracle-in-lattice, prior top-k coverage, selected accuracy, and failure category per case.
 
 Only call DocForge impressive after verifier-guided lattice selection beats nearest-visible and bridge-only on widened held-out spans. The public line stays severe: **Mac-local SOTA for visible-context document repair, not a general language model.**

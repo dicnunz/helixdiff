@@ -488,6 +488,52 @@ def surface_splice_candidates(
     return list(deduped.values())[: max(0, limit)]
 
 
+def lattice_source_prior_score(
+    source: dict[str, Any],
+    *,
+    suture_weight: float = 2.0,
+    morphology_weight: float = 1.0,
+    surface_weight: float = 1.0,
+) -> float:
+    score = 0.0
+    if source.get("suture_score") is not None:
+        score += float(source["suture_score"]) * suture_weight
+    if source.get("morphology_score") is not None:
+        score += float(source["morphology_score"]) * morphology_weight
+    if source.get("surface_score") is not None:
+        score += float(source["surface_score"]) * surface_weight
+    if source.get("source") == "bridge":
+        score += 0.25
+    rank = source.get("rank")
+    if isinstance(rank, int):
+        score -= rank * 0.01
+    return score
+
+
+def lattice_candidate_prior_score(
+    sources: list[dict[str, Any]],
+    *,
+    suture_weight: float = 2.0,
+    morphology_weight: float = 1.0,
+    surface_weight: float = 1.0,
+) -> tuple[float, str | None]:
+    if not sources:
+        return float("-inf"), None
+    scored = [
+        (
+            lattice_source_prior_score(
+                source,
+                suture_weight=suture_weight,
+                morphology_weight=morphology_weight,
+                surface_weight=surface_weight,
+            ),
+            str(source.get("source")),
+        )
+        for source in sources
+    ]
+    return max(scored, key=lambda item: (item[0], item[1]))
+
+
 def lattice_oracle_case(
     *,
     tokenizer: ByteTokenizer,
@@ -590,15 +636,30 @@ def lattice_oracle_case(
         pred = torch.tensor(candidate["ids"], dtype=torch.long)
         exact = bool(torch.equal(pred, target))
         sources = candidate["sources"]
+        prior_score, prior_source = lattice_candidate_prior_score(sources)
         if exact:
             exact_sources.extend(str(source["source"]) for source in sources)
         summaries.append(
             {
                 "predicted_hole": candidate["predicted_hole"],
                 "sources": sources,
+                "prior_score": json_score(prior_score),
+                "prior_source": prior_source,
                 "exact": exact,
             }
         )
+    ranked_summaries = sorted(
+        summaries,
+        key=lambda row: (
+            -(float(row["prior_score"]) if row["prior_score"] is not None else float("-inf")),
+            str(row["predicted_hole"]),
+        ),
+    )
+    for rank, row in enumerate(ranked_summaries):
+        row["prior_rank"] = rank
+    prior_selected = ranked_summaries[0] if ranked_summaries else None
+    exact_prior_ranks = [int(row["prior_rank"]) for row in ranked_summaries if row["exact"]]
+    best_exact_prior_rank = min(exact_prior_ranks) if exact_prior_ranks else None
 
     return {
         "marked_text": marked_text,
@@ -611,8 +672,16 @@ def lattice_oracle_case(
         "surface_oracle_exact": any(source.startswith("surface_") for source in exact_sources),
         "bridge_oracle_exact": "bridge" in exact_sources,
         "unigram_oracle_exact": "unigram" in exact_sources,
+        "prior_selected_hole": prior_selected["predicted_hole"] if prior_selected is not None else None,
+        "prior_selected_exact": bool(prior_selected["exact"]) if prior_selected is not None else False,
+        "prior_selected_score": prior_selected["prior_score"] if prior_selected is not None else None,
+        "prior_selected_source": prior_selected["prior_source"] if prior_selected is not None else None,
+        "prior_exact_rank": best_exact_prior_rank,
+        "prior_exact_in_top4": best_exact_prior_rank is not None and best_exact_prior_rank < 4,
+        "prior_exact_in_top8": best_exact_prior_rank is not None and best_exact_prior_rank < 8,
+        "prior_selector": "max_structural_source_prior_without_model",
         "exact_candidate_sources": sorted(set(exact_sources)),
-        "candidate_summaries": summaries,
+        "candidate_summaries": ranked_summaries,
     }
 
 
@@ -933,6 +1002,10 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "unigram_oracle_exact_rate": 0.0,
             "surface_oracle_exact_rate": 0.0,
             "avg_candidate_count": 0.0,
+            "prior_selected_exact_rate": 0.0,
+            "prior_top4_exact_rate": 0.0,
+            "prior_top8_exact_rate": 0.0,
+            "avg_prior_exact_rank": None,
         }
     return {
         "cases": len(rows),
@@ -943,6 +1016,15 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "bridge_oracle_exact_rate": sum(1.0 for row in rows if row["bridge_oracle_exact"]) / len(rows),
         "unigram_oracle_exact_rate": sum(1.0 for row in rows if row["unigram_oracle_exact"]) / len(rows),
         "avg_candidate_count": sum(float(row["candidate_count"]) for row in rows) / len(rows),
+        "prior_selected_exact_rate": sum(1.0 for row in rows if row["prior_selected_exact"]) / len(rows),
+        "prior_top4_exact_rate": sum(1.0 for row in rows if row["prior_exact_in_top4"]) / len(rows),
+        "prior_top8_exact_rate": sum(1.0 for row in rows if row["prior_exact_in_top8"]) / len(rows),
+        "avg_prior_exact_rank": (
+            sum(float(row["prior_exact_rank"]) for row in rows if row["prior_exact_rank"] is not None)
+            / sum(1 for row in rows if row["prior_exact_rank"] is not None)
+        )
+        if any(row["prior_exact_rank"] is not None for row in rows)
+        else None,
     }
 
 

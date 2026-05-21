@@ -26,7 +26,11 @@
         "surface_oracle_exact_rate": 0.0,
         "bridge_oracle_exact_rate": 0.0,
         "unigram_oracle_exact_rate": 0.0,
-        "avg_candidate_count": 61.0
+        "avg_candidate_count": 61.0,
+        "prior_selected_exact_rate": 0.25,
+        "prior_top4_exact_rate": 1.0,
+        "prior_top8_exact_rate": 1.0,
+        "avg_prior_exact_rank": 1.5
       },
       "cases": [
         {
@@ -40,114 +44,18 @@
           "surface_oracle_exact": false,
           "bridge_oracle_exact": false,
           "unigram_oracle_exact": false,
+          "prior_selected_hole": "Gabr",
+          "prior_selected_exact": true,
+          "prior_selected_score": 12.0,
+          "prior_selected_source": "morphology_name_stem_prefix",
+          "prior_exact_rank": 0,
+          "prior_exact_in_top4": true,
+          "prior_exact_in_top8": true,
+          "prior_selector": "max_structural_source_prior_without_model",
           "exact_candidate_sources": [
             "morphology_name_stem_prefix"
           ],
           "candidate_summaries": [
-            {
-              "predicted_hole": "i' t",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 0,
-                  "suture_score": 2,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "pump",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 1,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "were",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 2,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "all ",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 3,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": " unp",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 4,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "unpi",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 5,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "k'd ",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 6,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "coat",
-              "sources": [
-                {
-                  "source": "visible_before",
-                  "rank": 7,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
             {
               "predicted_hole": "Gabr",
               "sources": [
@@ -159,7 +67,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": true
+              "prior_score": 12.0,
+              "prior_source": "morphology_name_stem_prefix",
+              "exact": true,
+              "prior_rank": 0
             },
             {
               "predicted_hole": "Nath",
@@ -172,7 +83,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.89,
+              "prior_source": "morphology_name_stem_prefix",
+              "exact": false,
+              "prior_rank": 1
             },
             {
               "predicted_hole": "Ezek",
@@ -185,7 +99,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.83,
+              "prior_source": "morphology_name_stem_prefix",
+              "exact": false,
+              "prior_rank": 2
             },
             {
               "predicted_hole": "run-",
@@ -198,7 +115,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 10.00125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 3
             },
             {
               "predicted_hole": "pin-",
@@ -211,7 +131,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 9.24125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 4
             },
             {
               "predicted_hole": "foe-",
@@ -224,7 +147,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 9.10625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 5
             },
             {
               "predicted_hole": "ros-",
@@ -237,7 +163,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 8.7525,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 6
             },
             {
               "predicted_hole": "sly-",
@@ -250,7 +179,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 8.46125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 7
             },
             {
               "predicted_hole": "age-",
@@ -263,7 +195,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 8.42,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 8
             },
             {
               "predicted_hole": "get-",
@@ -276,7 +211,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 8.3475,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 9
             },
             {
               "predicted_hole": "dog-",
@@ -289,7 +227,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 8.30625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 10
             },
             {
               "predicted_hole": "fit-",
@@ -302,7 +243,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 8.2025,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 11
             },
             {
               "predicted_hole": "bit-",
@@ -315,7 +259,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 8.16125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 12
             },
             {
               "predicted_hole": "twa-",
@@ -328,7 +275,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 8.12,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 13
             },
             {
               "predicted_hole": "doe-",
@@ -341,7 +291,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 8.01625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 14
             },
             {
               "predicted_hole": "ask-",
@@ -354,7 +307,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 7.9125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 15
             },
             {
               "predicted_hole": "pot-",
@@ -367,7 +323,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 7.87125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 16
             },
             {
               "predicted_hole": "rag-",
@@ -380,7 +339,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 7.79875,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 17
             },
             {
               "predicted_hole": "cut-",
@@ -393,7 +355,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 7.57,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 18
             },
             {
               "predicted_hole": "goe-",
@@ -406,7 +371,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 7.34125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 19
             },
             {
               "predicted_hole": "rid-",
@@ -419,7 +387,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 7.3,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 20
             },
             {
               "predicted_hole": "pay-",
@@ -432,7 +403,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 7.25875,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 21
             },
             {
               "predicted_hole": "add-",
@@ -445,7 +419,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 7.12375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 22
             },
             {
               "predicted_hole": "rob-",
@@ -458,7 +435,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 7.0825,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 23
             },
             {
               "predicted_hole": "ope-",
@@ -471,7 +451,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.9475,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 24
             },
             {
               "predicted_hole": "owe-",
@@ -484,7 +467,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.875,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 25
             },
             {
               "predicted_hole": "leg-",
@@ -497,7 +483,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.83375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 26
             },
             {
               "predicted_hole": "pie-",
@@ -510,7 +499,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.7925,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 27
             },
             {
               "predicted_hole": "tie-",
@@ -523,7 +515,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.7825,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 28
             },
             {
               "predicted_hole": "hie-",
@@ -536,7 +531,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.67875,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 29
             },
             {
               "predicted_hole": "lip-",
@@ -549,7 +547,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.6375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 30
             },
             {
               "predicted_hole": "pen-",
@@ -562,7 +563,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.565,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 31
             },
             {
               "predicted_hole": "hid-",
@@ -575,7 +579,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.52375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 32
             },
             {
               "predicted_hole": "nap-",
@@ -588,7 +595,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.51375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 33
             },
             {
               "predicted_hole": "hew-",
@@ -601,7 +611,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.37875,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 34
             },
             {
               "predicted_hole": "vow-",
@@ -614,7 +627,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.3375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 35
             },
             {
               "predicted_hole": "bow-",
@@ -627,7 +643,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.17125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 36
             },
             {
               "predicted_hole": "sum-",
@@ -640,7 +659,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.16125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 37
             },
             {
               "predicted_hole": "bon-",
@@ -653,7 +675,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.08875,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 38
             },
             {
               "predicted_hole": "mes-",
@@ -666,7 +691,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 6.0475,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 39
             },
             {
               "predicted_hole": "woo-",
@@ -679,7 +707,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.94375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 40
             },
             {
               "predicted_hole": "its-",
@@ -692,7 +723,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.9025,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 41
             },
             {
               "predicted_hole": "saw-",
@@ -705,7 +739,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.83,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 42
             },
             {
               "predicted_hole": "eat-",
@@ -718,7 +755,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.7575,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 43
             },
             {
               "predicted_hole": "tun-",
@@ -731,7 +771,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.71625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 44
             },
             {
               "predicted_hole": "vic-",
@@ -744,7 +787,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.70625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 45
             },
             {
               "predicted_hole": "bag-",
@@ -757,7 +803,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.665,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 46
             },
             {
               "predicted_hole": "kis-",
@@ -770,7 +819,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.62375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 47
             },
             {
               "predicted_hole": "odd-",
@@ -783,7 +835,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.61375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 48
             },
             {
               "predicted_hole": "bat-",
@@ -796,7 +851,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.5725,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 49
             },
             {
               "predicted_hole": "cry-",
@@ -809,7 +867,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.5625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 50
             },
             {
               "predicted_hole": "oft-",
@@ -822,7 +883,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.5525,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 51
             },
             {
               "predicted_hole": "fly-",
@@ -835,7 +899,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.51125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 52
             },
             {
               "predicted_hole": "top-",
@@ -848,7 +915,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.50125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 53
             },
             {
               "predicted_hole": "paw-",
@@ -861,7 +931,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.46,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 54
             },
             {
               "predicted_hole": "sad-",
@@ -874,7 +947,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.45,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 55
             },
             {
               "predicted_hole": "sue-",
@@ -887,7 +963,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.4399999999999995,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 56
             },
             {
               "predicted_hole": "aim-",
@@ -900,7 +979,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.3675,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 57
             },
             {
               "predicted_hole": "red-",
@@ -913,7 +995,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.32625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 58
             },
             {
               "predicted_hole": "bad-",
@@ -926,7 +1011,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.285,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 59
             },
             {
               "predicted_hole": "dew-",
@@ -939,7 +1027,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.275,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 60
             },
             {
               "predicted_hole": "bud-",
@@ -952,7 +1043,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.2025,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 61
             },
             {
               "predicted_hole": "key-",
@@ -965,7 +1059,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.1925,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 62
             },
             {
               "predicted_hole": "yes-",
@@ -978,20 +1075,138 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.1825,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false,
+              "prior_rank": 63
             },
             {
-              "predicted_hole": "    ",
+              "predicted_hole": "i' t",
               "sources": [
                 {
-                  "source": "unigram",
+                  "source": "visible_after",
                   "rank": 0,
-                  "suture_score": null,
+                  "suture_score": 2,
                   "morphology_score": null,
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 4.0,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 64
+            },
+            {
+              "predicted_hole": "pump",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 1,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.99,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 65
+            },
+            {
+              "predicted_hole": "were",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 2,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.98,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 66
+            },
+            {
+              "predicted_hole": "all ",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 3,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.97,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 67
+            },
+            {
+              "predicted_hole": " unp",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 4,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.96,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 68
+            },
+            {
+              "predicted_hole": "unpi",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 5,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.95,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 69
+            },
+            {
+              "predicted_hole": "k'd ",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 6,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.94,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 70
+            },
+            {
+              "predicted_hole": "coat",
+              "sources": [
+                {
+                  "source": "visible_before",
+                  "rank": 7,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.93,
+              "prior_source": "visible_before",
+              "exact": false,
+              "prior_rank": 71
             },
             {
               "predicted_hole": "the ",
@@ -1004,7 +1219,26 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 0.25,
+              "prior_source": "bridge",
+              "exact": false,
+              "prior_rank": 72
+            },
+            {
+              "predicted_hole": "    ",
+              "sources": [
+                {
+                  "source": "unigram",
+                  "rank": 0,
+                  "suture_score": null,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 0.0,
+              "prior_source": "unigram",
+              "exact": false,
+              "prior_rank": 73
             }
           ],
           "target_hole_seen_in_train_split": false
@@ -1020,114 +1254,18 @@
           "surface_oracle_exact": false,
           "bridge_oracle_exact": false,
           "unigram_oracle_exact": false,
+          "prior_selected_hole": "p--l",
+          "prior_selected_exact": false,
+          "prior_selected_score": 19.583213344056215,
+          "prior_selected_source": "morphology_dash_bridge",
+          "prior_exact_rank": 2,
+          "prior_exact_in_top4": true,
+          "prior_exact_in_top8": true,
+          "prior_selector": "max_structural_source_prior_without_model",
           "exact_candidate_sources": [
             "morphology_dash_bridge"
           ],
           "candidate_summaries": [
-            {
-              "predicted_hole": "r; w",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 0,
-                  "suture_score": 2,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": ", ra",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 1,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "t\nWh",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 2,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "s th",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 3,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "t'st",
-              "sources": [
-                {
-                  "source": "visible_before",
-                  "rank": 4,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": " sle",
-              "sources": [
-                {
-                  "source": "visible_before",
-                  "rank": 5,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "ie, ",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 6,
-                  "suture_score": 0,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "e, r",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 7,
-                  "suture_score": 0,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
             {
               "predicted_hole": "p--l",
               "sources": [
@@ -1139,7 +1277,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 19.583213344056215,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 0
             },
             {
               "predicted_hole": "p--t",
@@ -1152,7 +1293,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 19.573213344056214,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 1
             },
             {
               "predicted_hole": "p--d",
@@ -1165,7 +1309,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": true
+              "prior_score": 19.502588722239782,
+              "prior_source": "morphology_dash_bridge",
+              "exact": true,
+              "prior_rank": 2
             },
             {
               "predicted_hole": "p--f",
@@ -1178,7 +1325,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 19.49258872223978,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 3
             },
             {
               "predicted_hole": "p--h",
@@ -1191,7 +1341,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 19.482588722239782,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 4
             },
             {
               "predicted_hole": "p--p",
@@ -1204,7 +1357,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 19.40805020110221,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 5
             },
             {
               "predicted_hole": "ps-l",
@@ -1217,7 +1373,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.481759469228056,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 6
             },
             {
               "predicted_hole": "ps-t",
@@ -1230,7 +1389,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.471759469228054,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 7
             },
             {
               "predicted_hole": "py-l",
@@ -1243,7 +1405,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.461759469228056,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 8
             },
             {
               "predicted_hole": "py-t",
@@ -1256,7 +1421,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.451759469228055,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 9
             },
             {
               "predicted_hole": "ve-l",
@@ -1269,7 +1437,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.441759469228053,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 10
             },
             {
               "predicted_hole": "ve-t",
@@ -1282,7 +1453,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.431759469228055,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 11
             },
             {
               "predicted_hole": "ps-d",
@@ -1295,7 +1469,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.2394379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 12
             },
             {
               "predicted_hole": "ps-f",
@@ -1308,7 +1485,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.2294379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 13
             },
             {
               "predicted_hole": "ps-h",
@@ -1321,7 +1501,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.2194379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 14
             },
             {
               "predicted_hole": "py-d",
@@ -1334,7 +1517,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.2094379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 15
             },
             {
               "predicted_hole": "py-f",
@@ -1347,7 +1533,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.1994379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 16
             },
             {
               "predicted_hole": "py-h",
@@ -1360,7 +1549,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.189437912434098,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 17
             },
             {
               "predicted_hole": "ve-d",
@@ -1373,7 +1565,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.1794379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 18
             },
             {
               "predicted_hole": "ve-f",
@@ -1386,7 +1581,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.1694379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 19
             },
             {
               "predicted_hole": "ve-h",
@@ -1399,7 +1597,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.1594379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 20
             },
             {
               "predicted_hole": "ps-p",
@@ -1412,7 +1613,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 17.92629436111989,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 21
             },
             {
               "predicted_hole": "py-p",
@@ -1425,7 +1629,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 17.916294361119892,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 22
             },
             {
               "predicted_hole": "ve-p",
@@ -1438,7 +1645,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 17.90629436111989,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 23
             },
             {
               "predicted_hole": "p--z",
@@ -1451,7 +1661,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.21805020110221,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 24
             },
             {
               "predicted_hole": "p-el",
@@ -1464,7 +1677,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.20805020110221,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 25
             },
             {
               "predicted_hole": "p-nt",
@@ -1477,7 +1693,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.19805020110221,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 26
             },
             {
               "predicted_hole": "p-nz",
@@ -1490,7 +1709,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.188050201102211,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 27
             },
             {
               "predicted_hole": "pe-l",
@@ -1503,7 +1725,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.261759469228055,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 28
             },
             {
               "predicted_hole": "pe-t",
@@ -1516,7 +1741,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.251759469228055,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 29
             },
             {
               "predicted_hole": "pi-l",
@@ -1529,7 +1757,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.241759469228054,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 30
             },
             {
               "predicted_hole": "pi-t",
@@ -1542,7 +1773,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.231759469228054,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 31
             },
             {
               "predicted_hole": "p'-l",
@@ -1555,7 +1789,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.0394379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 32
             },
             {
               "predicted_hole": "p'-t",
@@ -1568,7 +1805,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.0294379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 33
             },
             {
               "predicted_hole": "pe-d",
@@ -1581,7 +1821,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.0194379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 34
             },
             {
               "predicted_hole": "pe-f",
@@ -1594,7 +1837,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.0094379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 35
             },
             {
               "predicted_hole": "pe-h",
@@ -1607,7 +1853,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.9994379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 36
             },
             {
               "predicted_hole": "pi-d",
@@ -1620,7 +1869,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.9894379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 37
             },
             {
               "predicted_hole": "pi-f",
@@ -1633,7 +1885,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.979437912434099,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 38
             },
             {
               "predicted_hole": "pi-h",
@@ -1646,7 +1901,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.969437912434099,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 39
             },
             {
               "predicted_hole": "v--l",
@@ -1659,7 +1917,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.9594379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 40
             },
             {
               "predicted_hole": "v--t",
@@ -1672,7 +1933,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.9494379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 41
             },
             {
               "predicted_hole": "p'-d",
@@ -1685,7 +1949,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.71629436111989,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 42
             },
             {
               "predicted_hole": "p'-f",
@@ -1698,7 +1965,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.706294361119891,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 43
             },
             {
               "predicted_hole": "p'-h",
@@ -1711,7 +1981,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.696294361119891,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 44
             },
             {
               "predicted_hole": "pe-p",
@@ -1724,7 +1997,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.686294361119892,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 45
             },
             {
               "predicted_hole": "pi-p",
@@ -1737,7 +2013,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.67629436111989,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 46
             },
             {
               "predicted_hole": "ps-z",
@@ -1750,7 +2029,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.66629436111989,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 47
             },
             {
               "predicted_hole": "py-z",
@@ -1763,7 +2045,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.65629436111989,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 48
             },
             {
               "predicted_hole": "v--d",
@@ -1776,7 +2061,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.64629436111989,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 49
             },
             {
               "predicted_hole": "v--f",
@@ -1789,7 +2077,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.63629436111989,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 50
             },
             {
               "predicted_hole": "v--h",
@@ -1802,7 +2093,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.626294361119891,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 51
             },
             {
               "predicted_hole": "ve-z",
@@ -1815,7 +2109,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.616294361119891,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 52
             },
             {
               "predicted_hole": "p'-p",
@@ -1828,7 +2125,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.31861228866811,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 53
             },
             {
               "predicted_hole": "v--p",
@@ -1841,7 +2141,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.308612288668108,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 54
             },
             {
               "predicted_hole": "pe-z",
@@ -1854,7 +2157,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.586294361119891,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 55
             },
             {
               "predicted_hole": "pi-z",
@@ -1867,7 +2173,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.57629436111989,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 56
             },
             {
               "predicted_hole": "p'-z",
@@ -1880,7 +2189,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.27861228866811,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 57
             },
             {
               "predicted_hole": "v--z",
@@ -1893,7 +2205,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.26861228866811,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 58
             },
             {
               "predicted_hole": "v-el",
@@ -1906,7 +2221,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.25861228866811,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 59
             },
             {
               "predicted_hole": "v-nt",
@@ -1919,7 +2237,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.24861228866811,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 60
             },
             {
               "predicted_hole": "v-nz",
@@ -1932,20 +2253,106 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 5.23861228866811,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 61
             },
             {
-              "predicted_hole": "    ",
+              "predicted_hole": "r; w",
               "sources": [
                 {
-                  "source": "unigram",
+                  "source": "visible_after",
                   "rank": 0,
-                  "suture_score": null,
+                  "suture_score": 2,
                   "morphology_score": null,
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 4.0,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 62
+            },
+            {
+              "predicted_hole": ", ra",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 1,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.99,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 63
+            },
+            {
+              "predicted_hole": "t\nWh",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 2,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.98,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 64
+            },
+            {
+              "predicted_hole": "s th",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 3,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.97,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 65
+            },
+            {
+              "predicted_hole": "t'st",
+              "sources": [
+                {
+                  "source": "visible_before",
+                  "rank": 4,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.96,
+              "prior_source": "visible_before",
+              "exact": false,
+              "prior_rank": 66
+            },
+            {
+              "predicted_hole": " sle",
+              "sources": [
+                {
+                  "source": "visible_before",
+                  "rank": 5,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.95,
+              "prior_source": "visible_before",
+              "exact": false,
+              "prior_rank": 67
             },
             {
               "predicted_hole": "p th",
@@ -1958,7 +2365,58 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 0.25,
+              "prior_source": "bridge",
+              "exact": false,
+              "prior_rank": 68
+            },
+            {
+              "predicted_hole": "    ",
+              "sources": [
+                {
+                  "source": "unigram",
+                  "rank": 0,
+                  "suture_score": null,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 0.0,
+              "prior_source": "unigram",
+              "exact": false,
+              "prior_rank": 69
+            },
+            {
+              "predicted_hole": "ie, ",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 6,
+                  "suture_score": 0,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": -0.06,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 70
+            },
+            {
+              "predicted_hole": "e, r",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 7,
+                  "suture_score": 0,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": -0.07,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 71
             }
           ],
           "target_hole_seen_in_train_split": false
@@ -1974,153 +2432,18 @@
           "surface_oracle_exact": false,
           "bridge_oracle_exact": false,
           "unigram_oracle_exact": false,
+          "prior_selected_hole": "nted",
+          "prior_selected_exact": false,
+          "prior_selected_score": 6.761294361119891,
+          "prior_selected_source": "surface_left_splice",
+          "prior_exact_rank": 3,
+          "prior_exact_in_top4": true,
+          "prior_exact_in_top8": true,
+          "prior_selector": "max_structural_source_prior_without_model",
           "exact_candidate_sources": [
             "morphology_speaker_label_completion"
           ],
           "candidate_summaries": [
-            {
-              "predicted_hole": "d yo",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 0,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "r, w",
-              "sources": [
-                {
-                  "source": "visible_before",
-                  "rank": 1,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "th n",
-              "sources": [
-                {
-                  "source": "visible_before",
-                  "rank": 2,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "ead.",
-              "sources": [
-                {
-                  "source": "visible_before",
-                  "rank": 3,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "ad.\n",
-              "sources": [
-                {
-                  "source": "visible_before",
-                  "rank": 4,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "\nBut",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 5,
-                  "suture_score": 0,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "But ",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 6,
-                  "suture_score": 0,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "ut d",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 7,
-                  "suture_score": 0,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "nte:",
-              "sources": [
-                {
-                  "source": "morphology_speaker_label_completion",
-                  "rank": 0,
-                  "suture_score": null,
-                  "morphology_score": 5.6094379124341005,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "lor:",
-              "sources": [
-                {
-                  "source": "morphology_speaker_label_completion",
-                  "rank": 1,
-                  "suture_score": null,
-                  "morphology_score": 5.09861228866811,
-                  "surface_score": null
-                }
-              ],
-              "exact": true
-            },
-            {
-              "predicted_hole": "nts:",
-              "sources": [
-                {
-                  "source": "morphology_speaker_label_completion",
-                  "rank": 2,
-                  "suture_score": null,
-                  "morphology_score": 4.693147180559945,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
             {
               "predicted_hole": "nted",
               "sources": [
@@ -2139,7 +2462,10 @@
                   "surface_score": 6.761294361119891
                 }
               ],
-              "exact": false
+              "prior_score": 6.761294361119891,
+              "prior_source": "surface_left_splice",
+              "exact": false,
+              "prior_rank": 0
             },
             {
               "predicted_hole": "lors",
@@ -2159,20 +2485,138 @@
                   "surface_score": 6.47361228866811
                 }
               ],
-              "exact": false
+              "prior_score": 6.46361228866811,
+              "prior_source": "surface_left_splice",
+              "exact": false,
+              "prior_rank": 1
             },
             {
-              "predicted_hole": "    ",
+              "predicted_hole": "nte:",
               "sources": [
                 {
-                  "source": "unigram",
+                  "source": "morphology_speaker_label_completion",
                   "rank": 0,
                   "suture_score": null,
+                  "morphology_score": 5.6094379124341005,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 5.6094379124341005,
+              "prior_source": "morphology_speaker_label_completion",
+              "exact": false,
+              "prior_rank": 2
+            },
+            {
+              "predicted_hole": "lor:",
+              "sources": [
+                {
+                  "source": "morphology_speaker_label_completion",
+                  "rank": 1,
+                  "suture_score": null,
+                  "morphology_score": 5.09861228866811,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 5.08861228866811,
+              "prior_source": "morphology_speaker_label_completion",
+              "exact": true,
+              "prior_rank": 3
+            },
+            {
+              "predicted_hole": "nts:",
+              "sources": [
+                {
+                  "source": "morphology_speaker_label_completion",
+                  "rank": 2,
+                  "suture_score": null,
+                  "morphology_score": 4.693147180559945,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 4.673147180559946,
+              "prior_source": "morphology_speaker_label_completion",
+              "exact": false,
+              "prior_rank": 4
+            },
+            {
+              "predicted_hole": "d yo",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 0,
+                  "suture_score": 1,
                   "morphology_score": null,
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 2.0,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 5
+            },
+            {
+              "predicted_hole": "r, w",
+              "sources": [
+                {
+                  "source": "visible_before",
+                  "rank": 1,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.99,
+              "prior_source": "visible_before",
+              "exact": false,
+              "prior_rank": 6
+            },
+            {
+              "predicted_hole": "th n",
+              "sources": [
+                {
+                  "source": "visible_before",
+                  "rank": 2,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.98,
+              "prior_source": "visible_before",
+              "exact": false,
+              "prior_rank": 7
+            },
+            {
+              "predicted_hole": "ead.",
+              "sources": [
+                {
+                  "source": "visible_before",
+                  "rank": 3,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.97,
+              "prior_source": "visible_before",
+              "exact": false,
+              "prior_rank": 8
+            },
+            {
+              "predicted_hole": "ad.\n",
+              "sources": [
+                {
+                  "source": "visible_before",
+                  "rank": 4,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.96,
+              "prior_source": "visible_before",
+              "exact": false,
+              "prior_rank": 9
             },
             {
               "predicted_hole": "n th",
@@ -2185,7 +2629,74 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 0.25,
+              "prior_source": "bridge",
+              "exact": false,
+              "prior_rank": 10
+            },
+            {
+              "predicted_hole": "    ",
+              "sources": [
+                {
+                  "source": "unigram",
+                  "rank": 0,
+                  "suture_score": null,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 0.0,
+              "prior_source": "unigram",
+              "exact": false,
+              "prior_rank": 11
+            },
+            {
+              "predicted_hole": "\nBut",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 5,
+                  "suture_score": 0,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": -0.05,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 12
+            },
+            {
+              "predicted_hole": "But ",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 6,
+                  "suture_score": 0,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": -0.06,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 13
+            },
+            {
+              "predicted_hole": "ut d",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 7,
+                  "suture_score": 0,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": -0.07,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 14
             }
           ],
           "target_hole_seen_in_train_split": false
@@ -2201,114 +2712,18 @@
           "surface_oracle_exact": false,
           "bridge_oracle_exact": false,
           "unigram_oracle_exact": false,
+          "prior_selected_hole": "y-wa",
+          "prior_selected_exact": false,
+          "prior_selected_score": 18.916759469228055,
+          "prior_selected_source": "morphology_dash_bridge",
+          "prior_exact_rank": 1,
+          "prior_exact_in_top4": true,
+          "prior_exact_in_top8": true,
+          "prior_selector": "max_structural_source_prior_without_model",
           "exact_candidate_sources": [
             "morphology_dash_bridge"
           ],
           "candidate_summaries": [
-            {
-              "predicted_hole": "g!\n\n",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 0,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "hy, ",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 1,
-                  "suture_score": 1,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "tchi",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 2,
-                  "suture_score": 0,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "chin",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 3,
-                  "suture_score": 0,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "hing",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 4,
-                  "suture_score": 0,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "ing!",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 5,
-                  "suture_score": 0,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "ng!\n",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 6,
-                  "suture_score": 0,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "!\n\nG",
-              "sources": [
-                {
-                  "source": "visible_after",
-                  "rank": 7,
-                  "suture_score": 0,
-                  "morphology_score": null,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
             {
               "predicted_hole": "y-wa",
               "sources": [
@@ -2320,7 +2735,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.916759469228055,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 0
             },
             {
               "predicted_hole": "y-ca",
@@ -2333,7 +2751,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": true
+              "prior_score": 18.724437912434098,
+              "prior_source": "morphology_dash_bridge",
+              "exact": true,
+              "prior_rank": 1
             },
             {
               "predicted_hole": "y-ha",
@@ -2346,7 +2767,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.7144379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 2
             },
             {
               "predicted_hole": "y-ma",
@@ -2359,7 +2783,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 18.7044379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 3
             },
             {
               "predicted_hole": "s-wa",
@@ -2372,7 +2799,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 15.16253744390572,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 4
             },
             {
               "predicted_hole": "s-ca",
@@ -2385,7 +2815,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 15.135443010546417,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 5
             },
             {
               "predicted_hole": "s-ha",
@@ -2398,7 +2831,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 15.125443010546418,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 6
             },
             {
               "predicted_hole": "s-ma",
@@ -2411,7 +2847,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 15.115443010546418,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 7
             },
             {
               "predicted_hole": "t-wa",
@@ -2424,7 +2863,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.91620101090789,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 8
             },
             {
               "predicted_hole": "t-ca",
@@ -2437,7 +2879,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.88514760171006,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 9
             },
             {
               "predicted_hole": "t-ha",
@@ -2450,7 +2895,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.87514760171006,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 10
             },
             {
               "predicted_hole": "t-ma",
@@ -2463,7 +2911,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.86514760171006,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 11
             },
             {
               "predicted_hole": "f-wa",
@@ -2476,7 +2927,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.71857206670431,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 12
             },
             {
               "predicted_hole": "f-ca",
@@ -2489,7 +2943,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.683879454113935,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 13
             },
             {
               "predicted_hole": "f-ha",
@@ -2502,7 +2959,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.673879454113935,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 14
             },
             {
               "predicted_hole": "f-ma",
@@ -2515,7 +2975,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.663879454113935,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 15
             },
             {
               "predicted_hole": "c-wa",
@@ -2528,7 +2991,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.260836866004329,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 16
             },
             {
               "predicted_hole": "c-ca",
@@ -2541,7 +3007,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.213096538021482,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 17
             },
             {
               "predicted_hole": "c-ha",
@@ -2554,7 +3023,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.203096538021482,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 18
             },
             {
               "predicted_hole": "c-ma",
@@ -2567,7 +3039,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.193096538021482,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 19
             },
             {
               "predicted_hole": "v-wa",
@@ -2580,7 +3055,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.103053830347946,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 20
             },
             {
               "predicted_hole": "d-wa",
@@ -2593,7 +3071,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.050494215929149,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 21
             },
             {
               "predicted_hole": "v-ca",
@@ -2606,7 +3087,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.040494215929149,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 22
             },
             {
               "predicted_hole": "v-ha",
@@ -2619,7 +3103,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.03049421592915,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 23
             },
             {
               "predicted_hole": "v-ma",
@@ -2632,7 +3119,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 14.02049421592915,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 24
             },
             {
               "predicted_hole": "d-ca",
@@ -2645,7 +3135,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.966042453358316,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 25
             },
             {
               "predicted_hole": "d-ha",
@@ -2658,7 +3151,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.956042453358316,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 26
             },
             {
               "predicted_hole": "d-ma",
@@ -2671,7 +3167,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.946042453358316,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 27
             },
             {
               "predicted_hole": "j-wa",
@@ -2684,7 +3183,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.329906649788,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 28
             },
             {
               "predicted_hole": "j-ca",
@@ -2697,7 +3199,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.232895272798372,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 29
             },
             {
               "predicted_hole": "j-ha",
@@ -2710,7 +3215,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.22289527279837,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 30
             },
             {
               "predicted_hole": "j-ma",
@@ -2723,7 +3231,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.21289527279837,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 31
             },
             {
               "predicted_hole": "q-wa",
@@ -2736,7 +3247,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.20289527279837,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 32
             },
             {
               "predicted_hole": "q-ca",
@@ -2749,7 +3263,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.097585092994047,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 33
             },
             {
               "predicted_hole": "q-ha",
@@ -2762,7 +3279,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.087585092994047,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 34
             },
             {
               "predicted_hole": "q-ma",
@@ -2775,7 +3295,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.077585092994047,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 35
             },
             {
               "predicted_hole": "y--a",
@@ -2788,7 +3311,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 13.067585092994047,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 36
             },
             {
               "predicted_hole": "g-wa",
@@ -2801,7 +3327,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.700910149055314,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 37
             },
             {
               "predicted_hole": "g-ca",
@@ -2814,7 +3343,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.536759469228054,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 38
             },
             {
               "predicted_hole": "g-ha",
@@ -2827,7 +3359,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.526759469228054,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 39
             },
             {
               "predicted_hole": "g-ma",
@@ -2840,7 +3375,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.516759469228054,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 40
             },
             {
               "predicted_hole": "n-wa",
@@ -2853,7 +3391,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.3244379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 41
             },
             {
               "predicted_hole": "y-ra",
@@ -2866,7 +3407,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.3144379124341,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 42
             },
             {
               "predicted_hole": "i-wa",
@@ -2879,7 +3423,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.081294361119891,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 43
             },
             {
               "predicted_hole": "n-ca",
@@ -2892,7 +3439,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.071294361119891,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 44
             },
             {
               "predicted_hole": "n-ha",
@@ -2905,7 +3455,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.061294361119892,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 45
             },
             {
               "predicted_hole": "n-ma",
@@ -2918,7 +3471,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 12.05129436111989,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 46
             },
             {
               "predicted_hole": "i-ca",
@@ -2931,7 +3487,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.753612288668108,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 47
             },
             {
               "predicted_hole": "i-ha",
@@ -2944,7 +3503,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.743612288668109,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 48
             },
             {
               "predicted_hole": "i-ma",
@@ -2957,7 +3519,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 11.733612288668109,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 49
             },
             {
               "predicted_hole": "s--a",
@@ -2970,7 +3535,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 8.768134726391533,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 50
             },
             {
               "predicted_hole": "s-ra",
@@ -2983,7 +3551,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 8.675443010546418,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 51
             },
             {
               "predicted_hole": "t--a",
@@ -2996,150 +3567,10 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "t-ra",
-              "sources": [
-                {
-                  "source": "morphology_dash_bridge",
-                  "rank": 53,
-                  "suture_score": null,
-                  "morphology_score": 8.97514760171006,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "f--a",
-              "sources": [
-                {
-                  "source": "morphology_dash_bridge",
-                  "rank": 54,
-                  "suture_score": null,
-                  "morphology_score": 8.93166248977032,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "f-ra",
-              "sources": [
-                {
-                  "source": "morphology_dash_bridge",
-                  "rank": 55,
-                  "suture_score": null,
-                  "morphology_score": 8.813879454113936,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "c--a",
-              "sources": [
-                {
-                  "source": "morphology_dash_bridge",
-                  "rank": 56,
-                  "suture_score": null,
-                  "morphology_score": 8.558987204485145,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "v--a",
-              "sources": [
-                {
-                  "source": "morphology_dash_bridge",
-                  "rank": 57,
-                  "suture_score": null,
-                  "morphology_score": 8.457204510175204,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "d--a",
-              "sources": [
-                {
-                  "source": "morphology_dash_bridge",
-                  "rank": 58,
-                  "suture_score": null,
-                  "morphology_score": 8.42083686600433,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "c-ra",
-              "sources": [
-                {
-                  "source": "morphology_dash_bridge",
-                  "rank": 59,
-                  "suture_score": null,
-                  "morphology_score": 8.383096538021482,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "ve-a",
-              "sources": [
-                {
-                  "source": "morphology_dash_bridge",
-                  "rank": 60,
-                  "suture_score": null,
-                  "morphology_score": 8.383096538021482,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "tr-a",
-              "sources": [
-                {
-                  "source": "morphology_dash_bridge",
-                  "rank": 61,
-                  "suture_score": null,
-                  "morphology_score": 8.343875824868201,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "ce-a",
-              "sources": [
-                {
-                  "source": "morphology_dash_bridge",
-                  "rank": 62,
-                  "suture_score": null,
-                  "morphology_score": 8.26049421592915,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
-            },
-            {
-              "predicted_hole": "v-ra",
-              "sources": [
-                {
-                  "source": "morphology_dash_bridge",
-                  "rank": 63,
-                  "suture_score": null,
-                  "morphology_score": 8.26049421592915,
-                  "surface_score": null
-                }
-              ],
-              "exact": false
+              "prior_score": 8.556243718581428,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 52
             },
             {
               "predicted_hole": "trac",
@@ -3152,7 +3583,42 @@
                   "surface_score": 8.454441541679836
                 }
               ],
-              "exact": false
+              "prior_score": 8.454441541679836,
+              "prior_source": "surface_left_splice",
+              "exact": false,
+              "prior_rank": 53
+            },
+            {
+              "predicted_hole": "t-ra",
+              "sources": [
+                {
+                  "source": "morphology_dash_bridge",
+                  "rank": 53,
+                  "suture_score": null,
+                  "morphology_score": 8.97514760171006,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 8.44514760171006,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 54
+            },
+            {
+              "predicted_hole": "f--a",
+              "sources": [
+                {
+                  "source": "morphology_dash_bridge",
+                  "rank": 54,
+                  "suture_score": null,
+                  "morphology_score": 8.93166248977032,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 8.391662489770319,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 55
             },
             {
               "predicted_hole": "stan",
@@ -3165,7 +3631,26 @@
                   "surface_score": 8.320910149055313
                 }
               ],
-              "exact": false
+              "prior_score": 8.310910149055314,
+              "prior_source": "surface_left_splice",
+              "exact": false,
+              "prior_rank": 56
+            },
+            {
+              "predicted_hole": "f-ra",
+              "sources": [
+                {
+                  "source": "morphology_dash_bridge",
+                  "rank": 55,
+                  "suture_score": null,
+                  "morphology_score": 8.813879454113936,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 8.263879454113935,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 57
             },
             {
               "predicted_hole": "ques",
@@ -3178,7 +3663,10 @@
                   "surface_score": 8.166759469228055
                 }
               ],
-              "exact": false
+              "prior_score": 8.146759469228055,
+              "prior_source": "surface_left_splice",
+              "exact": false,
+              "prior_rank": 58
             },
             {
               "predicted_hole": "temp",
@@ -3191,7 +3679,138 @@
                   "surface_score": 8.166759469228055
                 }
               ],
-              "exact": false
+              "prior_score": 8.136759469228055,
+              "prior_source": "surface_left_splice",
+              "exact": false,
+              "prior_rank": 59
+            },
+            {
+              "predicted_hole": "c--a",
+              "sources": [
+                {
+                  "source": "morphology_dash_bridge",
+                  "rank": 56,
+                  "suture_score": null,
+                  "morphology_score": 8.558987204485145,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 7.998987204485145,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 60
+            },
+            {
+              "predicted_hole": "v--a",
+              "sources": [
+                {
+                  "source": "morphology_dash_bridge",
+                  "rank": 57,
+                  "suture_score": null,
+                  "morphology_score": 8.457204510175204,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 7.887204510175204,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 61
+            },
+            {
+              "predicted_hole": "d--a",
+              "sources": [
+                {
+                  "source": "morphology_dash_bridge",
+                  "rank": 58,
+                  "suture_score": null,
+                  "morphology_score": 8.42083686600433,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 7.840836866004329,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 62
+            },
+            {
+              "predicted_hole": "c-ra",
+              "sources": [
+                {
+                  "source": "morphology_dash_bridge",
+                  "rank": 59,
+                  "suture_score": null,
+                  "morphology_score": 8.383096538021482,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 7.793096538021482,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 63
+            },
+            {
+              "predicted_hole": "ve-a",
+              "sources": [
+                {
+                  "source": "morphology_dash_bridge",
+                  "rank": 60,
+                  "suture_score": null,
+                  "morphology_score": 8.383096538021482,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 7.783096538021482,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 64
+            },
+            {
+              "predicted_hole": "tr-a",
+              "sources": [
+                {
+                  "source": "morphology_dash_bridge",
+                  "rank": 61,
+                  "suture_score": null,
+                  "morphology_score": 8.343875824868201,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 7.733875824868201,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 65
+            },
+            {
+              "predicted_hole": "ce-a",
+              "sources": [
+                {
+                  "source": "morphology_dash_bridge",
+                  "rank": 62,
+                  "suture_score": null,
+                  "morphology_score": 8.26049421592915,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 7.64049421592915,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 66
+            },
+            {
+              "predicted_hole": "v-ra",
+              "sources": [
+                {
+                  "source": "morphology_dash_bridge",
+                  "rank": 63,
+                  "suture_score": null,
+                  "morphology_score": 8.26049421592915,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 7.63049421592915,
+              "prior_source": "morphology_dash_bridge",
+              "exact": false,
+              "prior_rank": 67
             },
             {
               "predicted_hole": "flic",
@@ -3204,7 +3823,10 @@
                   "surface_score": 7.068147180559945
                 }
               ],
-              "exact": false
+              "prior_score": 7.028147180559945,
+              "prior_source": "surface_left_splice",
+              "exact": false,
+              "prior_rank": 68
             },
             {
               "predicted_hole": "junc",
@@ -3217,7 +3839,10 @@
                   "surface_score": 7.068147180559945
                 }
               ],
-              "exact": false
+              "prior_score": 7.018147180559946,
+              "prior_source": "surface_left_splice",
+              "exact": false,
+              "prior_rank": 69
             },
             {
               "predicted_hole": "jura",
@@ -3230,7 +3855,10 @@
                   "surface_score": 7.068147180559945
                 }
               ],
-              "exact": false
+              "prior_score": 7.008147180559946,
+              "prior_source": "surface_left_splice",
+              "exact": false,
+              "prior_rank": 70
             },
             {
               "predicted_hole": "sola",
@@ -3243,7 +3871,10 @@
                   "surface_score": 7.068147180559945
                 }
               ],
-              "exact": false
+              "prior_score": 6.998147180559945,
+              "prior_source": "surface_left_splice",
+              "exact": false,
+              "prior_rank": 71
             },
             {
               "predicted_hole": "spec",
@@ -3256,20 +3887,42 @@
                   "surface_score": 7.068147180559945
                 }
               ],
-              "exact": false
+              "prior_score": 6.988147180559945,
+              "prior_source": "surface_left_splice",
+              "exact": false,
+              "prior_rank": 72
             },
             {
-              "predicted_hole": "    ",
+              "predicted_hole": "g!\n\n",
               "sources": [
                 {
-                  "source": "unigram",
+                  "source": "visible_after",
                   "rank": 0,
-                  "suture_score": null,
+                  "suture_score": 1,
                   "morphology_score": null,
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 2.0,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 73
+            },
+            {
+              "predicted_hole": "hy, ",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 1,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 1.99,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 74
             },
             {
               "predicted_hole": "ten ",
@@ -3282,7 +3935,122 @@
                   "surface_score": null
                 }
               ],
-              "exact": false
+              "prior_score": 0.25,
+              "prior_source": "bridge",
+              "exact": false,
+              "prior_rank": 75
+            },
+            {
+              "predicted_hole": "    ",
+              "sources": [
+                {
+                  "source": "unigram",
+                  "rank": 0,
+                  "suture_score": null,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": 0.0,
+              "prior_source": "unigram",
+              "exact": false,
+              "prior_rank": 76
+            },
+            {
+              "predicted_hole": "tchi",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 2,
+                  "suture_score": 0,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": -0.02,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 77
+            },
+            {
+              "predicted_hole": "chin",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 3,
+                  "suture_score": 0,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": -0.03,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 78
+            },
+            {
+              "predicted_hole": "hing",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 4,
+                  "suture_score": 0,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": -0.04,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 79
+            },
+            {
+              "predicted_hole": "ing!",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 5,
+                  "suture_score": 0,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": -0.05,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 80
+            },
+            {
+              "predicted_hole": "ng!\n",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 6,
+                  "suture_score": 0,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": -0.06,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 81
+            },
+            {
+              "predicted_hole": "!\n\nG",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 7,
+                  "suture_score": 0,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_score": -0.07,
+              "prior_source": "visible_after",
+              "exact": false,
+              "prior_rank": 82
             }
           ],
           "target_hole_seen_in_train_split": false

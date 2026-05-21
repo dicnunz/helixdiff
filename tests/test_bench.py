@@ -168,6 +168,7 @@ class BenchTest(unittest.TestCase):
         self.assertTrue(row["oracle_candidate_exact"])
         self.assertTrue(row["morphology_oracle_exact"])
         self.assertIn("morphology_name_possessive_suffix", row["exact_candidate_sources"])
+        self.assertTrue(row["prior_selected_exact"])
 
     def test_lattice_oracle_case_reports_surface_hit(self) -> None:
         tokenizer = ByteTokenizer()
@@ -184,6 +185,10 @@ class BenchTest(unittest.TestCase):
         self.assertTrue(row["oracle_candidate_exact"])
         self.assertTrue(row["surface_oracle_exact"])
         self.assertTrue(any(source.startswith("surface_") for source in row["exact_candidate_sources"]))
+        self.assertTrue(row["prior_selected_exact"])
+        self.assertEqual(row["candidate_summaries"][0]["prior_rank"], 0)
+        self.assertEqual(row["prior_exact_rank"], 0)
+        self.assertTrue(row["prior_exact_in_top4"])
 
     def test_lattice_oracle_summary_splits_sources(self) -> None:
         rows = [
@@ -195,6 +200,10 @@ class BenchTest(unittest.TestCase):
                 "bridge_oracle_exact": False,
                 "unigram_oracle_exact": False,
                 "candidate_count": 7,
+                "prior_selected_exact": True,
+                "prior_exact_in_top4": True,
+                "prior_exact_in_top8": True,
+                "prior_exact_rank": 0,
             },
             {
                 "oracle_candidate_exact": False,
@@ -204,6 +213,10 @@ class BenchTest(unittest.TestCase):
                 "bridge_oracle_exact": False,
                 "unigram_oracle_exact": False,
                 "candidate_count": 3,
+                "prior_selected_exact": False,
+                "prior_exact_in_top4": False,
+                "prior_exact_in_top8": False,
+                "prior_exact_rank": None,
             },
         ]
         summary = summarize_lattice_oracle(rows)
@@ -211,6 +224,10 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(summary["oracle_exact_rate"], 0.5)
         self.assertEqual(summary["morphology_oracle_exact_rate"], 0.5)
         self.assertEqual(summary["avg_candidate_count"], 5.0)
+        self.assertEqual(summary["prior_selected_exact_rate"], 0.5)
+        self.assertEqual(summary["prior_top4_exact_rate"], 0.5)
+        self.assertEqual(summary["prior_top8_exact_rate"], 0.5)
+        self.assertEqual(summary["avg_prior_exact_rank"], 0.0)
 
 
 if __name__ == "__main__":

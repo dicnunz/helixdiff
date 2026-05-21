@@ -8,7 +8,7 @@ The included training recipe is deliberately small enough to run on a laptop. Th
 
 | Check | Result |
 | --- | --- |
-| Unit tests | `77` tests passing |
+| Unit tests | `78` tests passing |
 | Scratch verifier | no banned pretrained-model snippets; 30k checkpoint says `scratch_only: true` |
 | Latest checkpoint | `439,968` parameters, `30,000` steps on Apple MPS, resumed only from an earlier scratch HelixDiff checkpoint |
 | Slim download | `checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt`, `1.8 MB`, SHA-256 `3d1ae0b04275291f44c17660eeef12c627ed0d8f96132eba3b8caff27bedd9bf` |
@@ -352,6 +352,12 @@ helixdiff-gate \
 The gate requires lower masked CE, at least `+1.5%` absolute masked accuracy, model-only infill beating the bridge-only baseline, bridge-guided infill beating bridge-only, and frozen context preservation before a model-quality claim is allowed. It separately checks the retrieval-lattice lane: at least four held-out cases by default, frozen context preservation, retrieval-lattice byte accuracy beating bridge-only, and retrieval-lattice byte/exact accuracy beating the nearest-visible repair baseline. If the model gate fails but the retrieval-lattice gate passes, the only allowed upgrade is a narrow repair-lattice claim, not a model-SOTA claim. The checked-in one-case dual smoke now fails this gate on case count even though its lattice result is exact, which is the intended honesty boundary.
 
 For the next widened repair-lattice proof, add `--require-repair-proof-contract` to make the metric gate also require the strict breakthrough receipt: checkpoint and split hashes, unseen-hole filtering, nearest-visible baseline, retrieval-lattice case rows matching the summary, oracle-in-scored-set diagnostics, surface-verifier diagnostics, selector margin and anchor sweeps, plus local surface-anchor calibration and its no-extra-compute margin sweep. It also enforces the predeclared flagship recipe: prior rerank top-k `4`, verifier mode `dual`, verifier top-k `0`, selector anchor `surface`, selector margin `3.0`, anchor sweep `prior,surface`, margin sweep `0,1,2,3,5`, and diagnostic-only local surface-anchor calibration. This keeps a narrow repair win from becoming a vague model-quality claim and makes missing diagnostics or softer benchmark settings fail visibly before the README language changes.
+
+To print the exact heavy benchmark, calibration, and gate commands for that recipe:
+
+```
+helixdiff-proof-recipe
+```
 
 ## Export A Slim Checkpoint
 

@@ -31,6 +31,7 @@ class ProxyMaskSelectorContractSmokeTests(unittest.TestCase):
         self.assertTrue(receipt["selector_contract"]["contract_apply"])
         self.assertTrue(receipt["selector_contract"]["selected_before_target_eval"])
         self.assertFalse(receipt["selector_contract"]["target_metric_used_for_selection"])
+        self.assertEqual(receipt["selector_contract"]["selected"]["source"], "proxy_mask_visible_context")
         self.assertGreater(receipt["pseudo_calibration"]["heldout"]["top4_exact"], receipt["shuffle_falsification"]["top4_exact"])
         self.assertTrue(receipt["checks"]["pseudo_heldout_beats_shuffle_top4"])
         self.assertFalse(receipt["claim_gate"]["require_useful_ratchet"])
@@ -63,6 +64,32 @@ class ProxyMaskSelectorContractSmokeTests(unittest.TestCase):
         self.assertFalse(gated["claim_gate"]["public_target_lift_claim_allowed"])
         self.assertIn("useful_ratchet_required", gated["failure_reasons"])
         self.assertIn("useful_ratchet=false", gated["claim_gate"]["blocker"])
+
+    def test_target_retrieval_geometry_proxy_mode_fails_closed_without_proxy_heldout_lift(self) -> None:
+        config = load_config(None)
+        config.update(
+            {
+                "data": "data/tinyshakespeare.txt",
+                "cases": 2,
+                "span_chars": 4,
+                "context_chars": 36,
+                "pseudo_masks_per_case": 6,
+                "max_candidates_per_example": 64,
+                "shuffle_trials": 16,
+                "proxy_geometry_mode": "target_retrieval",
+                "proxy_geometry_pool_per_case": 18,
+            }
+        )
+        receipt, contract = build_receipt(config)
+
+        self.assertEqual(receipt["proxy_geometry"]["mode"], "target_retrieval")
+        self.assertTrue(receipt["checks"]["proxy_masks_geometry_shaped"])
+        self.assertTrue(receipt["checks"]["proxy_geometry_uses_redacted_target_hole"])
+        self.assertTrue(receipt["checks"]["selected_proxy_geometry_no_worse_than_pool"])
+        self.assertFalse(receipt["checks"]["pseudo_heldout_beats_shuffle_top4"])
+        self.assertEqual(receipt["verdict"], "fail")
+        self.assertFalse(receipt["claim_gate"]["public_target_lift_claim_allowed"])
+        self.assertEqual(contract["selected"]["source"], "proxy_mask_target_retrieval_geometry")
 
 
 if __name__ == "__main__":

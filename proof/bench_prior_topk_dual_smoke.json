@@ -30,8 +30,8 @@
     "visible_context_adaptation_steps": 0
   },
   "masked_eval": {
-    "loss": 3.340157985687256,
-    "masked_accuracy": 0.12068965286016464,
+    "loss": 3.0925819873809814,
+    "masked_accuracy": 0.12727272510528564,
     "mask_rate": 0.5,
     "batches": 1,
     "batch_size": 2
@@ -113,7 +113,15 @@
         "byte_accuracy": 1.0,
         "exact_match_rate": 1.0,
         "pass_at_k_exact": 1.0,
-        "frozen_context_ok": true
+        "frozen_context_ok": true,
+        "oracle_candidate_exact_rate": 1.0,
+        "oracle_candidate_exact_in_scored_set_rate": 1.0,
+        "prior_selected_exact_rate": 1.0,
+        "raw_best_exact_rate": 0.0,
+        "anchor_exact_rate": 1.0,
+        "selector_margin_applied_rate": 1.0,
+        "avg_scored_candidate_count": 4.0,
+        "avg_prior_exact_rank": 0.0
       },
       "cases": [
         {
@@ -133,8 +141,12 @@
           "selector_margin_applied": true,
           "raw_best_hole": "Nath",
           "raw_best_score": 3.3911870861053472,
+          "raw_best_exact": false,
+          "raw_best_byte_accuracy": 0.25,
           "anchor_hole": "Gabr",
           "anchor_score": 0.8514676094055176,
+          "anchor_exact": true,
+          "anchor_byte_accuracy": 1.0,
           "lattice_verifier_mode": "dual",
           "lattice_verifier_top_k": 0,
           "lattice_suture_weight": 2.0,
@@ -1412,7 +1424,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 0.13056883300305344
+          "elapsed_seconds": 0.1378160839958582
         }
       ]
     },
@@ -1447,7 +1459,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 1.7761601250094827,
+          "elapsed_seconds": 2.1267633749812376,
           "target_hole_seen_in_train_split": false
         }
       ]

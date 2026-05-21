@@ -728,8 +728,12 @@ def select_lattice_row_with_margin(
             "selector_margin_applied": bool(margin_applied),
             "raw_best_hole": raw_best[2]["predicted_hole"],
             "raw_best_score": json_score(raw_best[0]),
+            "raw_best_exact": bool(raw_best[2].get("exact", False)),
+            "raw_best_byte_accuracy": float(raw_best[2].get("byte_accuracy", 0.0)),
             "anchor_hole": anchor[2]["predicted_hole"],
             "anchor_score": json_score(anchor[0]),
+            "anchor_exact": bool(anchor[2].get("exact", False)),
+            "anchor_byte_accuracy": float(anchor[2].get("byte_accuracy", 0.0)),
         },
     )
 
@@ -1090,6 +1094,48 @@ def summarize_infill(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    summary = summarize_infill(rows)
+    if not rows:
+        summary.update(
+            {
+                "oracle_candidate_exact_rate": 0.0,
+                "oracle_candidate_exact_in_scored_set_rate": 0.0,
+                "prior_selected_exact_rate": 0.0,
+                "raw_best_exact_rate": 0.0,
+                "anchor_exact_rate": 0.0,
+                "selector_margin_applied_rate": 0.0,
+                "avg_scored_candidate_count": 0.0,
+                "avg_prior_exact_rank": None,
+            }
+        )
+        return summary
+
+    prior_rank_rows = [row for row in rows if row.get("prior_exact_rank") is not None]
+    summary.update(
+        {
+            "oracle_candidate_exact_rate": sum(1.0 for row in rows if row.get("oracle_candidate_exact")) / len(rows),
+            "oracle_candidate_exact_in_scored_set_rate": sum(
+                1.0 for row in rows if row.get("oracle_candidate_exact_in_scored_set")
+            )
+            / len(rows),
+            "prior_selected_exact_rate": sum(1.0 for row in rows if row.get("prior_selected_exact")) / len(rows),
+            "raw_best_exact_rate": sum(1.0 for row in rows if row.get("raw_best_exact")) / len(rows),
+            "anchor_exact_rate": sum(1.0 for row in rows if row.get("anchor_exact")) / len(rows),
+            "selector_margin_applied_rate": sum(1.0 for row in rows if row.get("selector_margin_applied"))
+            / len(rows),
+            "avg_scored_candidate_count": sum(float(row.get("scored_candidate_count", 0)) for row in rows)
+            / len(rows),
+            "avg_prior_exact_rank": (
+                sum(float(row["prior_exact_rank"]) for row in prior_rank_rows) / len(prior_rank_rows)
+                if prior_rank_rows
+                else None
+            ),
+        }
+    )
+    return summary
+
+
 def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
     if not rows:
         return {
@@ -1338,7 +1384,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     unigram_summary = summarize_infill(unigram_rows)
     bridge_summary = summarize_infill(bridge_rows)
     nearest_visible_summary = summarize_infill(nearest_visible_rows)
-    retrieval_lattice_summary = summarize_infill(retrieval_lattice_rows)
+    retrieval_lattice_summary = summarize_retrieval_lattice(retrieval_lattice_rows)
     guided_summary = summarize_infill(guided_rows)
     adapted_summary = summarize_infill(adapted_rows)
     adapted_guided_summary = summarize_infill(adapted_guided_rows)

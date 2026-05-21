@@ -14,6 +14,7 @@ from helixdiff.bench import (
     select_lattice_row_with_margin,
     surface_splice_candidates,
     summarize_lattice_oracle,
+    summarize_retrieval_lattice,
     sha256_text,
     split_text,
     visible_suture_candidates,
@@ -262,8 +263,12 @@ class BenchTest(unittest.TestCase):
         challenger = torch.tensor([2])
         selected_score, selected_ids, selected_row, report = select_lattice_row_with_margin(
             [
-                (1.0, anchor, {"predicted_hole": "anchor", "prior_rank": 0}),
-                (1.4, challenger, {"predicted_hole": "challenger", "prior_rank": 1}),
+                (1.0, anchor, {"predicted_hole": "anchor", "prior_rank": 0, "exact": True, "byte_accuracy": 1.0}),
+                (
+                    1.4,
+                    challenger,
+                    {"predicted_hole": "challenger", "prior_rank": 1, "exact": False, "byte_accuracy": 0.0},
+                ),
             ],
             selector_margin=0.5,
         )
@@ -271,6 +276,53 @@ class BenchTest(unittest.TestCase):
         self.assertTrue(torch.equal(selected_ids, anchor))
         self.assertEqual(selected_row["predicted_hole"], "anchor")
         self.assertTrue(report["selector_margin_applied"])
+        self.assertFalse(report["raw_best_exact"])
+        self.assertTrue(report["anchor_exact"])
+        self.assertEqual(report["raw_best_byte_accuracy"], 0.0)
+        self.assertEqual(report["anchor_byte_accuracy"], 1.0)
+
+    def test_retrieval_lattice_summary_reports_selector_bottlenecks(self) -> None:
+        rows = [
+            {
+                "byte_accuracy": 1.0,
+                "exact": True,
+                "frozen_context_unchanged": True,
+                "candidate_summaries": [{"exact": True}],
+                "oracle_candidate_exact": True,
+                "oracle_candidate_exact_in_scored_set": True,
+                "prior_selected_exact": True,
+                "raw_best_exact": False,
+                "anchor_exact": True,
+                "selector_margin_applied": True,
+                "scored_candidate_count": 4,
+                "prior_exact_rank": 0,
+            },
+            {
+                "byte_accuracy": 0.5,
+                "exact": False,
+                "frozen_context_unchanged": True,
+                "candidate_summaries": [{"exact": False}],
+                "oracle_candidate_exact": True,
+                "oracle_candidate_exact_in_scored_set": False,
+                "prior_selected_exact": False,
+                "raw_best_exact": False,
+                "anchor_exact": False,
+                "selector_margin_applied": False,
+                "scored_candidate_count": 4,
+                "prior_exact_rank": 7,
+            },
+        ]
+        summary = summarize_retrieval_lattice(rows)
+        self.assertEqual(summary["cases"], 2)
+        self.assertEqual(summary["byte_accuracy"], 0.75)
+        self.assertEqual(summary["oracle_candidate_exact_rate"], 1.0)
+        self.assertEqual(summary["oracle_candidate_exact_in_scored_set_rate"], 0.5)
+        self.assertEqual(summary["prior_selected_exact_rate"], 0.5)
+        self.assertEqual(summary["raw_best_exact_rate"], 0.0)
+        self.assertEqual(summary["anchor_exact_rate"], 0.5)
+        self.assertEqual(summary["selector_margin_applied_rate"], 0.5)
+        self.assertEqual(summary["avg_scored_candidate_count"], 4.0)
+        self.assertEqual(summary["avg_prior_exact_rank"], 3.5)
 
     def test_lattice_oracle_summary_splits_sources(self) -> None:
         rows = [

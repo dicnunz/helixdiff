@@ -18,7 +18,7 @@ The included training recipe is deliberately small enough to run on a laptop. Th
 | Wider repair bench | 8 unseen validation holes: bridge-only `22.5%`, model-only `18.75%`, model+bridge `20.0%` |
 | Claim gate | failed; `mechanism_only_claim_required_do_not_call_model_sota` |
 
-Proof files are checked into the repo under `proof/`, including `scratch_verifier_clock_suture_30k.json`, `eval_clock_suture_30k.json`, `bench_clock_suture_30k_unseen_candidates_8case.json`, `bench_suture_tta_4case_lastblock10.json`, `lattice_oracle_4case.json`, `lattice_oracle_4case_local_calibration.json`, `bench_prior_topk_dual_smoke.json`, `selector_margin_calibration_smoke.json`, `gate_clock_suture_30k_8case.json`, and `export_clock_suture_30k.json`. The visible proof note is `REPAIR_BENCH_30K.md`.
+Proof files are checked into the repo under `proof/`, including `scratch_verifier_clock_suture_30k.json`, `eval_clock_suture_30k.json`, `bench_clock_suture_30k_unseen_candidates_8case.json`, `bench_suture_tta_4case_lastblock10.json`, `lattice_oracle_4case.json`, `lattice_oracle_4case_local_calibration.json`, `bench_prior_topk_dual_smoke.json`, `selector_margin_calibration_smoke.json`, `gate_clock_suture_30k_8case.json`, `gate_prior_topk_dual_smoke.json`, and `export_clock_suture_30k.json`. The visible proof note is `REPAIR_BENCH_30K.md`.
 
 The current checked-in checkpoint is intentionally not described as a strong language model. The repository is the 10/10 artifact here: a from-scratch diffusion LM stack with novel repair mechanisms, replayable Mac-local training, a slim checkpoint, and a harsh benchmark gate that refuses to launder scaffold memory into model quality.
 
@@ -346,7 +346,7 @@ helixdiff-gate \
   --json-out proof/gate_clock_suture_30k_8case.json
 ```
 
-The gate requires lower masked CE, at least `+1.5%` absolute masked accuracy, model-only infill beating the bridge-only baseline, bridge-guided infill beating bridge-only, and frozen context preservation. If it fails, the README/model card must call the checkpoint a mechanism proof, not a strong or SOTA model.
+The gate requires lower masked CE, at least `+1.5%` absolute masked accuracy, model-only infill beating the bridge-only baseline, bridge-guided infill beating bridge-only, and frozen context preservation before a model-quality claim is allowed. It separately checks the retrieval-lattice lane: at least four held-out cases by default, frozen context preservation, retrieval-lattice byte accuracy beating bridge-only, and retrieval-lattice byte/exact accuracy beating the nearest-visible repair baseline. If the model gate fails but the retrieval-lattice gate passes, the only allowed upgrade is a narrow repair-lattice claim, not a model-SOTA claim. The checked-in one-case dual smoke now fails this gate on case count even though its lattice result is exact, which is the intended honesty boundary.
 
 ## Export A Slim Checkpoint
 

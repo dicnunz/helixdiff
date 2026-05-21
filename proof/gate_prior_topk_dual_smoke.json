@@ -1,0 +1,70 @@
+{
+  "passed": false,
+  "model_quality_passed": false,
+  "repair_lattice_passed": false,
+  "claim_boundary": "mechanism_only_claim_required_do_not_call_model_sota",
+  "baseline": {
+    "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_4k.pt",
+    "masked_loss": 3.3574255108833313,
+    "masked_accuracy": 0.15266582369804382
+  },
+  "current": {
+    "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt",
+    "masked_loss": 3.295706033706665,
+    "masked_accuracy": 0.16923077404499054,
+    "quality_label": "mechanism_checkpoint",
+    "bridge_only_byte_accuracy": 0.0,
+    "unguided_byte_accuracy": 0.0,
+    "bridge_guided_byte_accuracy": 0.0
+  },
+  "deltas": {
+    "masked_loss_delta": -0.06171947717666626,
+    "masked_accuracy_gain": 0.016564950346946716,
+    "unguided_minus_bridge_only_byte_accuracy": 0.0,
+    "bridge_guided_minus_bridge_only_byte_accuracy": 0.0
+  },
+  "thresholds": {
+    "min_masked_accuracy_gain": 0.015,
+    "min_infill_lift": 0.0,
+    "min_repair_cases": 4,
+    "min_repair_lift": 0.0
+  },
+  "checks": {
+    "masked_ce_improved": true,
+    "masked_accuracy_gain_met": true,
+    "model_only_beats_bridge_only": false,
+    "bridge_guided_beats_bridge_only": false,
+    "frozen_context_preserved": true
+  },
+  "repair_lattice_gate": {
+    "passed": false,
+    "claim_boundary": "mechanism_only_claim_required_do_not_call_model_sota",
+    "current": {
+      "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt",
+      "cases": 1,
+      "bridge_only_byte_accuracy": 0.0,
+      "nearest_visible_byte_accuracy": 0.0,
+      "retrieval_lattice_byte_accuracy": 1.0,
+      "nearest_visible_exact_match_rate": 0.0,
+      "retrieval_lattice_exact_match_rate": 1.0
+    },
+    "deltas": {
+      "retrieval_lattice_minus_bridge_only_byte_accuracy": 1.0,
+      "retrieval_lattice_minus_nearest_visible_byte_accuracy": 1.0,
+      "retrieval_lattice_minus_nearest_visible_exact_match_rate": 1.0
+    },
+    "thresholds": {
+      "min_cases": 4,
+      "min_lift": 0.0
+    },
+    "checks": {
+      "retrieval_lattice_available": true,
+      "nearest_visible_available": true,
+      "case_count_met": false,
+      "retrieval_lattice_beats_bridge_only": true,
+      "retrieval_lattice_beats_nearest_visible": true,
+      "retrieval_lattice_exact_beats_nearest_visible": true,
+      "frozen_context_preserved": true
+    }
+  }
+}

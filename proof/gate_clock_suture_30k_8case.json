@@ -1,5 +1,7 @@
 {
   "passed": false,
+  "model_quality_passed": false,
+  "repair_lattice_passed": false,
   "claim_boundary": "mechanism_only_claim_required_do_not_call_model_sota",
   "baseline": {
     "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_4k.pt",
@@ -23,7 +25,9 @@
   },
   "thresholds": {
     "min_masked_accuracy_gain": 0.015,
-    "min_infill_lift": 0.0
+    "min_infill_lift": 0.0,
+    "min_repair_cases": 4,
+    "min_repair_lift": 0.0
   },
   "checks": {
     "masked_ce_improved": true,
@@ -31,5 +35,17 @@
     "model_only_beats_bridge_only": false,
     "bridge_guided_beats_bridge_only": false,
     "frozen_context_preserved": true
+  },
+  "repair_lattice_gate": {
+    "passed": false,
+    "claim_boundary": "no_repair_lattice_claim",
+    "reason": "current report has no retrieval_lattice benchmark variant",
+    "checks": {
+      "retrieval_lattice_available": false
+    },
+    "thresholds": {
+      "min_cases": 4,
+      "min_lift": 0.0
+    }
   }
 }

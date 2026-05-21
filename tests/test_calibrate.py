@@ -159,6 +159,40 @@ def _local_anchor_case(selected_anchor: str) -> dict:
     }
 
 
+def _visible_hole_case() -> dict:
+    case = _case()
+    case.update(
+        {
+            "exact": True,
+            "oracle_candidate_exact_in_scored_set": True,
+            "raw_best_exact": False,
+            "prior_selected_exact": True,
+            "selector_effect": "margin_rescued_exact_anchor",
+        }
+    )
+    return case
+
+
+def _candidate_generation_blocked_case() -> dict:
+    return {
+        "exact": False,
+        "oracle_candidate_exact_in_scored_set": False,
+        "raw_best_exact": False,
+        "anchor_exact": False,
+        "prior_selected_exact": False,
+        "selector_effect": "raw_verifier_selected_nonexact",
+        "selector_margin_sweep": [
+            _sweep_row(
+                0.0,
+                exact=False,
+                byte_accuracy=0.25,
+                effect="raw_verifier_selected_nonexact",
+                outcome="scored_exact_not_selected",
+            )
+        ],
+    }
+
+
 def _report(cases: list[dict]) -> dict:
     return {
         "checkpoint": "checkpoint.pt",
@@ -239,6 +273,40 @@ class CalibrateTest(unittest.TestCase):
         self.assertEqual(report["anchor_recommendation"]["status"], "diagnostic_only_insufficient_cases")
         self.assertIsNone(report["anchor_recommendation"]["recommended_selector_anchor"])
         self.assertEqual(report["anchor_recommendation"]["diagnostic_best_selector_anchor"], "prior")
+
+    def test_visible_hole_reranker_readiness_names_raw_verifier_miss(self) -> None:
+        report = calibrate_selector_margins(
+            [_report([_visible_hole_case(), _visible_hole_case()])],
+            min_cases=2,
+        )
+        readiness = report["visible_hole_reranker"]
+        self.assertEqual(readiness["status"], "candidate_visible_hole_reranker")
+        self.assertEqual(readiness["bottleneck"], "visible_hole_reranker")
+        self.assertEqual(readiness["rescue_opportunity_cases"], 2)
+        self.assertEqual(readiness["raw_verifier_exact_rate"], 0.0)
+        self.assertEqual(readiness["anchor_rescue_available_rate"], 1.0)
+        self.assertEqual(readiness["margin_rescued_exact_rate"], 1.0)
+        self.assertEqual(readiness["lowest_safe_observed_rescue_margin"], 0.5)
+        self.assertEqual(readiness["rescue_frontier"][0]["margin"], 0.5)
+        self.assertIn("predeclare", readiness["proof_gate"])
+
+    def test_visible_hole_reranker_readiness_remains_diagnostic_when_too_small(self) -> None:
+        report = calibrate_selector_margins([_report([_visible_hole_case()])], min_cases=4)
+        readiness = report["visible_hole_reranker"]
+        self.assertEqual(readiness["status"], "diagnostic_only_insufficient_cases")
+        self.assertEqual(readiness["bottleneck"], "visible_hole_reranker")
+        self.assertEqual(readiness["rescue_opportunity_cases"], 1)
+
+    def test_visible_hole_reranker_readiness_detects_candidate_generation_blocker(self) -> None:
+        report = calibrate_selector_margins(
+            [_report([_candidate_generation_blocked_case(), _candidate_generation_blocked_case()])],
+            min_cases=2,
+        )
+        readiness = report["visible_hole_reranker"]
+        self.assertEqual(readiness["status"], "candidate_generation_blocker")
+        self.assertEqual(readiness["bottleneck"], "candidate_generation")
+        self.assertEqual(readiness["oracle_in_scored_set_rate"], 0.0)
+        self.assertIn("candidate features", readiness["next_action"])
 
     def test_blocked_exact_raw_margin_is_not_recommended_by_default(self) -> None:
         risky_case = {

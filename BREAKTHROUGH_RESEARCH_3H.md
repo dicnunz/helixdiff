@@ -246,7 +246,9 @@ The source refresh has been pinned into a command so the next run does not depen
 helixdiff-breakthrough-plan
 ```
 
-It emits the ranked lanes, source IDs, claim boundary, GPT teammate blocker, and exact proof commands. The current top lane is `strict_repair_lattice_proof`: run the predeclared `helixdiff-proof-recipe` benchmark under the shared Heavy Slot, then run its calibrate and `helixdiff-gate --require-repair-proof-contract` commands. The cheap non-heavy next lane is `visible_hole_reranker`: train or calibrate only on synthetic holes from visible context and rescue raw verifier misses without lowering oracle-in-scored-set coverage.
+It emits the ranked lanes, source IDs, claim boundary, GPT teammate blocker, and exact proof commands. The current top lane is `strict_repair_lattice_proof`: run the predeclared `helixdiff-proof-recipe` benchmark under the shared Heavy Slot, then run its calibrate and `helixdiff-gate --require-repair-proof-contract` commands. The cheap non-heavy next lane is `visible_hole_reranker`: run `helixdiff-calibrate-selector`, inspect its `visible_hole_reranker` receipt, then train or calibrate only on synthetic holes from visible context when oracle-in-scored-set is high and raw verifier exact rate is low.
+
+The calibrator now makes that lane falsifiable before another training run. On the checked-in one-case smoke, `proof/selector_margin_calibration_smoke.json` reports `status=diagnostic_only_insufficient_cases`, `bottleneck=visible_hole_reranker`, `oracle_in_scored_set_rate=1.0`, `raw_verifier_exact_rate=0.0`, and `lowest_safe_observed_rescue_margin=3.0`. The next heavy-slot benchmark should widen the case count; if that pattern holds, spend compute on a visible-context reranker. If oracle-in-scored-set collapses, stop training the verifier and fix candidate generation instead.
 
 Source-backed updates from the refresh:
 

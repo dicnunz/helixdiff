@@ -46,6 +46,12 @@ def _outcome_rate(rows: list[dict[str, Any]], outcome: str) -> float:
     return sum(1.0 for row in rows if row.get("outcome_category") == outcome) / len(rows)
 
 
+def _case_rate(cases: list[dict[str, Any]], predicate: str) -> float:
+    if not cases:
+        return 0.0
+    return sum(1.0 for case in cases if case.get(predicate)) / len(cases)
+
+
 def iter_report_objects(payload: Any) -> Iterable[dict[str, Any]]:
     if isinstance(payload, dict):
         yield payload
@@ -386,6 +392,117 @@ def recommend_selector_anchor_margin(
     }
 
 
+def summarize_visible_hole_reranker_readiness(
+    cases: list[dict[str, Any]],
+    margin_summaries: dict[str, dict[str, Any]],
+    *,
+    min_cases: int = 4,
+) -> dict[str, Any]:
+    rescue_cases = [
+        case
+        for case in cases
+        if case.get("oracle_candidate_exact_in_scored_set") and not case.get("raw_best_exact")
+    ]
+    anchor_rescue_cases = [
+        case for case in rescue_cases if case.get("anchor_exact") or case.get("prior_selected_exact")
+    ]
+    margin_rescued_cases = [
+        case for case in cases if case.get("selector_effect") == "margin_rescued_exact_anchor"
+    ]
+    blocked_raw_cases = [
+        case
+        for case in cases
+        if case.get("raw_best_exact") and case.get("selector_effect") == "margin_blocked_exact_raw"
+    ]
+    rescue_frontier = [
+        {
+            "margin": float(summary["margin"]),
+            "cases": int(summary["cases"]),
+            "exact_match_rate": float(summary["exact_match_rate"]),
+            "byte_accuracy": float(summary["byte_accuracy"]),
+            "margin_rescued_exact_anchor_rate": float(summary["margin_rescued_exact_anchor_rate"]),
+            "margin_blocked_exact_raw_rate": float(summary["margin_blocked_exact_raw_rate"]),
+        }
+        for summary in margin_summaries.values()
+        if float(summary.get("margin_rescued_exact_anchor_rate", 0.0)) > 0.0
+    ]
+    rescue_frontier.sort(
+        key=lambda row: (
+            -float(row["exact_match_rate"]),
+            -float(row["byte_accuracy"]),
+            float(row["margin_blocked_exact_raw_rate"]),
+            float(row["margin"]),
+        )
+    )
+    safe_rescue_margins = [
+        row for row in rescue_frontier if float(row["margin_blocked_exact_raw_rate"]) == 0.0
+    ]
+    lowest_safe_rescue_margin = min((float(row["margin"]) for row in safe_rescue_margins), default=None)
+
+    if not cases:
+        status = "no_cases"
+        bottleneck = "run_retrieval_lattice_benchmark"
+        next_action = "run the strict repair-lattice recipe before training or claiming a reranker"
+    elif len(cases) < min_cases:
+        status = "diagnostic_only_insufficient_cases"
+        bottleneck = "visible_hole_reranker" if rescue_cases else "need_wider_repair_sample"
+        next_action = "rerun the predeclared strict repair benchmark on more held-out cases"
+    elif _case_rate(cases, "oracle_candidate_exact_in_scored_set") == 0.0:
+        status = "candidate_generation_blocker"
+        bottleneck = "candidate_generation"
+        next_action = "add non-leaky candidate features before spending compute on a verifier"
+    elif not rescue_cases:
+        status = "selector_already_saturated"
+        bottleneck = "not_visible_hole_reranker"
+        next_action = "look for model-quality or candidate-coverage failures instead of training a top-k reranker"
+    else:
+        status = "candidate_visible_hole_reranker"
+        bottleneck = "visible_hole_reranker"
+        next_action = (
+            "train or calibrate a tiny visible-context verifier on synthetic holes, then predeclare "
+            "the chosen selector rule on a separate held-out repair benchmark"
+        )
+
+    return {
+        "kind": "visible_hole_reranker_readiness",
+        "status": status,
+        "bottleneck": bottleneck,
+        "next_action": next_action,
+        "cases": len(cases),
+        "min_cases": min_cases,
+        "oracle_in_scored_set_cases": sum(1 for case in cases if case.get("oracle_candidate_exact_in_scored_set")),
+        "oracle_in_scored_set_rate": _case_rate(cases, "oracle_candidate_exact_in_scored_set"),
+        "raw_verifier_exact_cases": sum(1 for case in cases if case.get("raw_best_exact")),
+        "raw_verifier_exact_rate": _case_rate(cases, "raw_best_exact"),
+        "selected_exact_cases": sum(1 for case in cases if case.get("exact")),
+        "selected_exact_rate": _case_rate(cases, "exact"),
+        "anchor_exact_cases": sum(1 for case in cases if case.get("anchor_exact")),
+        "anchor_exact_rate": _case_rate(cases, "anchor_exact"),
+        "prior_selected_exact_cases": sum(1 for case in cases if case.get("prior_selected_exact")),
+        "prior_selected_exact_rate": _case_rate(cases, "prior_selected_exact"),
+        "rescue_opportunity_cases": len(rescue_cases),
+        "rescue_opportunity_rate": len(rescue_cases) / len(cases) if cases else 0.0,
+        "anchor_rescue_available_cases": len(anchor_rescue_cases),
+        "anchor_rescue_available_rate": len(anchor_rescue_cases) / len(cases) if cases else 0.0,
+        "margin_rescued_exact_cases": len(margin_rescued_cases),
+        "margin_rescued_exact_rate": len(margin_rescued_cases) / len(cases) if cases else 0.0,
+        "blocked_raw_exact_cases": len(blocked_raw_cases),
+        "blocked_raw_exact_rate": len(blocked_raw_cases) / len(cases) if cases else 0.0,
+        "avg_rescue_anchor_gap": _mean(
+            float(case["anchor_margin_gap"])
+            for case in anchor_rescue_cases
+            if case.get("anchor_margin_gap") is not None
+        ),
+        "lowest_safe_observed_rescue_margin": lowest_safe_rescue_margin,
+        "rescue_frontier": rescue_frontier,
+        "proof_gate": (
+            "diagnostic only: predeclare the reranker or margin on a calibration split, then evaluate "
+            "it on separate held-out cases with bridge-only and nearest-visible baselines"
+        ),
+        "claim_boundary": CLAIM_BOUNDARY,
+    }
+
+
 def calibrate_selector_margins(
     reports: list[dict[str, Any]],
     *,
@@ -413,6 +530,11 @@ def calibrate_selector_margins(
         "margins": margin_summaries,
         "anchor_margins": anchor_margin_summaries,
         "local_surface_anchor_margins": local_anchor_margin_summaries,
+        "visible_hole_reranker": summarize_visible_hole_reranker_readiness(
+            cases,
+            margin_summaries,
+            min_cases=min_cases,
+        ),
         "anchor_gap_diagnostics": {
             "avg_anchor_margin_gap": _mean(all_anchor_gaps),
             "avg_exact_anchor_margin_gap": _mean(exact_anchor_gaps),

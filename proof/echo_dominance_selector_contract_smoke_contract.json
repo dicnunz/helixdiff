@@ -1,0 +1,20 @@
+{
+  "kind": "helixdiff_selector_contract",
+  "source": "echo_dominance_selector_contract_smoke",
+  "ready_for_heldout": false,
+  "name": "echo_dominance_v0",
+  "apply": false,
+  "diagnostic_only": true,
+  "model_load": false,
+  "params": {
+    "min_real_null_margin": 2.0,
+    "require_exact_bi_anchor_or_two_modes": true,
+    "baseline_preserving": true,
+    "max_rank_promotions": 1,
+    "contrastive_nulls": [
+      "blank",
+      "swapped_edges"
+    ]
+  },
+  "receipt_sha256": "283fc4b96b1aa7bd95f95945541d479ad29ea8eb09a7cc53e9e3042e6e059777"
+}

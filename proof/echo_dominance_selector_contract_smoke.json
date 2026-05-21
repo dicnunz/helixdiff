@@ -1,0 +1,4889 @@
+{
+  "proof_name": "echo_dominance_selector_contract_smoke",
+  "kind": "helixdiff_echo_dominance_selector_contract_receipt",
+  "model_load": false,
+  "git": {
+    "commit": "2a2fbfb",
+    "dirty": false
+  },
+  "data": {
+    "path": "data/tinyshakespeare.txt",
+    "sha256": "86c4e6aa9db7c042ec79f339dcb96d42b0075e16b8fc2e86bf0ca57e2dc565ed",
+    "train_sha256": "3bcee3c77095c0828e0bca96a9d3e56860063e4af1f1a4eb38486fac22f6aa16",
+    "val_sha256": "8d0f7b33b39afc4bc3c80c8060f53b652a90e496a11a81c642cee37f1e028638",
+    "val_fraction": 0.08
+  },
+  "num_cases": 8,
+  "max_candidates_per_example": 128,
+  "selector_contract": {
+    "name": "echo_dominance_v0",
+    "apply": false,
+    "diagnostic_only": true,
+    "model_load": false,
+    "params": {
+      "min_real_null_margin": 2.0,
+      "require_exact_bi_anchor_or_two_modes": true,
+      "baseline_preserving": true,
+      "max_rank_promotions": 1,
+      "contrastive_nulls": [
+        "blank",
+        "swapped_edges"
+      ]
+    },
+    "ready": false,
+    "status": "killed_fail_closed",
+    "reason": "direct_echo_promotion_did_not_improve_top4_without_harm",
+    "selected_before_target_eval": true,
+    "target_metric_used_for_selection": false,
+    "baseline_preserving": true,
+    "min_real_null_margin": 2.0
+  },
+  "redaction": {
+    "target_span_redacted_before_echo_index": true,
+    "target_bytes_available_to_selector": false,
+    "masked_bytes_seen_by_features": false,
+    "sentinel_present_in_index": false
+  },
+  "source_policy": {
+    "uses_eval_visible_document": true,
+    "claim_mode": "transductive_fixed_span_visible_context_repair",
+    "target_window_overlap_hits": 0,
+    "target_anchor_window_overlap_hits": 0,
+    "same_offset_hits": 0,
+    "sentinel_source_window_hits": 0,
+    "near_duplicate_flags": 0
+  },
+  "echo_dominance": {
+    "promoted_cases": 7,
+    "rank1_promotions": 7,
+    "rank2_to_rank4_promotions": 0,
+    "median_real_score": 65.0,
+    "median_null_score": 0.0,
+    "median_causal_margin": 65.0,
+    "promoted_causal_margin_min": 91.0,
+    "promoted_under_blank": 0,
+    "promoted_under_swapped_edges": 0
+  },
+  "target_after_freeze": {
+    "prior_selected_exact": 0.375,
+    "contract_selected_exact": 0.25,
+    "prior_top4_exact": 0.375,
+    "contract_top4_exact": 0.375,
+    "beats_prior_selected": 0,
+    "harms_prior_selected": 1,
+    "beats_prior_top4": 0,
+    "harms_prior_top4": 0,
+    "gold_in_prior_lattice_at_128": 0.75,
+    "gold_in_combined_lattice_at_128": 1.0
+  },
+  "shuffle_falsification": {
+    "trials": 32,
+    "promoted_cases": 0.875,
+    "contract_selected_exact": 0.05859375,
+    "contract_top4_exact": 0.07421875
+  },
+  "claim_allowed": {
+    "echo_dominance_selector": false,
+    "target_lift": false,
+    "model_quality": false,
+    "global_sota": false
+  },
+  "fail_closed": {
+    "enabled": true,
+    "kill_triggered": true,
+    "direct_promotion_claim_blocked": true
+  },
+  "case_rows": [
+    {
+      "case_id": 0,
+      "target_sha256": "bd904622a31d33a79f007c84ec1c2eb884530774e34c23612702c393dc7a95c8",
+      "target_byte_start": 14628,
+      "target_byte_end": 14632,
+      "prior_candidate_count": 83,
+      "echo_candidate_count": 128,
+      "contract_candidate_count": 128,
+      "gold_in_prior_lattice_at_128": true,
+      "gold_in_combined_lattice_at_128": true,
+      "prior_selected_exact": false,
+      "contract_selected_exact": false,
+      "prior_top4_exact": false,
+      "contract_top4_exact": false,
+      "gold_rank_prior": 18,
+      "gold_rank_combined": 18,
+      "gold_rank_contract": 19,
+      "echo_overlap_audit": {
+        "target_window_overlap_hits": 0,
+        "target_anchor_window_overlap_hits": 0,
+        "same_offset_hits": 0,
+        "sentinel_source_window_hits": 0
+      },
+      "echo_dominance": {
+        "promoted_cases": 1,
+        "rank1_promotions": 1,
+        "rank2_to_rank4_promotions": 0,
+        "promoted_candidate_count": 1,
+        "promoted_candidate_keys": [
+          [
+            36,
+            101,
+            114,
+            104
+          ]
+        ],
+        "median_real_score": 67.0,
+        "median_null_score": 0.0,
+        "median_causal_margin": 67.0,
+        "promoted_real_score_median": 336.0,
+        "promoted_null_score_max": 0.0,
+        "promoted_causal_margin_min": 336.0,
+        "promoted_under_blank": 0,
+        "promoted_under_swapped_edges": 0
+      },
+      "promotion_decisions": [
+        {
+          "candidate_key": [
+            120,
+            108,
+            105,
+            118
+          ],
+          "predicted_hole": "ther",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 167,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 167,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 172.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 167,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 2,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 2,
+              "witness_mode_count": 1,
+              "candidate_visible_doc_frequency": 167,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 4.0
+            }
+          ],
+          "null_score": 4.0,
+          "causal_margin": 168.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            36,
+            101,
+            114,
+            104
+          ],
+          "predicted_hole": " and",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 331,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 331,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 336.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 331,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 331,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 336.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            114,
+            109,
+            115,
+            118
+          ],
+          "predicted_hole": "nior",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 17,
+            "row_source_modes": [
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 17,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 17,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            120,
+            108,
+            101,
+            120
+          ],
+          "predicted_hole": "that",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 2,
+            "morphology_echo_witness_count": 138,
+            "witness_source_count": 2,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 138,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 144.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 138,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 138,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 144.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            113,
+            105,
+            36,
+            120
+          ],
+          "predicted_hole": "me t",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 3,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 41,
+            "witness_source_count": 3,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 41,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 48.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 41,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 41,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 48.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            113,
+            105,
+            50,
+            14
+          ],
+          "predicted_hole": "me.\n",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 31,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 31,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 36.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 31,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 31,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 36.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            107,
+            115,
+            115,
+            104
+          ],
+          "predicted_hole": "good",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 53,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 53,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 58.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 53,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 53,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 58.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            113,
+            105,
+            36,
+            101
+          ],
+          "predicted_hole": "me a",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 2,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 2,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 21,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 4.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 21,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 21,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 4.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        }
+      ]
+    },
+    {
+      "case_id": 1,
+      "target_sha256": "c4d873bfe07e0e4d3d09d801271c9718b1a50c3225617cb709ab0eff5d71ba84",
+      "target_byte_start": 3314,
+      "target_byte_end": 3318,
+      "prior_candidate_count": 14,
+      "echo_candidate_count": 128,
+      "contract_candidate_count": 128,
+      "gold_in_prior_lattice_at_128": false,
+      "gold_in_combined_lattice_at_128": true,
+      "prior_selected_exact": false,
+      "contract_selected_exact": false,
+      "prior_top4_exact": false,
+      "contract_top4_exact": false,
+      "gold_rank_prior": null,
+      "gold_rank_combined": 58,
+      "gold_rank_contract": 58,
+      "echo_overlap_audit": {
+        "target_window_overlap_hits": 0,
+        "target_anchor_window_overlap_hits": 0,
+        "same_offset_hits": 0,
+        "sentinel_source_window_hits": 0
+      },
+      "echo_dominance": {
+        "promoted_cases": 1,
+        "rank1_promotions": 1,
+        "rank2_to_rank4_promotions": 0,
+        "promoted_candidate_count": 1,
+        "promoted_candidate_keys": [
+          [
+            120,
+            108,
+            105,
+            36
+          ]
+        ],
+        "median_real_score": 3.0,
+        "median_null_score": 0.0,
+        "median_causal_margin": 3.0,
+        "promoted_real_score_median": 414.0,
+        "promoted_null_score_max": 0.0,
+        "promoted_causal_margin_min": 414.0,
+        "promoted_under_blank": 0,
+        "promoted_under_swapped_edges": 0
+      },
+      "promotion_decisions": [
+        {
+          "candidate_key": [
+            120,
+            108,
+            105,
+            36
+          ],
+          "predicted_hole": "the ",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 3,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 407,
+            "witness_source_count": 3,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 407,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 414.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 407,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 407,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 414.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            125,
+            115,
+            121,
+            36
+          ],
+          "predicted_hole": "you ",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 17,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 17,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 207,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 19.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 207,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 207,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 19.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            108,
+            109,
+            119,
+            36
+          ],
+          "predicted_hole": "his ",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 2,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 173,
+            "witness_source_count": 2,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 173,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 179.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 173,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 173,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 179.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            101,
+            112,
+            112,
+            36
+          ],
+          "predicted_hole": "all ",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 147,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 147,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 152.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 147,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 147,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 152.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            120,
+            108,
+            105,
+            118
+          ],
+          "predicted_hole": "ther",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 2,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 167,
+            "witness_source_count": 2,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 167,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 173.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 167,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 167,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 173.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            115,
+            121,
+            118,
+            36
+          ],
+          "predicted_hole": "our ",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 3,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 149,
+            "witness_source_count": 3,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 149,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 156.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 149,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 149,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 156.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            101,
+            118,
+            105,
+            36
+          ],
+          "predicted_hole": "are ",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 2,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 71,
+            "witness_source_count": 2,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 71,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 77.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 71,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 71,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 77.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            119,
+            108,
+            105,
+            36
+          ],
+          "predicted_hole": "she ",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 3,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 54,
+            "witness_source_count": 3,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 54,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 61.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 54,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 54,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 61.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        }
+      ]
+    },
+    {
+      "case_id": 2,
+      "target_sha256": "64b6f23cefa5bad8b6d75ee169bf4c7d28a10f923075fe0b6269ed3cb4cdf7f9",
+      "target_byte_start": 36084,
+      "target_byte_end": 36088,
+      "prior_candidate_count": 53,
+      "echo_candidate_count": 128,
+      "contract_candidate_count": 128,
+      "gold_in_prior_lattice_at_128": true,
+      "gold_in_combined_lattice_at_128": true,
+      "prior_selected_exact": true,
+      "contract_selected_exact": true,
+      "prior_top4_exact": true,
+      "contract_top4_exact": true,
+      "gold_rank_prior": 0,
+      "gold_rank_combined": 0,
+      "gold_rank_contract": 0,
+      "echo_overlap_audit": {
+        "target_window_overlap_hits": 0,
+        "target_anchor_window_overlap_hits": 0,
+        "same_offset_hits": 0,
+        "sentinel_source_window_hits": 0
+      },
+      "echo_dominance": {
+        "promoted_cases": 1,
+        "rank1_promotions": 1,
+        "rank2_to_rank4_promotions": 0,
+        "promoted_candidate_count": 1,
+        "promoted_candidate_keys": [
+          [
+            76,
+            69,
+            86,
+            77
+          ]
+        ],
+        "median_real_score": 44.0,
+        "median_null_score": 0.0,
+        "median_causal_margin": 44.0,
+        "promoted_real_score_median": 474.0,
+        "promoted_null_score_max": 0.0,
+        "promoted_causal_margin_min": 474.0,
+        "promoted_under_blank": 0,
+        "promoted_under_swapped_edges": 0
+      },
+      "promotion_decisions": [
+        {
+          "candidate_key": [
+            76,
+            69,
+            86,
+            77
+          ],
+          "predicted_hole": "HARI",
+          "real": {
+            "exact_bi_anchor_witness_count": 39,
+            "left_echo_witness_count": 39,
+            "right_echo_witness_count": 39,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 39,
+            "witness_mode_count": 3,
+            "candidate_visible_doc_frequency": 39,
+            "row_source_modes": [
+              "exact_bi_anchor_echo",
+              "left_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 474.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 39,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 39,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 474.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            69,
+            86,
+            77,
+            82
+          ],
+          "predicted_hole": "ARIN",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 40,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 40,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 45.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 40,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 40,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 45.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            88,
+            69,
+            86,
+            77
+          ],
+          "predicted_hole": "TARI",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 1,
+            "row_source_modes": [
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 1,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 1,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            77,
+            83,
+            62,
+            14
+          ],
+          "predicted_hole": "IO:\n",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 332,
+            "witness_source_count": 0,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 332,
+            "row_source_modes": [
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 334.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 332,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 332,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 334.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            89,
+            71,
+            76,
+            77
+          ],
+          "predicted_hole": "UCHI",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 94,
+            "witness_source_count": 0,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 94,
+            "row_source_modes": [
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 96.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 94,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 94,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 96.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            86,
+            89,
+            71,
+            76
+          ],
+          "predicted_hole": "RUCH",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 94,
+            "witness_source_count": 0,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 94,
+            "row_source_modes": [
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 96.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 94,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 94,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 96.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            88,
+            86,
+            89,
+            71
+          ],
+          "predicted_hole": "TRUC",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 94,
+            "witness_source_count": 0,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 94,
+            "row_source_modes": [
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 96.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 94,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 94,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 96.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            73,
+            88,
+            86,
+            89
+          ],
+          "predicted_hole": "ETRU",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 94,
+            "witness_source_count": 0,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 94,
+            "row_source_modes": [
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 96.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 94,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 94,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 96.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        }
+      ]
+    },
+    {
+      "case_id": 3,
+      "target_sha256": "a3b0af6885d2eb0d7b2c2b8befe075d0bb9ea0bc66dd74615c17ae7186d7933b",
+      "target_byte_start": 32134,
+      "target_byte_end": 32138,
+      "prior_candidate_count": 75,
+      "echo_candidate_count": 128,
+      "contract_candidate_count": 128,
+      "gold_in_prior_lattice_at_128": false,
+      "gold_in_combined_lattice_at_128": true,
+      "prior_selected_exact": false,
+      "contract_selected_exact": false,
+      "prior_top4_exact": false,
+      "contract_top4_exact": false,
+      "gold_rank_prior": null,
+      "gold_rank_combined": 91,
+      "gold_rank_contract": 91,
+      "echo_overlap_audit": {
+        "target_window_overlap_hits": 0,
+        "target_anchor_window_overlap_hits": 0,
+        "same_offset_hits": 0,
+        "sentinel_source_window_hits": 0
+      },
+      "echo_dominance": {
+        "promoted_cases": 1,
+        "rank1_promotions": 1,
+        "rank2_to_rank4_promotions": 0,
+        "promoted_candidate_count": 1,
+        "promoted_candidate_keys": [
+          [
+            114,
+            104,
+            36,
+            120
+          ]
+        ],
+        "median_real_score": 65.0,
+        "median_null_score": 0.0,
+        "median_causal_margin": 65.0,
+        "promoted_real_score_median": 91.0,
+        "promoted_null_score_max": 0.0,
+        "promoted_causal_margin_min": 91.0,
+        "promoted_under_blank": 0,
+        "promoted_under_swapped_edges": 0
+      },
+      "promotion_decisions": [
+        {
+          "candidate_key": [
+            114,
+            104,
+            36,
+            120
+          ],
+          "predicted_hole": "nd t",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 86,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 86,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 91.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 86,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 86,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 91.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            115,
+            118,
+            36,
+            120
+          ],
+          "predicted_hole": "or t",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 48,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 48,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 53.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 48,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 48,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 53.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            114,
+            107,
+            36,
+            120
+          ],
+          "predicted_hole": "ng t",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 2,
+            "morphology_echo_witness_count": 35,
+            "witness_source_count": 2,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 35,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 41.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 35,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 35,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 41.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            105,
+            118,
+            36,
+            120
+          ],
+          "predicted_hole": "er t",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 2,
+            "morphology_echo_witness_count": 36,
+            "witness_source_count": 2,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 36,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 42.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 36,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 36,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 42.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            101,
+            125,
+            36,
+            120
+          ],
+          "predicted_hole": "ay t",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 27,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 27,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 32.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 27,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 27,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 32.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            115,
+            120,
+            36,
+            120
+          ],
+          "predicted_hole": "ot t",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 26,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 26,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 31.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 26,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 26,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 31.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            122,
+            105,
+            36,
+            120
+          ],
+          "predicted_hole": "ve t",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 2,
+            "morphology_echo_witness_count": 23,
+            "witness_source_count": 2,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 23,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 29.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 23,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 23,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 29.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            111,
+            105,
+            36,
+            120
+          ],
+          "predicted_hole": "ke t",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 2,
+            "morphology_echo_witness_count": 23,
+            "witness_source_count": 2,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 23,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 29.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 23,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 23,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 29.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        }
+      ]
+    },
+    {
+      "case_id": 4,
+      "target_sha256": "66dd231befc8120d323edb448b16f7151ac1cd8d1048b4f89a0b2f00f82ac0a8",
+      "target_byte_start": 29292,
+      "target_byte_end": 29296,
+      "prior_candidate_count": 73,
+      "echo_candidate_count": 128,
+      "contract_candidate_count": 128,
+      "gold_in_prior_lattice_at_128": true,
+      "gold_in_combined_lattice_at_128": true,
+      "prior_selected_exact": true,
+      "contract_selected_exact": false,
+      "prior_top4_exact": true,
+      "contract_top4_exact": true,
+      "gold_rank_prior": 0,
+      "gold_rank_combined": 0,
+      "gold_rank_contract": 1,
+      "echo_overlap_audit": {
+        "target_window_overlap_hits": 0,
+        "target_anchor_window_overlap_hits": 0,
+        "same_offset_hits": 0,
+        "sentinel_source_window_hits": 0
+      },
+      "echo_dominance": {
+        "promoted_cases": 1,
+        "rank1_promotions": 1,
+        "rank2_to_rank4_promotions": 0,
+        "promoted_candidate_count": 1,
+        "promoted_candidate_keys": [
+          [
+            36,
+            114,
+            115,
+            120
+          ]
+        ],
+        "median_real_score": 58.5,
+        "median_null_score": 0.0,
+        "median_causal_margin": 58.5,
+        "promoted_real_score_median": 184.0,
+        "promoted_null_score_max": 0.0,
+        "promoted_causal_margin_min": 184.0,
+        "promoted_under_blank": 0,
+        "promoted_under_swapped_edges": 0
+      },
+      "promotion_decisions": [
+        {
+          "candidate_key": [
+            36,
+            114,
+            115,
+            120
+          ],
+          "predicted_hole": " not",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 179,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 179,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 184.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 179,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 179,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 184.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            105,
+            114,
+            103,
+            105
+          ],
+          "predicted_hole": "ence",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 37,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 37,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 42.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 37,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 37,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 42.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            108,
+            120,
+            105,
+            118
+          ],
+          "predicted_hole": "hter",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 19,
+            "row_source_modes": [
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 19,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 19,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            36,
+            112,
+            109,
+            105
+          ],
+          "predicted_hole": " lie",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 15,
+            "row_source_modes": [
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 15,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 15,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            105,
+            101,
+            104,
+            125
+          ],
+          "predicted_hole": "eady",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 2,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 2,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 14,
+            "row_source_modes": [
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 4.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 14,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 14,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 4.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            114,
+            105,
+            119,
+            119
+          ],
+          "predicted_hole": "ness",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 43,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 43,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 48.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 43,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 43,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 48.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            112,
+            105,
+            105,
+            116
+          ],
+          "predicted_hole": "leep",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 15,
+            "row_source_modes": [
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 15,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 15,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            36,
+            123,
+            115,
+            114
+          ],
+          "predicted_hole": " won",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 13,
+            "row_source_modes": [
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 13,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 13,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        }
+      ]
+    },
+    {
+      "case_id": 5,
+      "target_sha256": "6e5ce6afa65bc328ed7ef2585ac6077dca716587a929ef60778a364b5680051c",
+      "target_byte_start": 18325,
+      "target_byte_end": 18329,
+      "prior_candidate_count": 74,
+      "echo_candidate_count": 128,
+      "contract_candidate_count": 128,
+      "gold_in_prior_lattice_at_128": true,
+      "gold_in_combined_lattice_at_128": true,
+      "prior_selected_exact": false,
+      "contract_selected_exact": false,
+      "prior_top4_exact": false,
+      "contract_top4_exact": false,
+      "gold_rank_prior": 72,
+      "gold_rank_combined": 72,
+      "gold_rank_contract": 72,
+      "echo_overlap_audit": {
+        "target_window_overlap_hits": 0,
+        "target_anchor_window_overlap_hits": 0,
+        "same_offset_hits": 0,
+        "sentinel_source_window_hits": 0
+      },
+      "echo_dominance": {
+        "promoted_cases": 1,
+        "rank1_promotions": 1,
+        "rank2_to_rank4_promotions": 0,
+        "promoted_candidate_count": 1,
+        "promoted_candidate_keys": [
+          [
+            108,
+            109,
+            119,
+            36
+          ]
+        ],
+        "median_real_score": 72.5,
+        "median_null_score": 0.0,
+        "median_causal_margin": 72.5,
+        "promoted_real_score_median": 177.0,
+        "promoted_null_score_max": 0.0,
+        "promoted_causal_margin_min": 177.0,
+        "promoted_under_blank": 0,
+        "promoted_under_swapped_edges": 0
+      },
+      "promotion_decisions": [
+        {
+          "candidate_key": [
+            108,
+            109,
+            119,
+            36
+          ],
+          "predicted_hole": "his ",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 172,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 172,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 177.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 172,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 172,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 177.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            113,
+            105,
+            48,
+            36
+          ],
+          "predicted_hole": "me, ",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 52,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 52,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 57.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 52,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 52,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 57.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            109,
+            114,
+            36,
+            120
+          ],
+          "predicted_hole": "in t",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 50,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 50,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 55.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 50,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 50,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 55.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            119,
+            115,
+            36,
+            102
+          ],
+          "predicted_hole": "so b",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 7,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 7,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 7,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            102,
+            101,
+            103,
+            111
+          ],
+          "predicted_hole": "back",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 8,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 8,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 8,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            113,
+            105,
+            50,
+            14
+          ],
+          "predicted_hole": "me.\n",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 31,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 31,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 31,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            113,
+            105,
+            49,
+            49
+          ],
+          "predicted_hole": "me--",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 1,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 1,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 1,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            121,
+            116,
+            115,
+            114
+          ],
+          "predicted_hole": "upon",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 24,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 24,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 29.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 24,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 24,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 29.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        }
+      ]
+    },
+    {
+      "case_id": 6,
+      "target_sha256": "d693a071991cc922d083ce837ff3a22eafe8175ca02b3985ebd36157821004ce",
+      "target_byte_start": 13470,
+      "target_byte_end": 13474,
+      "prior_candidate_count": 103,
+      "echo_candidate_count": 128,
+      "contract_candidate_count": 128,
+      "gold_in_prior_lattice_at_128": true,
+      "gold_in_combined_lattice_at_128": true,
+      "prior_selected_exact": false,
+      "contract_selected_exact": false,
+      "prior_top4_exact": false,
+      "contract_top4_exact": false,
+      "gold_rank_prior": 64,
+      "gold_rank_combined": 64,
+      "gold_rank_contract": 65,
+      "echo_overlap_audit": {
+        "target_window_overlap_hits": 0,
+        "target_anchor_window_overlap_hits": 0,
+        "same_offset_hits": 0,
+        "sentinel_source_window_hits": 0
+      },
+      "echo_dominance": {
+        "promoted_cases": 1,
+        "rank1_promotions": 1,
+        "rank2_to_rank4_promotions": 0,
+        "promoted_candidate_count": 1,
+        "promoted_candidate_keys": [
+          [
+            36,
+            120,
+            108,
+            109
+          ]
+        ],
+        "median_real_score": 65.0,
+        "median_null_score": 0.0,
+        "median_causal_margin": 65.0,
+        "promoted_real_score_median": 153.0,
+        "promoted_null_score_max": 0.0,
+        "promoted_causal_margin_min": 153.0,
+        "promoted_under_blank": 0,
+        "promoted_under_swapped_edges": 0
+      },
+      "promotion_decisions": [
+        {
+          "candidate_key": [
+            36,
+            120,
+            108,
+            109
+          ],
+          "predicted_hole": " thi",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 148,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 148,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 153.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 148,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 148,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 153.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            105,
+            101,
+            118,
+            36
+          ],
+          "predicted_hole": "ear ",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 45,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 45,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 50.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 45,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 45,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 50.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            36,
+            102,
+            118,
+            109
+          ],
+          "predicted_hole": " bri",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 37,
+            "witness_source_count": 1,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 37,
+            "row_source_modes": [
+              "morphology_echo",
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 42.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 37,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 37,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 42.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            115,
+            123,
+            48,
+            36
+          ],
+          "predicted_hole": "ow, ",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 3,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 27,
+            "witness_source_count": 3,
+            "witness_mode_count": 2,
+            "candidate_visible_doc_frequency": 27,
+            "row_source_modes": [
+              "left_echo",
+              "morphology_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 34.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 27,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 27,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 34.0,
+          "promotable": true,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            115,
+            115,
+            112,
+            109
+          ],
+          "predicted_hole": "ooli",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 7,
+            "row_source_modes": [
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 7,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 7,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            105,
+            36,
+            111,
+            109
+          ],
+          "predicted_hole": "e ki",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 2,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 2,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 16,
+            "row_source_modes": [
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 4.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 16,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 16,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 4.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            101,
+            119,
+            108,
+            109
+          ],
+          "predicted_hole": "ashi",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 0,
+            "right_echo_witness_count": 1,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 6,
+            "row_source_modes": [
+              "right_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 6,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 6,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            115,
+            120,
+            36,
+            108
+          ],
+          "predicted_hole": "ot h",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 12,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 12,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 12,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        }
+      ]
+    },
+    {
+      "case_id": 7,
+      "target_sha256": "1eece04f3183d805699445aa0ea32f5a1e62d13e248b5060ed752635a9fc4489",
+      "target_byte_start": 88732,
+      "target_byte_end": 88736,
+      "prior_candidate_count": 14,
+      "echo_candidate_count": 128,
+      "contract_candidate_count": 128,
+      "gold_in_prior_lattice_at_128": true,
+      "gold_in_combined_lattice_at_128": true,
+      "prior_selected_exact": true,
+      "contract_selected_exact": true,
+      "prior_top4_exact": true,
+      "contract_top4_exact": true,
+      "gold_rank_prior": 0,
+      "gold_rank_combined": 0,
+      "gold_rank_contract": 0,
+      "echo_overlap_audit": {
+        "target_window_overlap_hits": 0,
+        "target_anchor_window_overlap_hits": 0,
+        "same_offset_hits": 0,
+        "sentinel_source_window_hits": 0
+      },
+      "echo_dominance": {
+        "promoted_cases": 0,
+        "rank1_promotions": 0,
+        "rank2_to_rank4_promotions": 0,
+        "promoted_candidate_count": 0,
+        "promoted_candidate_keys": [],
+        "median_real_score": 67.0,
+        "median_null_score": 0.0,
+        "median_causal_margin": 67.0,
+        "promoted_real_score_median": 0.0,
+        "promoted_null_score_max": 0.0,
+        "promoted_causal_margin_min": 0.0,
+        "promoted_under_blank": 0,
+        "promoted_under_swapped_edges": 0
+      },
+      "promotion_decisions": [
+        {
+          "candidate_key": [
+            112,
+            104,
+            119,
+            120
+          ],
+          "predicted_hole": "ldst",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 3,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 3,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 5,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 5.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 5,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 5,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 5.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            112,
+            104,
+            50,
+            14
+          ],
+          "predicted_hole": "ld.\n",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 5,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 5,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 5,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            112,
+            104,
+            36,
+            77
+          ],
+          "predicted_hole": "ld I",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 10,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 10,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 10,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            112,
+            104,
+            105,
+            118
+          ],
+          "predicted_hole": "lder",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 2,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 2,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 2,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 4.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 2,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 2,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 4.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            112,
+            104,
+            36,
+            102
+          ],
+          "predicted_hole": "ld b",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 8,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 8,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 12,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 10.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 12,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 12,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 10.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            112,
+            104,
+            36,
+            114
+          ],
+          "predicted_hole": "ld n",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 1,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 1,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 10,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 3.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 10,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 10,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 3.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            112,
+            104,
+            36,
+            119
+          ],
+          "predicted_hole": "ld s",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 3,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 3,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 10,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 5.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 10,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 10,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 5.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        },
+        {
+          "candidate_key": [
+            112,
+            104,
+            36,
+            120
+          ],
+          "predicted_hole": "ld t",
+          "real": {
+            "exact_bi_anchor_witness_count": 0,
+            "left_echo_witness_count": 2,
+            "right_echo_witness_count": 0,
+            "morphology_echo_witness_count": 0,
+            "witness_source_count": 2,
+            "witness_mode_count": 1,
+            "candidate_visible_doc_frequency": 9,
+            "row_source_modes": [
+              "left_echo"
+            ],
+            "forbidden_overlap_flags": {
+              "overlaps_target": false,
+              "overlaps_anchor_window": false,
+              "sentinel_in_source_window": false
+            },
+            "score": 4.0
+          },
+          "nulls": [
+            {
+              "name": "blank",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 9,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            },
+            {
+              "name": "swapped_edges",
+              "exact_bi_anchor_witness_count": 0,
+              "left_echo_witness_count": 0,
+              "right_echo_witness_count": 0,
+              "morphology_echo_witness_count": 0,
+              "witness_source_count": 0,
+              "witness_mode_count": 0,
+              "candidate_visible_doc_frequency": 9,
+              "row_source_modes": [],
+              "forbidden_overlap_flags": {
+                "overlaps_target": false,
+                "overlaps_anchor_window": false,
+                "sentinel_in_source_window": false
+              },
+              "score": 0.0
+            }
+          ],
+          "null_score": 0.0,
+          "causal_margin": 4.0,
+          "promotable": false,
+          "promoted_under_blank": false,
+          "promoted_under_swapped_edges": false
+        }
+      ]
+    }
+  ],
+  "claim_boundary": "model-free Causal Echo-Dominance selector for fixed-span visible-context document repair; not global LM SOTA, not variable-length infill, and not model-quality evidence until a held-out selector-contract benchmark passes",
+  "checks": {
+    "model_not_loaded": true,
+    "contract_status_consistent": true,
+    "contract_apply_matches_readiness": true,
+    "diagnostic_only_matches_readiness": true,
+    "selected_before_target_eval": true,
+    "target_metric_not_used_for_selection": true,
+    "target_span_redacted_before_echo_index": true,
+    "target_bytes_not_available_to_selector": true,
+    "masked_bytes_not_seen_by_features": true,
+    "no_target_window_overlap": true,
+    "no_target_anchor_window_overlap": true,
+    "no_same_offset_hits": true,
+    "no_near_duplicate_flags": true,
+    "promoted_cases_positive": true,
+    "blank_null_not_promoted": true,
+    "swapped_edges_null_not_promoted": true,
+    "promoted_margin_passes": true,
+    "ready_or_fail_closed": true,
+    "ready_requires_top4_lift": true,
+    "ready_requires_no_top4_harm": true,
+    "ready_requires_shuffle_below_contract": true,
+    "fail_closed_blocks_claim": true
+  },
+  "verdict": "pass",
+  "kill_criterion": "kill direct echo promotion if combined K=128 containment stays above prior but the frozen contract does not improve top4 without harm on this smoke"
+}

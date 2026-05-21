@@ -87,6 +87,15 @@ class BenchTest(unittest.TestCase):
         )
         self.assertIn("bat-", {row["predicted_hole"] for row in rows})
 
+    def test_morphology_candidates_include_name_possessive_suffix(self) -> None:
+        rows = morphology_candidates(
+            tokenizer=ByteTokenizer(),
+            marked_text="And Gabr[[iel']]s pumps were bright",
+            train_text="Nathaniel's book and Michael's cloak are nearby.",
+            limit=16,
+        )
+        self.assertIn("iel'", {row["predicted_hole"] for row in rows})
+
 
 if __name__ == "__main__":
     unittest.main()

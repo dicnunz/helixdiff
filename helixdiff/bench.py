@@ -304,6 +304,30 @@ def morphology_candidates(
                     "morphology_score": float(2.5 + min(count, 64) / 32.0 + plural_signal),
                 }
             )
+    if left_tail[:1].isupper() and right_head.startswith("s") and hole_len >= 2:
+        suffixes = [
+            "iel'",
+            "ael'",
+            "uel'",
+            "ian'",
+            "ias'",
+            "ius'",
+            "ard'",
+            "old'",
+            "ert'",
+            "son'",
+        ]
+        for rank, suffix in enumerate(suffixes):
+            if len(suffix) != hole_len:
+                continue
+            rows.append(
+                {
+                    "ids": tokenizer.encode(suffix, add_bos=False, add_eos=False),
+                    "predicted_hole": suffix,
+                    "source": "morphology_name_possessive_suffix",
+                    "morphology_score": float(4.0 - (rank * 0.05)),
+                }
+            )
 
     filtered = [row for row in rows if len(row["ids"]) == hole_len]
     deduped: dict[tuple[int, ...], dict[str, Any]] = {}

@@ -16,9 +16,23 @@ def _strict_lattice_variant(byte_accuracy: float, exact: float, cases: int = 4) 
             {
                 "selector_margin_sweep": [{"selector_margin": 0.0, "exact": True, "byte_accuracy": 1.0}],
                 "selector_anchor_margin_sweep": [
-                    {"selector_anchor": "prior", "selector_margin": 0.0, "exact": True, "byte_accuracy": 1.0}
+                    {"selector_anchor": "prior", "selector_margin": 0.0, "exact": True, "byte_accuracy": 1.0},
+                    {
+                        "selector_anchor": "visible_reranker",
+                        "selector_margin": 0.0,
+                        "exact": True,
+                        "byte_accuracy": 1.0,
+                    },
                 ],
                 "local_surface_anchor_calibration": {"selected_selector_anchor": "prior", "applied": False},
+                "visible_reranker_calibration": {
+                    "status": "selected_visible_context_reranker_weights",
+                    "applied": False,
+                    "selected_summary": {
+                        "visible_reranker_top1_exact_rate": 1.0,
+                        "visible_reranker_top4_exact_rate": 1.0,
+                    },
+                },
             }
         )
     return {
@@ -32,8 +46,16 @@ def _strict_lattice_variant(byte_accuracy: float, exact: float, cases: int = 4) 
             "surface_verifier_top4_exact_rate": 1.0,
             "surface_verifier_harm_count": 0,
             "surface_verifier_help_count": 0,
+            "visible_reranker_selected_exact_rate": 1.0,
+            "visible_reranker_top4_exact_rate": 1.0,
+            "visible_reranker_harm_count": 0,
+            "visible_reranker_help_count": 0,
+            "visible_reranker_calibration_cases": cases,
             "selector_margin_sweep": {"0": {"cases": cases}},
-            "selector_anchor_margin_sweep": {"prior": {"0": {"cases": cases}}},
+            "selector_anchor_margin_sweep": {
+                "prior": {"0": {"cases": cases}},
+                "visible_reranker": {"0": {"cases": cases}},
+            },
             "local_surface_anchor_calibration_cases": cases,
             "local_surface_anchor_margin_sweep": {"0": {"cases": cases}},
         },
@@ -221,10 +243,12 @@ class GateTests(unittest.TestCase):
                 "lattice_verifier_top_k": 0,
                 "lattice_selector_margin": 3.0,
                 "lattice_selector_anchor": "surface",
-                "lattice_selector_anchor_sweep": ["prior", "surface"],
+                "lattice_selector_anchor_sweep": ["prior", "surface", "visible_reranker"],
                 "lattice_selector_margin_sweep": [0, 1, 2, 3, 5],
                 "lattice_local_surface_anchor_calibration": True,
                 "lattice_apply_local_surface_anchor_calibration": False,
+                "lattice_visible_reranker_calibration": True,
+                "lattice_apply_visible_reranker_calibration": False,
             }
         )
 
@@ -254,10 +278,12 @@ class GateTests(unittest.TestCase):
                 "lattice_verifier_top_k": 0,
                 "lattice_selector_margin": 3.0,
                 "lattice_selector_anchor": "surface",
-                "lattice_selector_anchor_sweep": ["prior", "surface"],
+                "lattice_selector_anchor_sweep": ["prior", "surface", "visible_reranker"],
                 "lattice_selector_margin_sweep": [0.0, 1.0, 2.0, 3.0, 5.0],
                 "lattice_local_surface_anchor_calibration": True,
                 "lattice_apply_local_surface_anchor_calibration": False,
+                "lattice_visible_reranker_calibration": True,
+                "lattice_apply_visible_reranker_calibration": False,
             }
         )
 

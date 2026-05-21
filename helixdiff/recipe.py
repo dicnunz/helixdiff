@@ -76,6 +76,7 @@ def build_strict_repair_commands(
         "--lattice-selector-margin-sweep",
         comma_join(STRICT_REPAIR_RECIPE["lattice_selector_margin_sweep"]),
         "--lattice-local-surface-anchor-calibration",
+        "--lattice-visible-reranker-calibration",
         "--json-out",
         bench_out,
     ]
@@ -123,6 +124,7 @@ def build_strict_repair_commands(
             "Claim the shared heavy slot before running benchmark.",
             "Run calibrate and gate after benchmark completes.",
             "Do not add lattice-local-prior-calibration to this first strict proof.",
+            "Visible-reranker calibration is diagnostic-only here; do not apply it until a later held-out split.",
         ],
     }
 

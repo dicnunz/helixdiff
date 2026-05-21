@@ -32,6 +32,8 @@ class BreakthroughPlanTests(unittest.TestCase):
         self.assertIn("--lattice-prior-rerank-top-k 4", proof_commands)
         self.assertIn("--lattice-verifier-mode dual", proof_commands)
         self.assertIn("--lattice-selector-anchor surface", proof_commands)
+        self.assertIn("--lattice-selector-anchor-sweep prior,surface,visible_reranker", proof_commands)
+        self.assertIn("--lattice-visible-reranker-calibration", proof_commands)
         self.assertIn("--lattice-selector-margin-sweep 0,1,2,3,5", proof_commands)
         self.assertIn("--require-repair-proof-contract", proof_commands)
 

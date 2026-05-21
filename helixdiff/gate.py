@@ -13,10 +13,12 @@ STRICT_REPAIR_RECIPE = {
     "lattice_verifier_top_k": 0,
     "lattice_selector_margin": 3.0,
     "lattice_selector_anchor": "surface",
-    "lattice_selector_anchor_sweep": ["prior", "surface"],
+    "lattice_selector_anchor_sweep": ["prior", "surface", "visible_reranker"],
     "lattice_selector_margin_sweep": [0.0, 1.0, 2.0, 3.0, 5.0],
     "lattice_local_surface_anchor_calibration": True,
     "lattice_apply_local_surface_anchor_calibration": False,
+    "lattice_visible_reranker_calibration": True,
+    "lattice_apply_visible_reranker_calibration": False,
 }
 
 
@@ -95,7 +97,7 @@ def evaluate_strict_repair_recipe(case_filter: dict[str, Any]) -> dict[str, Any]
         ),
         "selector_anchor_is_surface": case_filter.get("lattice_selector_anchor")
         == STRICT_REPAIR_RECIPE["lattice_selector_anchor"],
-        "selector_anchor_sweep_is_prior_surface": case_filter.get("lattice_selector_anchor_sweep")
+        "selector_anchor_sweep_is_prior_surface_visible_reranker": case_filter.get("lattice_selector_anchor_sweep")
         == STRICT_REPAIR_RECIPE["lattice_selector_anchor_sweep"],
         "selector_margin_sweep_is_0_1_2_3_5": _numeric_list_equal(
             case_filter.get("lattice_selector_margin_sweep"),
@@ -108,6 +110,10 @@ def evaluate_strict_repair_recipe(case_filter: dict[str, Any]) -> dict[str, Any]
         "local_surface_anchor_calibration_not_applied": case_filter.get(
             "lattice_apply_local_surface_anchor_calibration"
         )
+        is False,
+        "visible_reranker_calibration_enabled": case_filter.get("lattice_visible_reranker_calibration")
+        is True,
+        "visible_reranker_calibration_not_applied": case_filter.get("lattice_apply_visible_reranker_calibration")
         is False,
     }
     missing = [name for name, passed in checks.items() if not passed]
@@ -134,6 +140,7 @@ def evaluate_repair_proof_contract(report: dict[str, Any]) -> dict[str, Any]:
     lattice_rows = _variant_cases(report, "retrieval_lattice")
     summary_case_count = int(lattice_summary.get("cases", 0)) if lattice_summary.get("cases") is not None else 0
     local_surface_cases = int(lattice_summary.get("local_surface_anchor_calibration_cases", 0) or 0)
+    visible_reranker_cases = int(lattice_summary.get("visible_reranker_calibration_cases", 0) or 0)
 
     checks = {
         "checkpoint_sha256_recorded": bool(report.get("checkpoint_sha256")),
@@ -166,6 +173,16 @@ def evaluate_repair_proof_contract(report: dict[str, Any]) -> dict[str, Any]:
             lattice_summary.get("local_surface_anchor_margin_sweep")
         )
         or _any_case_has(lattice_rows, "local_surface_anchor_margin_sweep"),
+        "visible_reranker_diagnostics_reported": all(
+            key in lattice_summary
+            for key in (
+                "visible_reranker_selected_exact_rate",
+                "visible_reranker_top4_exact_rate",
+                "visible_reranker_harm_count",
+                "visible_reranker_help_count",
+            )
+        ),
+        "visible_reranker_calibration_reported": lattice_cases > 0 and visible_reranker_cases >= lattice_cases,
         "predeclared_strict_recipe_matched": bool(strict_recipe["passed"]),
     }
     missing = [name for name, passed in checks.items() if not passed]
@@ -189,6 +206,7 @@ def evaluate_repair_proof_contract(report: dict[str, Any]) -> dict[str, Any]:
             "configured_local_surface_anchor_calibration": case_filter.get(
                 "lattice_local_surface_anchor_calibration"
             ),
+            "configured_visible_reranker_calibration": case_filter.get("lattice_visible_reranker_calibration"),
         },
     }
 

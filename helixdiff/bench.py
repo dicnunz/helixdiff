@@ -2028,6 +2028,14 @@ def retrieval_lattice_case(
         if torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)
     ]
     best_exact_surface_rank = min(exact_surface_ranks) if exact_surface_ranks else None
+    exact_visible_reranker_ranks = [
+        int(visible_candidate_report[tuple(int(token_id) for token_id in candidate["ids"])]["visible_reranker_rank"])
+        for candidate in ranked_candidates
+        if torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)
+    ]
+    best_exact_visible_reranker_rank = (
+        min(exact_visible_reranker_ranks) if exact_visible_reranker_ranks else None
+    )
     surface_selected = min(
         ranked_candidates,
         key=lambda candidate: (
@@ -2040,6 +2048,20 @@ def retrieval_lattice_case(
     surface_selected_exact = (
         bool(torch.equal(torch.tensor(surface_selected["ids"], dtype=torch.long), target))
         if surface_selected is not None
+        else False
+    )
+    visible_reranker_selected = min(
+        ranked_candidates,
+        key=lambda candidate: (
+            int(visible_candidate_report[tuple(int(token_id) for token_id in candidate["ids"])]["visible_reranker_rank"]),
+            int(candidate["prior_rank"]),
+            str(candidate["predicted_hole"]),
+        ),
+        default=None,
+    )
+    visible_reranker_selected_exact = (
+        bool(torch.equal(torch.tensor(visible_reranker_selected["ids"], dtype=torch.long), target))
+        if visible_reranker_selected is not None
         else False
     )
     if prior_rerank_top_k > 0:
@@ -2154,6 +2176,15 @@ def retrieval_lattice_case(
         "surface_verifier_exact_rank": best_exact_surface_rank,
         "surface_verifier_exact_in_top4": best_exact_surface_rank is not None and best_exact_surface_rank < 4,
         "surface_verifier_selector": "training_split_repair_surface_features_without_model",
+        "visible_reranker_selected_hole": (
+            visible_reranker_selected["predicted_hole"] if visible_reranker_selected is not None else None
+        ),
+        "visible_reranker_selected_exact": visible_reranker_selected_exact,
+        "visible_reranker_exact_rank": best_exact_visible_reranker_rank,
+        "visible_reranker_exact_in_top4": (
+            best_exact_visible_reranker_rank is not None and best_exact_visible_reranker_rank < 4
+        ),
+        "visible_reranker_selector": "visible_context_prior_surface_weight_sweep",
         "candidate_summaries": scored_rows,
         "unscored_prior_candidate_summaries": [
             {
@@ -2370,6 +2401,16 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "surface_verifier_top4_delta_vs_prior": 0.0,
                 "surface_verifier_harm_count": 0,
                 "surface_verifier_help_count": 0,
+                "visible_reranker_selected_exact_rate": 0.0,
+                "visible_reranker_top4_exact_rate": 0.0,
+                "visible_reranker_avg_exact_rank": None,
+                "visible_reranker_top4_delta_vs_prior": 0.0,
+                "visible_reranker_harm_count": 0,
+                "visible_reranker_help_count": 0,
+                "visible_reranker_calibration_cases": 0,
+                "visible_reranker_applied_rate": 0.0,
+                "visible_reranker_visible_top1_exact_rate": None,
+                "visible_reranker_visible_top4_exact_rate": None,
                 "local_surface_anchor_calibration_cases": 0,
                 "local_surface_anchor_selected_counts": {},
                 "local_surface_anchor_surface_selected_rate": 0.0,
@@ -2399,6 +2440,8 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
     )
     surface_rank_rows = [row for row in rows if row.get("surface_verifier_exact_rank") is not None]
     surface_top4_rate = sum(1.0 for row in rows if row.get("surface_verifier_exact_in_top4")) / len(rows)
+    visible_reranker_rank_rows = [row for row in rows if row.get("visible_reranker_exact_rank") is not None]
+    visible_reranker_top4_rate = sum(1.0 for row in rows if row.get("visible_reranker_exact_in_top4")) / len(rows)
     exact_anchor_rows = [row for row in rows if row.get("anchor_exact")]
     local_surface_reports = [
         row["local_surface_anchor_calibration"]
@@ -2408,6 +2451,11 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
     local_surface_selected_counts = Counter(
         str(report.get("selected_selector_anchor", "unknown")) for report in local_surface_reports
     )
+    visible_reranker_reports = [
+        row["visible_reranker_calibration"]
+        for row in rows
+        if row.get("visible_reranker_calibration") is not None
+    ]
     outcome_categories = Counter(str(row.get("outcome_category", "unknown")) for row in rows)
     selector_effects = Counter(str(row.get("selector_effect", "unknown")) for row in rows)
     summary.update(
@@ -2453,6 +2501,56 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 for row in rows
                 if not (row.get("prior_exact_rank") is not None and int(row["prior_exact_rank"]) < 4)
                 and row.get("surface_verifier_exact_in_top4")
+            ),
+            "visible_reranker_selected_exact_rate": sum(
+                1.0 for row in rows if row.get("visible_reranker_selected_exact")
+            )
+            / len(rows),
+            "visible_reranker_top4_exact_rate": visible_reranker_top4_rate,
+            "visible_reranker_avg_exact_rank": (
+                sum(float(row["visible_reranker_exact_rank"]) for row in visible_reranker_rank_rows)
+                / len(visible_reranker_rank_rows)
+                if visible_reranker_rank_rows
+                else None
+            ),
+            "visible_reranker_top4_delta_vs_prior": visible_reranker_top4_rate - prior_top4_rate,
+            "visible_reranker_harm_count": sum(
+                1
+                for row in rows
+                if row.get("prior_exact_rank") is not None
+                and int(row["prior_exact_rank"]) < 4
+                and not row.get("visible_reranker_exact_in_top4")
+            ),
+            "visible_reranker_help_count": sum(
+                1
+                for row in rows
+                if not (row.get("prior_exact_rank") is not None and int(row["prior_exact_rank"]) < 4)
+                and row.get("visible_reranker_exact_in_top4")
+            ),
+            "visible_reranker_calibration_cases": len(visible_reranker_reports),
+            "visible_reranker_applied_rate": (
+                sum(1.0 for report in visible_reranker_reports if report.get("applied"))
+                / len(visible_reranker_reports)
+                if visible_reranker_reports
+                else 0.0
+            ),
+            "visible_reranker_visible_top1_exact_rate": (
+                sum(
+                    float(report.get("selected_summary", {}).get("visible_reranker_top1_exact_rate", 0.0))
+                    for report in visible_reranker_reports
+                )
+                / len(visible_reranker_reports)
+                if visible_reranker_reports
+                else None
+            ),
+            "visible_reranker_visible_top4_exact_rate": (
+                sum(
+                    float(report.get("selected_summary", {}).get("visible_reranker_top4_exact_rate", 0.0))
+                    for report in visible_reranker_reports
+                )
+                / len(visible_reranker_reports)
+                if visible_reranker_reports
+                else None
             ),
             "local_surface_anchor_calibration_cases": len(local_surface_reports),
             "local_surface_anchor_selected_counts": dict(sorted(local_surface_selected_counts.items())),

@@ -20,10 +20,11 @@ class RecipeTests(unittest.TestCase):
         self.assertIn("--lattice-selector-anchor", benchmark)
         self.assertIn("surface", benchmark)
         self.assertIn("--lattice-selector-anchor-sweep", benchmark)
-        self.assertIn("prior,surface", benchmark)
+        self.assertIn("prior,surface,visible_reranker", benchmark)
         self.assertIn("--lattice-selector-margin-sweep", benchmark)
         self.assertIn("0,1,2,3,5", benchmark)
         self.assertIn("--lattice-local-surface-anchor-calibration", benchmark)
+        self.assertIn("--lattice-visible-reranker-calibration", benchmark)
         self.assertIn("--require-repair-proof-contract", gate)
         self.assertTrue(recipe["heavy_slot_required"])
 

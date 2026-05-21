@@ -8,7 +8,7 @@ The included training recipe is deliberately small enough to run on a laptop. Th
 
 | Check | Result |
 | --- | --- |
-| Unit tests | `78` tests passing |
+| Unit tests | `80` tests passing |
 | Scratch verifier | no banned pretrained-model snippets; 30k checkpoint says `scratch_only: true` |
 | Latest checkpoint | `439,968` parameters, `30,000` steps on Apple MPS, resumed only from an earlier scratch HelixDiff checkpoint |
 | Slim download | `checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt`, `1.8 MB`, SHA-256 `3d1ae0b04275291f44c17660eeef12c627ed0d8f96132eba3b8caff27bedd9bf` |
@@ -357,6 +357,12 @@ To print the exact heavy benchmark, calibration, and gate commands for that reci
 
 ```
 helixdiff-proof-recipe
+```
+
+To print the source-backed Mac-local breakthrough lanes that justify that recipe and keep the GPT/browser boundary honest:
+
+```
+helixdiff-breakthrough-plan
 ```
 
 ## Export A Slim Checkpoint

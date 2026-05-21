@@ -237,3 +237,22 @@ Suture TTA shipped and did not clear the stronger gate. Retrieval-lattice select
 The first local-prior proof is useful because it failed safely. It records per-case visible-context weight proposals in `proof/lattice_oracle_4case_local_calibration.json`, keeps `applied=false`, and preserves the original top-4 oracle rate at `100%`. This prevents a seductive Mac-local trick from silently making the reranker set worse; the breakthrough standard is not novelty, it is novelty that survives the oracle.
 
 Only call DocForge impressive after verifier-guided lattice selection beats nearest-visible and bridge-only on widened held-out spans. The public line stays severe: **Mac-local SOTA for visible-context document repair, not a general language model.**
+
+## 2026-05-21 Executable Breakthrough Plan
+
+The source refresh has been pinned into a command so the next run does not depend on remembering this memo:
+
+```sh
+helixdiff-breakthrough-plan
+```
+
+It emits the ranked lanes, source IDs, claim boundary, GPT teammate blocker, and exact proof commands. The current top lane is `strict_repair_lattice_proof`: run the predeclared `helixdiff-proof-recipe` benchmark under the shared Heavy Slot, then run its calibrate and `helixdiff-gate --require-repair-proof-contract` commands. The cheap non-heavy next lane is `visible_hole_reranker`: train or calibrate only on synthetic holes from visible context and rescue raw verifier misses without lowering oracle-in-scored-set coverage.
+
+Source-backed updates from the refresh:
+
+- MDLM (`arxiv:2406.07524`) supports treating objective and sampler discipline as real diffusion-LM leverage, not cosmetics.
+- Block Diffusion (`arxiv:2503.09573`) supports locality, block structure, and data-driven schedules as the path around random-mask weakness.
+- SEDD (`arxiv:2310.16834`) supports discrete score/ratio objectives and controllable infilling as a serious alternative to plain masked CE.
+- LLaDA (`arxiv:2502.09992`) supports scratch diffusion LMs at scale, but also proves the laptop claim boundary: HelixDiff cannot honestly borrow 8B-scale results.
+- LADD (`arxiv:2510.18114`) supports the diagnosis that factored reverse transitions need auxiliary joint structure; HelixDiff's cheap version is a surface-signature/reranker channel, not a broad foundation-model claim.
+- Frequency-informed MDLM work (`2025.babylm-main.38`) supports spending scarce Mac-local gradient signal on rare/hard boundary bytes instead of uniform corruption alone.

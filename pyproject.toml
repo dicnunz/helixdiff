@@ -26,6 +26,7 @@ helixdiff-calibrate-selector = "helixdiff.calibrate:main"
 helixdiff-export = "helixdiff.export:main"
 helixdiff-gate = "helixdiff.gate:main"
 helixdiff-proof-recipe = "helixdiff.recipe:main"
+helixdiff-breakthrough-plan = "helixdiff.breakthrough:main"
 helixdiff-verify-scratch = "helixdiff.verify_scratch:main"
 
 [tool.setuptools.packages.find]

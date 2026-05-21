@@ -18,7 +18,7 @@ The included training recipe is deliberately small enough to run on a laptop. Th
 | Wider repair bench | 8 unseen validation holes: bridge-only `22.5%`, model-only `18.75%`, model+bridge `20.0%` |
 | Claim gate | failed; `mechanism_only_claim_required_do_not_call_model_sota` |
 
-Proof files are checked into the repo under `proof/`, including `scratch_verifier_clock_suture_30k.json`, `eval_clock_suture_30k.json`, `bench_clock_suture_30k_unseen_candidates_8case.json`, `bench_suture_tta_4case_lastblock10.json`, `lattice_oracle_4case.json`, `lattice_oracle_4case_local_calibration.json`, `lattice_oracle_4case_surface_anchor_calibration.json`, `bench_prior_topk_dual_smoke.json`, `selector_margin_calibration_smoke.json`, `selector_contract_smoke.json`, `visible_reranker_oracle_smoke.json`, `proxy_mask_selector_contract_smoke.json`, `proxy_mask_selector_contract_smoke_contract.json`, `gate_clock_suture_30k_8case.json`, `gate_prior_topk_dual_smoke.json`, and `export_clock_suture_30k.json`. The visible proof note is `REPAIR_BENCH_30K.md`.
+Proof files are checked into the repo under `proof/`, including `scratch_verifier_clock_suture_30k.json`, `eval_clock_suture_30k.json`, `bench_clock_suture_30k_unseen_candidates_8case.json`, `bench_suture_tta_4case_lastblock10.json`, `lattice_oracle_4case.json`, `lattice_oracle_4case_local_calibration.json`, `lattice_oracle_4case_surface_anchor_calibration.json`, `bench_prior_topk_dual_smoke.json`, `selector_margin_calibration_smoke.json`, `selector_contract_smoke.json`, `visible_reranker_oracle_smoke.json`, `proxy_mask_selector_contract_smoke.json`, `proxy_mask_selector_contract_smoke_contract.json`, `canvas_boundary_smoke.json`, `gate_clock_suture_30k_8case.json`, `gate_prior_topk_dual_smoke.json`, and `export_clock_suture_30k.json`. The visible proof note is `REPAIR_BENCH_30K.md`.
 
 The current checked-in checkpoint is intentionally not described as a strong language model. The repository is the 10/10 artifact here: a from-scratch diffusion LM stack with novel repair mechanisms, replayable Mac-local training, a slim checkpoint, and a harsh benchmark gate that refuses to launder scaffold memory into model quality.
 
@@ -333,6 +333,20 @@ There is also an experimental `proxy_geometry_mode: target_retrieval` path. It r
 The newer `proxy_geometry_mode: target_shadow` path is stricter: it computes a label-free target lattice fingerprint, including source diversity, selector disagreement, prior entropy, prior top-gap, pairwise candidate edit distance, and duplicate-source pressure, then picks visible-only pseudo masks whose own fingerprints are closest while avoiding the target anchor window. This is the current best proxy-calibration idea from the Extended Pro teammate plus local proof work, but it is not promoted either: the smoke sets `contract_ready=false` until shadow heldout beats shuffle and avoids prior harm.
 
 Current canvas boundary: HelixDiff's claim target is fixed-span visible-context repair. DreamOn-style variable-length infilling is a separate future gate, not something the current benchmark proves.
+
+```
+helixdiff-canvas-boundary-smoke \
+  --out proof/canvas_boundary_smoke.json \
+  --json
+```
+
+That receipt passes only for the fixed-span repair plan. A flexible-length or code-infilling claim must fail until this command has a real variable-length gate to detect:
+
+```
+helixdiff-canvas-boundary-smoke \
+  --require-variable-length-gate \
+  --json
+```
 
 ```
 helixdiff-proxy-mask-selector-contract-smoke \

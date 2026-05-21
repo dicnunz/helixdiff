@@ -211,9 +211,10 @@ def build_breakthrough_plan() -> dict[str, Any]:
             ),
             "proof_commands": [
                 "uv run helixdiff-breakthrough-plan --json",
+                "uv run helixdiff-canvas-boundary-smoke --out proof/canvas_boundary_smoke.json --json",
                 "uv run helixdiff-proof-recipe --json",
             ],
-            "pass_condition": "release plan discloses fixed-length canvas limits and the proof recipe reports repair accuracy against baselines, not perplexity alone",
+            "pass_condition": "canvas-boundary receipt passes, release plan discloses fixed-length canvas limits, and the proof recipe reports repair accuracy against baselines, not perplexity alone",
             "claim_if_passes": "fixed-span visible-context repair plan is source-backed and canvas-boundary-aware",
             "kill_condition": "any README/release language claims flexible-length infilling, code-infilling SOTA, or broad diffusion-LM quality without a variable-length gate",
             "heavy_slot_required": False,

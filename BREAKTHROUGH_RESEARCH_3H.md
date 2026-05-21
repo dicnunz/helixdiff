@@ -268,6 +268,7 @@ Source-backed updates from the refresh:
 - Unlocking Prompt Infilling Capability for dLMs (`arxiv:2604.03677`) strengthens the current bet that masking practice is not a footnote: full-context masking is a mechanism that can unlock infilling behavior.
 - DreamOn (`arxiv:2602.01326`) makes the fixed-canvas boundary explicit. HelixDiff's current proof target is fixed-span visible-context repair; flexible-length code infilling needs a separate gate before any public claim.
 - Scaling Beyond Masked Diffusion Language Models (`arxiv:2602.15014`) says perplexity is not enough across diffusion families. HelixDiff should keep reporting repair accuracy, bridge/nearest-visible baselines, and speed-quality tradeoffs.
+- `helixdiff-canvas-boundary-smoke` now makes that boundary mechanical: `proof/canvas_boundary_smoke.json` allows only fixed-span visible-context repair planning, and `--require-variable-length-gate` fails until a real variable-length repair gate exists.
 - LLaDA (`arxiv:2502.09992`) supports scratch diffusion LMs at scale, but also proves the laptop claim boundary: HelixDiff cannot honestly borrow 8B-scale results.
 - LADD (`arxiv:2510.18114`) supports the diagnosis that factored reverse transitions need auxiliary joint structure; HelixDiff's cheap version is a surface-signature/reranker channel, not a broad foundation-model claim.
 - Frequency-informed MDLM work (`2025.babylm-main.38`) supports spending scarce Mac-local gradient signal on rare/hard boundary bytes instead of uniform corruption alone.

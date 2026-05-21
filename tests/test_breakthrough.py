@@ -20,6 +20,7 @@ class BreakthroughPlanTests(unittest.TestCase):
         self.assertIn("arxiv:2604.03677", source_ids)
         self.assertIn("arxiv:2602.01326", source_ids)
         self.assertIn("arxiv:2602.15014", source_ids)
+        self.assertIn("arxiv:2506.23529", source_ids)
         self.assertIn("strict_repair_lattice_proof", lane_names)
         self.assertIn("visible_reranker_oracle_smoke", lane_names)
         self.assertIn("proxy_mask_selector_contract_smoke", lane_names)
@@ -44,6 +45,17 @@ class BreakthroughPlanTests(unittest.TestCase):
         self.assertIn("chatgpt.com/c/", prior_note["conversation_url"])
         self.assertIn("target-shadow proxy calibration", prior_note["contribution"])
         self.assertEqual(prior_note["verification_status"], "current_chrome_readback_reverified_url")
+
+    def test_prompt_canvas_curriculum_has_mechanical_receipt(self) -> None:
+        plan = build_breakthrough_plan()
+        lane = [lane for lane in plan["lanes"] if lane["name"] == "prompt_canvas_curriculum"][0]
+        proof_commands = "\n".join(lane["proof_commands"])
+
+        self.assertFalse(lane["heavy_slot_required"])
+        self.assertIn("helixdiff-canvas-boundary-smoke", proof_commands)
+        self.assertIn("proof/canvas_boundary_smoke.json", proof_commands)
+        self.assertIn("canvas-boundary receipt passes", lane["pass_condition"])
+        self.assertIn("variable-length gate", lane["kill_condition"])
 
     def test_top_lane_reuses_predeclared_recipe_and_gate(self) -> None:
         plan = build_breakthrough_plan()

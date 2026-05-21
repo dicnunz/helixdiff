@@ -134,13 +134,15 @@ The new nearest-visible baseline changed the research state. On the 4-case unsee
 
 The first retrieval-lattice probe exposed a sharper split. Pure diffusion scoring found the exact answer in the lattice for two cases but rejected those exact candidates. Adding a fixed boundary-suture prior selected the visible exact candidates and matched nearest-visible at `50.0%`. It still did not beat nearest-visible, because the other two holes did not have the answer in the visible candidate lattice.
 
-Next patch landed but is not yet full-benchmarked: train-corpus morphology candidates now add word completions and hyphen-compound stems to the lattice. A short candidate smoke confirms the `bat-` repair candidate enters the default lattice for `[[bat-]]fowling`; the expensive proof benchmark is intentionally deferred while the Mac is under heavy load.
+Next patch landed and got a cheap proof without loading the model: `helixdiff-bench --candidate-oracle-only` now measures whether the repair lattice contains the hidden span before diffusion scoring spends CPU. On the same 4-case unseen validation slice that previously exposed missing candidates, `proof/lattice_oracle_4case.json` reports `oracle_exact_rate: 1.0`. The exact hits are `Gabr` from a name-stem prior, `p--d` and `y-ca` from dash/morpheme bridges, and `lor:` from speaker-label completion.
+
+That does not prove accuracy. It proves the bottleneck moved. Before this patch, the system could not select missing answers. After this patch, the next hard problem is selecting/verifying the right candidate without laundering a hand-built lattice into a model-quality claim.
 
 That kills the naive version of the breakthrough. Raw visible-context adaptation is not enough. The promising mutation is:
 
-**Retrieval-Lattice Diffusion**: generate a lattice of allowed local repair candidates from visible context, training split bridge guesses, byte-class/morphology completions, and sampled diffusion proposals; then use the diffusion model as a verifier/remask controller instead of asking it to invent every byte from scratch.
+**Retrieval-Lattice Diffusion**: generate a lattice of allowed local repair candidates from visible context, training split bridge guesses, surface-unit splices, byte-class/morphology completions, and sampled diffusion proposals; then use the diffusion model as a verifier/remask controller instead of asking it to invent every byte from scratch.
 
-The next falsifiable edge is no longer generic "sampling." It is a two-stage scoreboard: if the correct answer is in the candidate lattice and the selector misses it, train the verifier; if the correct answer is absent, improve candidate generation with byte-class, morphology, and document-structure channels. This turns each failure into a named bottleneck instead of a vague "train bigger" answer.
+The next falsifiable edge is no longer generic "sampling." It is a two-stage scoreboard: if the correct answer is in the candidate lattice and the selector misses it, train or calibrate the verifier; if the correct answer is absent, improve candidate generation with byte-class, morphology, and document-structure channels. This turns each failure into a named bottleneck instead of a vague "train bigger" answer.
 
 ## Falsifiers
 

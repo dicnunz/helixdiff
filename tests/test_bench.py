@@ -1,14 +1,18 @@
 import unittest
 
 from helixdiff.bench import (
+    lattice_oracle_case,
     make_marked_cases,
     model_quality_label,
     morphology_candidates,
     nearest_visible_case,
+    surface_splice_candidates,
+    summarize_lattice_oracle,
     sha256_text,
     split_text,
     visible_suture_candidates,
 )
+from helixdiff.ngram import BigramGuide
 from helixdiff.tokenizer import ByteTokenizer
 
 
@@ -95,6 +99,118 @@ class BenchTest(unittest.TestCase):
             limit=16,
         )
         self.assertIn("iel'", {row["predicted_hole"] for row in rows})
+
+    def test_morphology_candidates_include_name_stem_prefix(self) -> None:
+        rows = morphology_candidates(
+            tokenizer=ByteTokenizer(),
+            marked_text="And [[Gabr]]iel's pumps were bright",
+            train_text="Nathaniel's book and Michael's cloak are nearby.",
+            limit=16,
+        )
+        self.assertIn("Gabr", {row["predicted_hole"] for row in rows})
+
+    def test_morphology_candidates_include_speaker_label_completion(self) -> None:
+        rows = morphology_candidates(
+            tokenizer=ByteTokenizer(),
+            marked_text="with needle and thread.\n\nTai[[lor:]]\nBut did you not",
+            train_text="The tailor mends. Another Tailor speaks.",
+            limit=16,
+        )
+        self.assertIn("lor:", {row["predicted_hole"] for row in rows})
+
+    def test_morphology_candidates_include_dash_bridge(self) -> None:
+        rows = morphology_candidates(
+            tokenizer=ByteTokenizer(),
+            marked_text="thy fortune slee[[p--d]]ie, rather",
+            train_text="sleep sleeper die fie lie.",
+            limit=32,
+        )
+        self.assertIn("p--d", {row["predicted_hole"] for row in rows})
+
+    def test_morphology_candidates_include_hyphen_morpheme_bridge(self) -> None:
+        rows = morphology_candidates(
+            tokenizer=ByteTokenizer(),
+            marked_text="full of con[[y-ca]]tching!",
+            train_text="cony rabbits and catching fish.",
+            limit=32,
+        )
+        self.assertIn("y-ca", {row["predicted_hole"] for row in rows})
+
+    def test_surface_splice_candidates_mine_possessive_prefix(self) -> None:
+        rows = surface_splice_candidates(
+            tokenizer=ByteTokenizer(),
+            marked_text="And [[Gabr]]iel's pumps were bright",
+            train_text="Gabriel's trumpet and Michael's cloak are nearby.",
+            limit=8,
+        )
+        self.assertIn("Gabr", {row["predicted_hole"] for row in rows})
+
+    def test_surface_splice_candidates_mine_punctuation_inside_surface_unit(self) -> None:
+        rows = surface_splice_candidates(
+            tokenizer=ByteTokenizer(),
+            marked_text="Thou let'st thy fortune slee[[p--d]]ie, rather;",
+            train_text="sleep--die, cony-catching! Tailor:",
+            limit=8,
+        )
+        self.assertIn("p--d", {row["predicted_hole"] for row in rows})
+
+    def test_lattice_oracle_case_reports_morphology_hit(self) -> None:
+        tokenizer = ByteTokenizer()
+        train_text = "Nathaniel's book and Michael's cloak are nearby."
+        row = lattice_oracle_case(
+            tokenizer=tokenizer,
+            marked_text="And Gabr[[iel']]s pumps were bright",
+            guide=BigramGuide.from_text(train_text, tokenizer),
+            train_text=train_text,
+            visible_limit=4,
+            morphology_limit=16,
+        )
+        self.assertTrue(row["oracle_candidate_exact"])
+        self.assertTrue(row["morphology_oracle_exact"])
+        self.assertIn("morphology_name_possessive_suffix", row["exact_candidate_sources"])
+
+    def test_lattice_oracle_case_reports_surface_hit(self) -> None:
+        tokenizer = ByteTokenizer()
+        train_text = "sleep--die, cony-catching! Tailor:"
+        row = lattice_oracle_case(
+            tokenizer=tokenizer,
+            marked_text="Thou let'st thy fortune slee[[p--d]]ie, rather;",
+            guide=BigramGuide.from_text(train_text, tokenizer),
+            train_text=train_text,
+            visible_limit=4,
+            morphology_limit=4,
+            surface_limit=8,
+        )
+        self.assertTrue(row["oracle_candidate_exact"])
+        self.assertTrue(row["surface_oracle_exact"])
+        self.assertTrue(any(source.startswith("surface_") for source in row["exact_candidate_sources"]))
+
+    def test_lattice_oracle_summary_splits_sources(self) -> None:
+        rows = [
+            {
+                "oracle_candidate_exact": True,
+                "visible_oracle_exact": False,
+                "morphology_oracle_exact": True,
+                "surface_oracle_exact": False,
+                "bridge_oracle_exact": False,
+                "unigram_oracle_exact": False,
+                "candidate_count": 7,
+            },
+            {
+                "oracle_candidate_exact": False,
+                "visible_oracle_exact": False,
+                "morphology_oracle_exact": False,
+                "surface_oracle_exact": False,
+                "bridge_oracle_exact": False,
+                "unigram_oracle_exact": False,
+                "candidate_count": 3,
+            },
+        ]
+        summary = summarize_lattice_oracle(rows)
+        self.assertEqual(summary["cases"], 2)
+        self.assertEqual(summary["oracle_exact_rate"], 0.5)
+        self.assertEqual(summary["morphology_oracle_exact_rate"], 0.5)
+        self.assertEqual(summary["avg_candidate_count"], 5.0)
 
 
 if __name__ == "__main__":

@@ -61,6 +61,12 @@ def build_breakthrough_plan() -> dict[str, Any]:
         "--config configs/proof_visible_reranker_oracle_smoke.yaml "
         "--out proof/visible_reranker_oracle_smoke.json --json"
     )
+    proxy_mask_contract_command = (
+        "uv run helixdiff-proxy-mask-selector-contract-smoke "
+        "--config configs/proof_proxy_mask_selector_contract_smoke.yaml "
+        "--out proof/proxy_mask_selector_contract_smoke.json "
+        "--contract-out proof/proxy_mask_selector_contract_smoke_contract.json --json"
+    )
     benchmark_command = strict_recipe["shell_commands"]["benchmark"]
     calibrate_command = strict_recipe["shell_commands"]["calibrate"]
     selector_contract_command = strict_recipe["shell_commands"]["selector_contract"]
@@ -78,17 +84,29 @@ def build_breakthrough_plan() -> dict[str, Any]:
         {
             "rank": 1,
             "name": "visible_reranker_oracle_smoke",
-            "thesis": "Before claiming a reranker breakthrough, prove it is model-free, diagnostic-only, and leakage-audited.",
+            "thesis": "Before claiming a reranker breakthrough, prove it is model-free, diagnostic-only, leakage-audited, and causally tied to visible context.",
             "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
-            "repo_move": "Emit the visible-reranker oracle smoke receipt before any heavy reranker claim.",
+            "repo_move": "Emit the visible-reranker oracle smoke receipt with shuffle and counterfactual-context falsification before any heavy reranker claim.",
             "proof_commands": [visible_smoke_command],
-            "pass_condition": "receipt has prior/surface/visible_reranker branches, calibration, apply=false, leakage audit, and shuffle falsification",
+            "pass_condition": "receipt has prior/surface/visible_reranker branches, calibration, apply=false, leakage audit, shuffle falsification, and causal-visible counterfactual context audit",
             "claim_if_passes": "model-free visible-context reranker proof only",
-            "kill_condition": "reranker is applied, labels choose the branch, shuffle does not collapse, or leakage flags fire",
+            "kill_condition": "reranker is applied, labels choose the branch, shuffle/counterfactual context does not collapse, or leakage flags fire",
             "heavy_slot_required": False,
         },
         {
             "rank": 2,
+            "name": "proxy_mask_selector_contract_smoke",
+            "thesis": "Choose a selector contract from visible proxy masks before target scoring, or do not trust the selector.",
+            "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
+            "repo_move": "Emit a ready selector contract from visible-only proxy masks while redacting target spans from calibration.",
+            "proof_commands": [proxy_mask_contract_command],
+            "pass_condition": "receipt has contract_ready=true, target_metric_used_for_selection=false, pseudo-heldout beats shuffle, and target metrics remain diagnostic",
+            "claim_if_passes": "visible-only selector predeclaration smoke only",
+            "kill_condition": "proxy heldout fails shuffle, target gold leaks into selection, or target metrics are used to choose the contract",
+            "heavy_slot_required": False,
+        },
+        {
+            "rank": 3,
             "name": "gold_blind_bi_anchor_oracle",
             "thesis": "If the exact span is not in the train-only visible-anchor lattice, no sampler can rescue the run.",
             "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
@@ -103,7 +121,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": False,
         },
         {
-            "rank": 3,
+            "rank": 4,
             "name": "strict_repair_lattice_proof",
             "thesis": "Make the next benchmark a predeclared trial, not a sampler search.",
             "source_ids": ["arxiv:2406.07524", "arxiv:2503.09573"],
@@ -118,7 +136,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": True,
         },
         {
-            "rank": 4,
+            "rank": 5,
             "name": "frozen_selector_heldout_trial",
             "thesis": "A selector choice is not evidence until a separate benchmark loads it from a ready contract.",
             "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
@@ -130,7 +148,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": True,
         },
         {
-            "rank": 5,
+            "rank": 6,
             "name": "visible_hole_reranker",
             "thesis": "The answer is often in a tiny top-k set; the breakthrough is selecting it without hidden leakage.",
             "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
@@ -152,7 +170,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": False,
         },
         {
-            "rank": 6,
+            "rank": 7,
             "name": "frequency_block_suture_curriculum",
             "thesis": "Mac-local training must spend scarce gradient signal on rare boundary bytes and local blocks.",
             "source_ids": ["arxiv:2503.09573", "aclanthology:2025.babylm-main.38"],
@@ -170,7 +188,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": True,
         },
         {
-            "rank": 7,
+            "rank": 8,
             "name": "latent_surface_signature",
             "thesis": "A tiny model needs cheap joint structure; surface-unit signatures can mimic some latent-channel benefits.",
             "source_ids": ["arxiv:2510.18114", "arxiv:2502.09992"],
@@ -192,9 +210,13 @@ def build_breakthrough_plan() -> dict[str, Any]:
         "source_refresh_date": SOURCE_REFRESH_DATE,
         "chatgpt_teammate_status": {
             "requested": True,
-            "usable_this_run": False,
-            "blocker": "Current Chrome/ChatGPT bridge probe fails at node_repl/js Transport closed.",
-            "claim": "No fresh GPT-5.5 Pro contribution is claimed for this continuation.",
+            "usable_this_run": True,
+            "model_mode": "Extended Pro",
+            "conversation_url": "https://chatgpt.com/c/6a0f1cf7-b734-83ea-afa1-1a92152682f1",
+            "latest_request": "next cheap breakthrough critique after selector-contract lane",
+            "latest_response_status": "answered",
+            "latest_recommendation": "proxy-mask selector self-calibration",
+            "claim": "Extended Pro recommended a visible-only proxy-mask selector contract; the repo implements a smoke proof for that lane.",
             "recorded_prior_note": {
                 "model_mode": "Extended Pro",
                 "conversation_url": "https://chatgpt.com/c/6a0f1cf7-b734-83ea-afa1-1a92152682f1",
@@ -202,11 +224,11 @@ def build_breakthrough_plan() -> dict[str, Any]:
                     "Recorded prior note: test the model-free visible-reranker oracle smoke "
                     "before spending Mac heat on model scoring."
                 ),
-                "verification_status": "recorded_url_not_reverified_by_current_bridge",
+                "verification_status": "current_chrome_readback_reverified_url",
             },
         },
         "claim_boundary": CLAIM_BOUNDARY,
-        "current_best_move": "visible_reranker_oracle_smoke",
+        "current_best_move": "proxy_mask_selector_contract_smoke",
         "sources": DIFFUSION_LM_SOURCES,
         "lanes": lanes,
         "release_standard": [
@@ -281,8 +303,10 @@ def _format_markdown(plan: dict[str, Any]) -> str:
             )
         )
     lines.extend(["", "## Command Ladder", ""])
-    top_lane = plan["lanes"][0]
-    for index, command in enumerate(top_lane["proof_commands"], start=1):
+    current_lane = next(
+        lane for lane in plan["lanes"] if lane["name"] == plan["current_best_move"]
+    )
+    for index, command in enumerate(current_lane["proof_commands"], start=1):
         lines.append(f"{index}. `{command}`")
     lines.extend(["", "Cheap mutation if the heavy lane fails:"])
     cheap_lanes = [lane for lane in plan["lanes"] if not lane["heavy_slot_required"]]

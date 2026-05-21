@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import random
 import subprocess
 from collections import Counter
@@ -42,6 +43,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "lattice_bi_anchor_candidates": 8,
     "lattice_bi_anchor_sizes": [32, 24, 16, 12, 8, 6, 4],
     "shuffle_trials": 3,
+    "counterfactual_context_chars": 12,
 }
 
 
@@ -122,6 +124,17 @@ def _branch_summary(case_rows: list[dict[str, Any]], branch: str) -> dict[str, A
     }
 
 
+def _counterfactual_marked_text(marked_text: str, mode: str, *, context_chars: int) -> str:
+    before, rest = marked_text.split("[[", 1)
+    hole, after = rest.split("]]", 1)
+    width = max(1, int(context_chars))
+    if mode == "blank_context":
+        return f"{' ' * min(len(before), width)}[[{hole}]]{' ' * min(len(after), width)}"
+    if mode == "swapped_edges":
+        return f"{after[:width]}[[{hole}]]{before[-width:]}"
+    raise ValueError(f"unknown counterfactual context mode: {mode}")
+
+
 def _shuffle_falsification(
     *,
     case_rows: list[dict[str, Any]],
@@ -152,6 +165,47 @@ def _shuffle_falsification(
     }
 
 
+def _counterfactual_context_summary(case_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    if not case_rows:
+        return {
+            "verdict": "fail",
+            "real_visible_reranker_selected_exact": 0.0,
+            "blank_context_selected_exact": 0.0,
+            "swapped_edges_selected_exact": 0.0,
+            "causal_visible_selected_exact": 0.0,
+            "causal_visible_top4_exact": 0.0,
+            "context_specificity_gap": 0.0,
+            "apply": False,
+        }
+    cases = len(case_rows)
+    real_rate = sum(1.0 for row in case_rows if row["visible_reranker_selected_exact"]) / cases
+    blank_rate = sum(
+        1.0 for row in case_rows if row["counterfactual_context"]["blank_context_selected_exact"]
+    ) / cases
+    swapped_rate = sum(
+        1.0 for row in case_rows if row["counterfactual_context"]["swapped_edges_selected_exact"]
+    ) / cases
+    causal_rate = sum(
+        1.0 for row in case_rows if row["counterfactual_context"]["causal_visible_selected_exact"]
+    ) / cases
+    causal_top4 = sum(
+        1.0 for row in case_rows if row["counterfactual_context"]["causal_visible_top4_exact"]
+    ) / cases
+    return {
+        "verdict": "pass" if causal_rate >= real_rate and max(blank_rate, swapped_rate) < real_rate else "fail",
+        "real_visible_reranker_selected_exact": real_rate,
+        "blank_context_selected_exact": blank_rate,
+        "swapped_edges_selected_exact": swapped_rate,
+        "causal_visible_selected_exact": causal_rate,
+        "causal_visible_top4_exact": causal_top4,
+        "context_specificity_gap": real_rate - max(blank_rate, swapped_rate),
+        "apply": False,
+        "claim_boundary": (
+            "diagnostic-only causal visible-context audit; counterfactual labels never select the held-out answer"
+        ),
+    }
+
+
 def evaluate_visible_reranker_oracle_contract(receipt: dict[str, Any]) -> dict[str, Any]:
     """Make the model-free smoke fail closed when its anti-leak checks stop falsifying."""
 
@@ -165,21 +219,30 @@ def evaluate_visible_reranker_oracle_contract(receipt: dict[str, Any]) -> dict[s
     sweep = sweep if isinstance(sweep, dict) else {}
     visible = sweep.get("visible_reranker", {})
     visible = visible if isinstance(visible, dict) else {}
+    counterfactual = receipt.get("counterfactual_context", {})
+    counterfactual = counterfactual if isinstance(counterfactual, dict) else {}
 
     try:
         real_selected_exact = float(visible.get("selected_exact", 0.0))
         shuffled_selected_exact = float(shuffle.get("visible_reranker_selected_exact", 1.0))
         real_lattice_rate = float(lattice.get("gold_in_lattice_at_128", 0.0))
         shuffled_lattice_rate = float(shuffle.get("gold_in_lattice_at_128", 1.0))
+        blank_context_selected_exact = float(counterfactual.get("blank_context_selected_exact", 1.0))
+        swapped_edges_selected_exact = float(counterfactual.get("swapped_edges_selected_exact", 1.0))
+        causal_visible_selected_exact = float(counterfactual.get("causal_visible_selected_exact", 0.0))
     except (TypeError, ValueError):
         real_selected_exact = 0.0
         shuffled_selected_exact = 1.0
         real_lattice_rate = 0.0
         shuffled_lattice_rate = 1.0
+        blank_context_selected_exact = 1.0
+        swapped_edges_selected_exact = 1.0
+        causal_visible_selected_exact = 0.0
 
     checks = {
         "model_not_loaded": receipt.get("model_load") is False,
         "visible_reranker_diagnostic_only": visible.get("apply") is False,
+        "causal_visible_context_diagnostic_only": counterfactual.get("apply") is False,
         "gold_not_used_for_selection": leakage.get("gold_used_for_selection") is False,
         "masked_bytes_not_seen_by_features": leakage.get("masked_bytes_seen_by_features") is False,
         "no_train_split_target_hole_leakage": int(leakage.get("target_hole_seen_in_train_split", 1) or 0) == 0,
@@ -187,6 +250,11 @@ def evaluate_visible_reranker_oracle_contract(receipt: dict[str, Any]) -> dict[s
         "no_same_doc_hits": int(leakage.get("same_doc_hits", 1) or 0) == 0,
         "shuffle_falsification_drops_selected_exact": shuffled_selected_exact < real_selected_exact,
         "shuffle_falsification_drops_lattice_coverage": shuffled_lattice_rate < real_lattice_rate,
+        "counterfactual_context_drops_selected_exact": max(
+            blank_context_selected_exact, swapped_edges_selected_exact
+        )
+        < real_selected_exact,
+        "causal_visible_context_no_harm": causal_visible_selected_exact >= real_selected_exact,
     }
     missing = [name for name, passed in checks.items() if not passed]
     return {
@@ -198,6 +266,9 @@ def evaluate_visible_reranker_oracle_contract(receipt: dict[str, Any]) -> dict[s
             "shuffle_visible_reranker_selected_exact": shuffled_selected_exact,
             "gold_in_lattice_at_128": real_lattice_rate,
             "shuffle_gold_in_lattice_at_128": shuffled_lattice_rate,
+            "blank_context_selected_exact": blank_context_selected_exact,
+            "swapped_edges_selected_exact": swapped_edges_selected_exact,
+            "causal_visible_selected_exact": causal_visible_selected_exact,
         },
         "claim_boundary": "model_free_oracle_smoke_only_no_generation_claim",
     }
@@ -277,6 +348,67 @@ def build_receipt(config: dict[str, Any]) -> dict[str, Any]:
         prior_selected = candidate_keys[0] if candidate_keys else ()
         surface_selected = min(candidate_keys, key=lambda key: surface_ranks.get(key, 10**9), default=())
         reranker_selected = min(candidate_keys, key=lambda key: reranker_ranks.get(key, 10**9), default=())
+        counterfactual_surfaces: dict[str, dict[tuple[int, ...], dict[str, Any]]] = {}
+        counterfactual_selected: dict[str, tuple[int, ...]] = {}
+        counterfactual_ranks: dict[str, int | None] = {}
+        for mode in ("blank_context", "swapped_edges"):
+            variant_marked = _counterfactual_marked_text(
+                marked,
+                mode,
+                context_chars=int(config.get("counterfactual_context_chars", 12)),
+            )
+            variant_surface = surface_verifier_candidate_report(ranked, marked_text=variant_marked, train_text=train_text)
+            variant_reranker = visible_reranker_candidate_report(
+                _ranked_candidates_with_surface_report(ranked, variant_surface),
+                prior_weight=float(selected_weights["prior_weight"]),
+                surface_weight=float(selected_weights["surface_weight"]),
+            )
+            counterfactual_surfaces[mode] = variant_surface
+            counterfactual_selected[mode] = min(
+                candidate_keys,
+                key=lambda key: int(variant_reranker[key]["visible_reranker_rank"]),
+                default=(),
+            )
+            counterfactual_ranks[mode] = (
+                int(variant_reranker[target_key]["visible_reranker_rank"])
+                if target_key in variant_reranker
+                else None
+            )
+        causal_rows: list[dict[str, Any]] = []
+        for candidate in ranked:
+            key = tuple(int(token_id) for token_id in candidate["ids"])
+            raw_prior = candidate.get("prior_score")
+            prior_score = float(raw_prior) if raw_prior is not None else -1e9
+            if not math.isfinite(prior_score):
+                prior_score = -1e9
+            real_surface = float(surface[key]["surface_verifier_score"])
+            null_surface = max(
+                float(counterfactual_surfaces["blank_context"][key]["surface_verifier_score"]),
+                float(counterfactual_surfaces["swapped_edges"][key]["surface_verifier_score"]),
+            )
+            surface_lift = real_surface - null_surface
+            causal_rows.append(
+                {
+                    "ids": key,
+                    "predicted_hole": str(candidate["predicted_hole"]),
+                    "prior_rank": int(candidate["prior_rank"]),
+                    "score": (
+                        float(selected_weights["prior_weight"]) * prior_score
+                        + float(selected_weights["surface_weight"]) * surface_lift
+                    ),
+                    "surface_lift": surface_lift,
+                }
+            )
+        causal_rows.sort(
+            key=lambda row: (
+                -float(row["score"]),
+                int(row["prior_rank"]),
+                str(row["predicted_hole"]),
+            )
+        )
+        causal_selected = causal_rows[0]["ids"] if causal_rows else ()
+        causal_rank = next((rank for rank, row in enumerate(causal_rows) if row["ids"] == target_key), None)
+        target_causal_row = next((row for row in causal_rows if row["ids"] == target_key), None)
         bi_anchor_rows = bi_anchor_gap_candidates(
             tokenizer=tokenizer,
             marked_text=marked,
@@ -311,6 +443,19 @@ def build_receipt(config: dict[str, Any]) -> dict[str, Any]:
                     "apply": False,
                     "calibration_cases": calibration["calibration_cases"],
                 },
+                "counterfactual_context": {
+                    "blank_context_selected_exact": counterfactual_selected["blank_context"] == target_key,
+                    "blank_context_rank": counterfactual_ranks["blank_context"],
+                    "swapped_edges_selected_exact": counterfactual_selected["swapped_edges"] == target_key,
+                    "swapped_edges_rank": counterfactual_ranks["swapped_edges"],
+                    "causal_visible_selected_exact": causal_selected == target_key,
+                    "causal_visible_rank": causal_rank,
+                    "causal_visible_top4_exact": causal_rank is not None and causal_rank < 4,
+                    "target_surface_lift": (
+                        float(target_causal_row["surface_lift"]) if target_causal_row is not None else None
+                    ),
+                    "apply": False,
+                },
                 "_candidate_keys_at_128": [list(key) for key in candidate_keys[:128]],
                 "_visible_reranker_selected_key": list(reranker_selected),
             }
@@ -331,6 +476,7 @@ def build_receipt(config: dict[str, Any]) -> dict[str, Any]:
             "apply": False,
         },
     }
+    counterfactual_context = _counterfactual_context_summary(case_rows)
     shuffle = _shuffle_falsification(
         case_rows=case_rows,
         target_keys=target_keys,
@@ -371,6 +517,7 @@ def build_receipt(config: dict[str, Any]) -> dict[str, Any]:
             "p95_candidate_count": candidate_counts[p95_index] if candidate_counts else 0,
         },
         "selector_anchor_sweep": selector_anchor_sweep,
+        "counterfactual_context": counterfactual_context,
         "leakage": leakage,
         "shuffle_falsification": shuffle,
         "cases": [

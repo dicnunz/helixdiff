@@ -30,6 +30,7 @@ helixdiff-breakthrough-plan = "helixdiff.breakthrough:main"
 helixdiff-verify-scratch = "helixdiff.verify_scratch:main"
 helixdiff-selector-contract = "helixdiff.contract:main"
 helixdiff-visible-reranker-oracle-smoke = "helixdiff.proofs.visible_reranker_oracle_smoke:main"
+helixdiff-proxy-mask-selector-contract-smoke = "helixdiff.proofs.proxy_mask_selector_contract_smoke:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

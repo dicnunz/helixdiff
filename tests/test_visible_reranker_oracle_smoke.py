@@ -43,6 +43,19 @@ class VisibleRerankerOracleSmokeTests(unittest.TestCase):
         self.assertIn("shuffle_falsification", receipt)
         self.assertEqual(receipt["shuffle_falsification"]["num_trials"], 3)
         self.assertIn("bi_anchor_gold_in_lattice_rate", receipt["lattice"])
+        self.assertEqual(receipt["counterfactual_context"]["verdict"], "pass")
+        self.assertFalse(receipt["counterfactual_context"]["apply"])
+        self.assertLess(
+            receipt["counterfactual_context"]["blank_context_selected_exact"],
+            receipt["counterfactual_context"]["real_visible_reranker_selected_exact"],
+        )
+        self.assertGreaterEqual(
+            receipt["counterfactual_context"]["causal_visible_selected_exact"],
+            receipt["counterfactual_context"]["real_visible_reranker_selected_exact"],
+        )
+        self.assertIn("counterfactual_context", receipt["cases"][0])
+        self.assertTrue(receipt["proof_contract"]["checks"]["counterfactual_context_drops_selected_exact"])
+        self.assertTrue(receipt["proof_contract"]["checks"]["causal_visible_context_no_harm"])
         self.assertTrue(receipt["proof_contract"]["passed"])
         self.assertFalse(receipt["proof_contract"]["missing"])
         self.assertTrue(receipt["proof_contract"]["checks"]["shuffle_falsification_drops_selected_exact"])
@@ -58,6 +71,17 @@ class VisibleRerankerOracleSmokeTests(unittest.TestCase):
 
         self.assertFalse(contract["passed"])
         self.assertIn("shuffle_falsification_drops_selected_exact", contract["missing"])
+
+    def test_contract_fails_when_counterfactual_context_does_not_drop(self) -> None:
+        receipt = copy.deepcopy(self.receipt)
+        real_rate = receipt["counterfactual_context"]["real_visible_reranker_selected_exact"]
+        receipt["counterfactual_context"]["blank_context_selected_exact"] = real_rate
+        receipt["counterfactual_context"]["swapped_edges_selected_exact"] = real_rate
+
+        contract = evaluate_visible_reranker_oracle_contract(receipt)
+
+        self.assertFalse(contract["passed"])
+        self.assertIn("counterfactual_context_drops_selected_exact", contract["missing"])
 
 
 if __name__ == "__main__":

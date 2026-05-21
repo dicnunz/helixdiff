@@ -19,27 +19,50 @@ class BreakthroughPlanTests(unittest.TestCase):
         self.assertIn("arxiv:2510.18114", source_ids)
         self.assertIn("strict_repair_lattice_proof", lane_names)
         self.assertIn("visible_reranker_oracle_smoke", lane_names)
+        self.assertIn("proxy_mask_selector_contract_smoke", lane_names)
         self.assertIn("gold_blind_bi_anchor_oracle", lane_names)
         self.assertIn("frozen_selector_heldout_trial", lane_names)
         self.assertIn("visible_hole_reranker", lane_names)
-        self.assertFalse(plan["chatgpt_teammate_status"]["usable_this_run"])
-        self.assertIn("Transport closed", plan["chatgpt_teammate_status"]["blocker"])
-        self.assertIn("No fresh GPT-5.5 Pro contribution", plan["chatgpt_teammate_status"]["claim"])
+        self.assertIn("proxy_mask_selector_contract_smoke", lane_names)
+        self.assertTrue(plan["chatgpt_teammate_status"]["usable_this_run"])
+        self.assertEqual(plan["chatgpt_teammate_status"]["model_mode"], "Extended Pro")
+        self.assertIn("chatgpt.com/c/", plan["chatgpt_teammate_status"]["conversation_url"])
+        self.assertIn("proxy-mask selector", plan["chatgpt_teammate_status"]["latest_recommendation"])
         prior_note = plan["chatgpt_teammate_status"]["recorded_prior_note"]
         self.assertEqual(prior_note["model_mode"], "Extended Pro")
         self.assertIn("chatgpt.com/c/", prior_note["conversation_url"])
         self.assertIn("visible-reranker oracle smoke", prior_note["contribution"])
-        self.assertEqual(prior_note["verification_status"], "recorded_url_not_reverified_by_current_bridge")
+        self.assertEqual(prior_note["verification_status"], "current_chrome_readback_reverified_url")
 
     def test_top_lane_reuses_predeclared_recipe_and_gate(self) -> None:
         plan = build_breakthrough_plan()
-        top_lane = plan["lanes"][0]
+        top_lane = [lane for lane in plan["lanes"] if lane["name"] == "visible_reranker_oracle_smoke"][0]
         proof_commands = "\n".join(top_lane["proof_commands"])
 
-        self.assertEqual(top_lane["name"], plan["current_best_move"])
         self.assertFalse(top_lane["heavy_slot_required"])
+        self.assertIn("counterfactual context", top_lane["kill_condition"])
         self.assertIn("helixdiff-visible-reranker-oracle-smoke", proof_commands)
         self.assertIn("--out proof/visible_reranker_oracle_smoke.json", proof_commands)
+
+    def test_current_best_move_is_proxy_mask_contract_smoke(self) -> None:
+        plan = build_breakthrough_plan()
+        lane = [lane for lane in plan["lanes"] if lane["name"] == plan["current_best_move"]][0]
+        proof_commands = "\n".join(lane["proof_commands"])
+
+        self.assertEqual(lane["name"], "proxy_mask_selector_contract_smoke")
+        self.assertFalse(lane["heavy_slot_required"])
+        self.assertIn("helixdiff-proxy-mask-selector-contract-smoke", proof_commands)
+        self.assertIn("--contract-out proof/proxy_mask_selector_contract_smoke_contract.json", proof_commands)
+
+    def test_proxy_mask_selector_contract_lane_is_visible_only(self) -> None:
+        plan = build_breakthrough_plan()
+        lane = [lane for lane in plan["lanes"] if lane["name"] == "proxy_mask_selector_contract_smoke"][0]
+        proof_commands = "\n".join(lane["proof_commands"])
+
+        self.assertFalse(lane["heavy_slot_required"])
+        self.assertIn("helixdiff-proxy-mask-selector-contract-smoke", proof_commands)
+        self.assertIn("--contract-out proof/proxy_mask_selector_contract_smoke_contract.json", proof_commands)
+        self.assertIn("target_metric_used_for_selection=false", lane["pass_condition"])
 
     def test_bi_anchor_lane_reuses_no_model_oracle(self) -> None:
         plan = build_breakthrough_plan()

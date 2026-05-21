@@ -1,7 +1,7 @@
 {
   "proof_name": "visible_reranker_oracle_smoke",
-  "commit": "b4ac2b4",
-  "git_dirty": true,
+  "commit": "511b621",
+  "git_dirty": false,
   "model_load": false,
   "device": "cpu",
   "num_examples": 2,
@@ -125,6 +125,28 @@
       }
     }
   ],
-  "verdict": "pass",
-  "claim_boundary": "model-free visible-context reranker proof only; reranker apply=false and no generation claim"
+  "claim_boundary": "model-free visible-context reranker proof only; reranker apply=false and no generation claim",
+  "proof_contract": {
+    "passed": true,
+    "missing": [],
+    "checks": {
+      "model_not_loaded": true,
+      "visible_reranker_diagnostic_only": true,
+      "gold_not_used_for_selection": true,
+      "masked_bytes_not_seen_by_features": true,
+      "no_train_split_target_hole_leakage": true,
+      "no_eval_doc_hits": true,
+      "no_same_doc_hits": true,
+      "shuffle_falsification_drops_selected_exact": true,
+      "shuffle_falsification_drops_lattice_coverage": true
+    },
+    "observed": {
+      "visible_reranker_selected_exact": 1.0,
+      "shuffle_visible_reranker_selected_exact": 0.3333333333333333,
+      "gold_in_lattice_at_128": 1.0,
+      "shuffle_gold_in_lattice_at_128": 0.3333333333333333
+    },
+    "claim_boundary": "model_free_oracle_smoke_only_no_generation_claim"
+  },
+  "verdict": "pass"
 }

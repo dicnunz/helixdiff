@@ -216,16 +216,16 @@ def build_breakthrough_plan() -> dict[str, Any]:
         "source_refresh_date": SOURCE_REFRESH_DATE,
         "chatgpt_teammate_status": {
             "requested": True,
-            "usable_this_run": True,
-            "model_mode": "Extended Pro",
-            "conversation_url": "https://chatgpt.com/c/6a0f1cf7-b734-83ea-afa1-1a92152682f1",
-            "latest_request": "fresh Extended Pro critique for turning proxy self-calibration into target lift",
-            "latest_response_status": "partial_but_actionable",
-            "latest_recommendation": "target retrieval geometry-shaped proxy masks",
-            "blocker": None,
+            "usable_this_run": False,
+            "model_mode": "unverified_current_runtime",
+            "conversation_url": None,
+            "latest_request": "fresh GPT-5.5 Pro teammate re-probe for selector-contract continuation",
+            "latest_response_status": "blocked",
+            "latest_recommendation": None,
+            "blocker": "node_repl/js Transport closed before the Chrome browser-client could list ChatGPT tabs",
             "claim": (
-                "Extended Pro identified the current failure as generic visible pseudo masks not being target-shaped; "
-                "the repo now implements target-retrieval-geometry proxy mode as a fail-closed probe."
+                "No fresh GPT-5.5 Pro contribution is claimed in this run; current work proceeds from "
+                "local proofs, source-backed constraints, and recorded prior notes only."
             ),
             "recorded_prior_note": {
                 "model_mode": "Extended Pro",
@@ -234,7 +234,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
                     "Recorded prior note: test the model-free visible-reranker oracle smoke "
                     "before spending Mac heat on model scoring."
                 ),
-                "verification_status": "current_chrome_readback_reverified_url",
+                "verification_status": "prior_recorded_note_not_reverified_current_runtime",
             },
         },
         "claim_boundary": CLAIM_BOUNDARY,

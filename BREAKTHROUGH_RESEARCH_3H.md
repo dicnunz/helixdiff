@@ -140,6 +140,8 @@ The follow-up selector audit makes the bottleneck sharper. A fixed structural pr
 
 That does not prove accuracy. It proves the bottleneck moved. Before this patch, the system could not select missing answers. After this patch, the next hard problem is selecting/verifying the right candidate without laundering a hand-built lattice into a model-quality claim.
 
+Source refresh, 2026-05-21: D3PM showed that the discrete corruption transition is a first-class design choice, including absorbing states that connect diffusion to masked and autoregressive modeling (`https://arxiv.org/abs/2107.03006`). SEDD showed that ratio/score-style objectives can make discrete diffusion language models competitive and useful for controllable infilling (`https://arxiv.org/abs/2310.16834`). XDLM's 2026 claim is a useful warning shot: the frontier is moving toward kernels that bridge masked-diffusion understanding and uniform-noise generation, not just toward bigger left-to-right samplers (`https://arxiv.org/abs/2602.01362`). For HelixDiff on a Mac, the actionable translation is narrow: do not chase a huge general LM; build a tiny repair specialist whose corruption kernel, candidate lattice, and verifier calibration are all optimized for visible-context document repair.
+
 That kills the naive version of the breakthrough. Raw visible-context adaptation is not enough. The promising mutation is:
 
 **Retrieval-Lattice Diffusion**: generate a lattice of allowed local repair candidates from visible context, training split bridge guesses, surface-unit splices, byte-class/morphology completions, and sampled diffusion proposals; then use the diffusion model as a verifier/remask controller instead of asking it to invent every byte from scratch.

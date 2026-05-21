@@ -27,7 +27,8 @@
     "min_masked_accuracy_gain": 0.015,
     "min_infill_lift": 0.0,
     "min_repair_cases": 4,
-    "min_repair_lift": 0.0
+    "min_repair_lift": 0.0,
+    "require_repair_proof_contract": false
   },
   "checks": {
     "masked_ce_improved": true,
@@ -65,6 +66,47 @@
       "retrieval_lattice_beats_nearest_visible": true,
       "retrieval_lattice_exact_beats_nearest_visible": true,
       "frozen_context_preserved": true
+    },
+    "proof_contract_required": false,
+    "repair_proof_contract": {
+      "passed": false,
+      "claim_boundary": "repair_lattice_claim_requires_predeclared_heldout_proof_contract",
+      "missing": [
+        "surface_verifier_diagnostics_reported",
+        "selector_anchor_margin_sweep_reported",
+        "local_surface_anchor_calibration_reported",
+        "local_surface_anchor_margin_sweep_reported"
+      ],
+      "checks": {
+        "checkpoint_sha256_recorded": true,
+        "split_hashes_recorded": true,
+        "unseen_holes_required": true,
+        "retrieval_lattice_available": true,
+        "nearest_visible_available": true,
+        "case_rows_match_summary": true,
+        "oracle_scored_set_reported": true,
+        "surface_verifier_diagnostics_reported": false,
+        "selector_margin_sweep_reported": true,
+        "selector_anchor_margin_sweep_reported": false,
+        "local_surface_anchor_calibration_reported": false,
+        "local_surface_anchor_margin_sweep_reported": false
+      },
+      "current": {
+        "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt",
+        "cases": 1,
+        "case_rows": 1,
+        "configured_selector_margin": 3.0,
+        "configured_selector_anchor": null,
+        "configured_selector_anchor_sweep": null,
+        "configured_selector_margin_sweep": [
+          0.0,
+          1.0,
+          2.0,
+          3.0,
+          5.0
+        ],
+        "configured_local_surface_anchor_calibration": null
+      }
     }
   }
 }

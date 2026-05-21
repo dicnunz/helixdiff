@@ -2,11 +2,43 @@ from __future__ import annotations
 
 import unittest
 
-from helixdiff.gate import evaluate_gate, evaluate_repair_lattice_gate
+from helixdiff.gate import evaluate_gate, evaluate_repair_lattice_gate, evaluate_repair_proof_contract
 
 
 def _variant(byte_accuracy: float, exact: float = 0.0) -> dict:
     return {"summary": {"byte_accuracy": byte_accuracy, "exact_match_rate": exact, "frozen_context_ok": True}}
+
+
+def _strict_lattice_variant(byte_accuracy: float, exact: float, cases: int = 4) -> dict:
+    case_rows = []
+    for _ in range(cases):
+        case_rows.append(
+            {
+                "selector_margin_sweep": [{"selector_margin": 0.0, "exact": True, "byte_accuracy": 1.0}],
+                "selector_anchor_margin_sweep": [
+                    {"selector_anchor": "prior", "selector_margin": 0.0, "exact": True, "byte_accuracy": 1.0}
+                ],
+                "local_surface_anchor_calibration": {"selected_selector_anchor": "prior", "applied": False},
+            }
+        )
+    return {
+        "summary": {
+            "byte_accuracy": byte_accuracy,
+            "exact_match_rate": exact,
+            "frozen_context_ok": True,
+            "cases": cases,
+            "oracle_candidate_exact_in_scored_set_rate": 1.0,
+            "surface_verifier_selected_exact_rate": 1.0,
+            "surface_verifier_top4_exact_rate": 1.0,
+            "surface_verifier_harm_count": 0,
+            "surface_verifier_help_count": 0,
+            "selector_margin_sweep": {"0": {"cases": cases}},
+            "selector_anchor_margin_sweep": {"prior": {"0": {"cases": cases}}},
+            "local_surface_anchor_calibration_cases": cases,
+            "local_surface_anchor_margin_sweep": {"0": {"cases": cases}},
+        },
+        "cases": case_rows,
+    }
 
 
 def _report(
@@ -24,6 +56,10 @@ def _report(
 ) -> dict:
     report = {
         "checkpoint": "checkpoint.pt",
+        "checkpoint_sha256": "abc",
+        "train_split_sha256": "train",
+        "validation_split_sha256": "validation",
+        "case_filter": {"require_unseen_hole": True},
         "quality_label": "mechanism_checkpoint",
         "masked_eval": {"loss": loss, "masked_accuracy": acc},
         "infill": {
@@ -120,6 +156,79 @@ class GateTests(unittest.TestCase):
         self.assertFalse(report["passed"])
         self.assertFalse(report["checks"]["retrieval_lattice_beats_nearest_visible"])
         self.assertEqual(report["claim_boundary"], "mechanism_only_claim_required_do_not_call_model_sota")
+
+    def test_repair_proof_contract_reports_missing_diagnostics(self) -> None:
+        current = _report(
+            loss=3.2,
+            acc=0.14,
+            bridge=0.1,
+            unguided=0.1,
+            guided=0.1,
+            nearest=0.4,
+            lattice=0.6,
+            nearest_exact=0.25,
+            lattice_exact=0.5,
+            lattice_cases=8,
+        )
+
+        contract = evaluate_repair_proof_contract(current)
+
+        self.assertFalse(contract["passed"])
+        self.assertIn("selector_anchor_margin_sweep_reported", contract["missing"])
+        self.assertIn("local_surface_anchor_calibration_reported", contract["missing"])
+
+    def test_required_repair_proof_contract_blocks_metric_only_lattice_win(self) -> None:
+        current = _report(
+            loss=3.2,
+            acc=0.14,
+            bridge=0.1,
+            unguided=0.1,
+            guided=0.1,
+            nearest=0.4,
+            lattice=0.6,
+            nearest_exact=0.25,
+            lattice_exact=0.5,
+            lattice_cases=8,
+        )
+
+        report = evaluate_repair_lattice_gate(current, min_cases=4, require_proof_contract=True)
+
+        self.assertFalse(report["passed"])
+        self.assertTrue(report["checks"]["retrieval_lattice_beats_nearest_visible"])
+        self.assertFalse(report["checks"]["repair_proof_contract_met"])
+        self.assertEqual(
+            report["repair_proof_contract"]["claim_boundary"],
+            "repair_lattice_claim_requires_predeclared_heldout_proof_contract",
+        )
+
+    def test_required_repair_proof_contract_allows_predeclared_lattice_win(self) -> None:
+        current = _report(
+            loss=3.2,
+            acc=0.14,
+            bridge=0.1,
+            unguided=0.1,
+            guided=0.1,
+            nearest=0.4,
+            lattice=None,
+            nearest_exact=0.25,
+            lattice_exact=0.5,
+        )
+        current["infill"]["retrieval_lattice"] = _strict_lattice_variant(0.6, 0.5, cases=8)
+        current["case_filter"].update(
+            {
+                "lattice_selector_margin": 3.0,
+                "lattice_selector_anchor": "surface",
+                "lattice_selector_anchor_sweep": ["prior", "surface"],
+                "lattice_selector_margin_sweep": [0, 1, 2, 3, 5],
+                "lattice_local_surface_anchor_calibration": True,
+            }
+        )
+
+        report = evaluate_repair_lattice_gate(current, min_cases=4, require_proof_contract=True)
+
+        self.assertTrue(report["passed"])
+        self.assertTrue(report["repair_proof_contract"]["passed"])
+        self.assertEqual(report["claim_boundary"], "narrow_repair_lattice_claim_allowed_not_model_sota")
 
 
 if __name__ == "__main__":

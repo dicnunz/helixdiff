@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import Any
 
 
+REPAIR_PROOF_CONTRACT_BOUNDARY = "repair_lattice_claim_requires_predeclared_heldout_proof_contract"
+
+
 def _masked_loss(report: dict[str, Any]) -> float:
     return float(report["masked_eval"]["loss"])
 
@@ -30,8 +33,95 @@ def _has_variant(report: dict[str, Any], variant: str) -> bool:
     return isinstance(report.get("infill", {}).get(variant), dict)
 
 
+def _variant_summary(report: dict[str, Any], variant: str) -> dict[str, Any]:
+    summary = report.get("infill", {}).get(variant, {}).get("summary", {})
+    return summary if isinstance(summary, dict) else {}
+
+
+def _variant_cases(report: dict[str, Any], variant: str) -> list[dict[str, Any]]:
+    cases = report.get("infill", {}).get(variant, {}).get("cases", [])
+    if not isinstance(cases, list):
+        return []
+    return [case for case in cases if isinstance(case, dict)]
+
+
 def _frozen_context_ok(report: dict[str, Any], variant: str) -> bool:
     return bool(report["infill"][variant]["summary"].get("frozen_context_ok", False))
+
+
+def _nonempty_dict(value: Any) -> bool:
+    return isinstance(value, dict) and bool(value)
+
+
+def _any_case_has(cases: list[dict[str, Any]], field: str) -> bool:
+    return any(bool(case.get(field)) for case in cases)
+
+
+def evaluate_repair_proof_contract(report: dict[str, Any]) -> dict[str, Any]:
+    """Check whether a repair-lattice metric run carries enough proof to be claimable."""
+
+    case_filter = report.get("case_filter", {})
+    case_filter = case_filter if isinstance(case_filter, dict) else {}
+    lattice_summary = _variant_summary(report, "retrieval_lattice")
+    lattice_cases = _case_count(report, "retrieval_lattice") if _has_variant(report, "retrieval_lattice") else 0
+    lattice_rows = _variant_cases(report, "retrieval_lattice")
+    summary_case_count = int(lattice_summary.get("cases", 0)) if lattice_summary.get("cases") is not None else 0
+    local_surface_cases = int(lattice_summary.get("local_surface_anchor_calibration_cases", 0) or 0)
+
+    checks = {
+        "checkpoint_sha256_recorded": bool(report.get("checkpoint_sha256")),
+        "split_hashes_recorded": bool(report.get("train_split_sha256"))
+        and bool(report.get("validation_split_sha256")),
+        "unseen_holes_required": case_filter.get("require_unseen_hole") is True,
+        "retrieval_lattice_available": _has_variant(report, "retrieval_lattice"),
+        "nearest_visible_available": _has_variant(report, "nearest_visible_baseline"),
+        "case_rows_match_summary": bool(lattice_rows)
+        and len(lattice_rows) == lattice_cases
+        and summary_case_count == lattice_cases,
+        "oracle_scored_set_reported": "oracle_candidate_exact_in_scored_set_rate" in lattice_summary,
+        "surface_verifier_diagnostics_reported": all(
+            key in lattice_summary
+            for key in (
+                "surface_verifier_selected_exact_rate",
+                "surface_verifier_top4_exact_rate",
+                "surface_verifier_harm_count",
+                "surface_verifier_help_count",
+            )
+        ),
+        "selector_margin_sweep_reported": _nonempty_dict(lattice_summary.get("selector_margin_sweep"))
+        or _any_case_has(lattice_rows, "selector_margin_sweep"),
+        "selector_anchor_margin_sweep_reported": _nonempty_dict(
+            lattice_summary.get("selector_anchor_margin_sweep")
+        )
+        or _any_case_has(lattice_rows, "selector_anchor_margin_sweep"),
+        "local_surface_anchor_calibration_reported": lattice_cases > 0 and local_surface_cases >= lattice_cases,
+        "local_surface_anchor_margin_sweep_reported": _nonempty_dict(
+            lattice_summary.get("local_surface_anchor_margin_sweep")
+        )
+        or _any_case_has(lattice_rows, "local_surface_anchor_margin_sweep"),
+    }
+    missing = [name for name, passed in checks.items() if not passed]
+    passed = not missing
+    return {
+        "passed": passed,
+        "claim_boundary": (
+            "predeclared_repair_lattice_claim_contract_met" if passed else REPAIR_PROOF_CONTRACT_BOUNDARY
+        ),
+        "missing": missing,
+        "checks": checks,
+        "current": {
+            "checkpoint": report.get("checkpoint"),
+            "cases": lattice_cases,
+            "case_rows": len(lattice_rows),
+            "configured_selector_margin": case_filter.get("lattice_selector_margin"),
+            "configured_selector_anchor": case_filter.get("lattice_selector_anchor"),
+            "configured_selector_anchor_sweep": case_filter.get("lattice_selector_anchor_sweep"),
+            "configured_selector_margin_sweep": case_filter.get("lattice_selector_margin_sweep"),
+            "configured_local_surface_anchor_calibration": case_filter.get(
+                "lattice_local_surface_anchor_calibration"
+            ),
+        },
+    }
 
 
 def evaluate_repair_lattice_gate(
@@ -39,7 +129,9 @@ def evaluate_repair_lattice_gate(
     *,
     min_cases: int = 4,
     min_lift: float = 0.0,
+    require_proof_contract: bool = False,
 ) -> dict[str, Any]:
+    proof_contract = evaluate_repair_proof_contract(report)
     if not _has_variant(report, "retrieval_lattice"):
         return {
             "passed": False,
@@ -47,6 +139,8 @@ def evaluate_repair_lattice_gate(
             "reason": "current report has no retrieval_lattice benchmark variant",
             "checks": {"retrieval_lattice_available": False},
             "thresholds": {"min_cases": min_cases, "min_lift": min_lift},
+            "proof_contract_required": bool(require_proof_contract),
+            "repair_proof_contract": proof_contract,
         }
     if not _has_variant(report, "nearest_visible_baseline"):
         return {
@@ -55,6 +149,8 @@ def evaluate_repair_lattice_gate(
             "reason": "retrieval_lattice exists, but nearest_visible_baseline is missing",
             "checks": {"retrieval_lattice_available": True, "nearest_visible_available": False},
             "thresholds": {"min_cases": min_cases, "min_lift": min_lift},
+            "proof_contract_required": bool(require_proof_contract),
+            "repair_proof_contract": proof_contract,
         }
 
     lattice = _byte_accuracy(report, "retrieval_lattice")
@@ -72,6 +168,8 @@ def evaluate_repair_lattice_gate(
         "retrieval_lattice_exact_beats_nearest_visible": (lattice_exact - nearest_exact) > min_lift,
         "frozen_context_preserved": _frozen_context_ok(report, "retrieval_lattice"),
     }
+    if require_proof_contract:
+        checks["repair_proof_contract_met"] = bool(proof_contract["passed"])
     passed = all(checks.values())
     return {
         "passed": passed,
@@ -96,6 +194,8 @@ def evaluate_repair_lattice_gate(
         },
         "thresholds": {"min_cases": min_cases, "min_lift": min_lift},
         "checks": checks,
+        "proof_contract_required": bool(require_proof_contract),
+        "repair_proof_contract": proof_contract,
     }
 
 
@@ -107,6 +207,7 @@ def evaluate_gate(
     min_infill_lift: float = 0.0,
     min_repair_cases: int = 4,
     min_repair_lift: float = 0.0,
+    require_repair_proof_contract: bool = False,
 ) -> dict[str, Any]:
     baseline_acc = _masked_accuracy(baseline)
     current_acc = _masked_accuracy(current)
@@ -128,6 +229,7 @@ def evaluate_gate(
         current,
         min_cases=min_repair_cases,
         min_lift=min_repair_lift,
+        require_proof_contract=require_repair_proof_contract,
     )
     passed = model_passed
     claim_boundary = "mechanism_only_claim_required_do_not_call_model_sota"
@@ -165,6 +267,7 @@ def evaluate_gate(
             "min_infill_lift": min_infill_lift,
             "min_repair_cases": min_repair_cases,
             "min_repair_lift": min_repair_lift,
+            "require_repair_proof_contract": bool(require_repair_proof_contract),
         },
         "checks": checks,
         "repair_lattice_gate": repair_lattice,
@@ -183,6 +286,14 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--min-infill-lift", type=float, default=0.0)
     parser.add_argument("--min-repair-cases", type=int, default=4)
     parser.add_argument("--min-repair-lift", type=float, default=0.0)
+    parser.add_argument(
+        "--require-repair-proof-contract",
+        action="store_true",
+        help=(
+            "Require the retrieval-lattice run to include the strict proof contract: hashes, unseen holes, "
+            "nearest-visible baseline, selector sweeps, and local surface-anchor calibration diagnostics."
+        ),
+    )
     parser.add_argument("--json-out")
     args = parser.parse_args(argv)
     report = evaluate_gate(
@@ -192,6 +303,7 @@ def main(argv: list[str] | None = None) -> None:
         min_infill_lift=args.min_infill_lift,
         min_repair_cases=args.min_repair_cases,
         min_repair_lift=args.min_repair_lift,
+        require_repair_proof_contract=args.require_repair_proof_contract,
     )
     print(json.dumps(report, indent=2))
     if args.json_out:

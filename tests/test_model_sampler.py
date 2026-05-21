@@ -47,6 +47,15 @@ class ModelSamplerTest(unittest.TestCase):
         )
         self.assertIsInstance(scaffolded, str)
 
+    def test_ngram_guide_uses_high_order_left_anchor(self) -> None:
+        tokenizer = ByteTokenizer()
+        guide = BigramGuide.from_text("alpha sentence, alpha signal,", tokenizer, order=8)
+        prefix = tokenizer.encode("alpha sen", add_bos=True, add_eos=False)
+        tokens = torch.tensor([prefix + [tokenizer.mask_token_id]])
+        logits = guide.logits(tokens, tokenizer)
+        predicted = int(logits[0, -1].argmax().item())
+        self.assertEqual(predicted, tokenizer.encode("t", add_bos=False, add_eos=False)[0])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,6 +5,7 @@ import json
 import math
 import time
 from pathlib import Path
+from typing import Any
 
 import torch
 
@@ -59,12 +60,45 @@ def _filter_logits(
     return logits
 
 
-def generate_ids(
+def render_tokens_with_masks(
+    ids: torch.Tensor | list[int],
+    tokenizer: ByteTokenizer,
+    *,
+    mask_char: str = "~",
+) -> str:
+    """Render byte tokens while keeping unrepaired masks visible."""
+    pieces: list[str] = []
+    raw = bytearray()
+
+    def flush_raw() -> None:
+        nonlocal raw
+        if raw:
+            pieces.append(bytes(raw).decode("utf-8", errors="replace"))
+            raw = bytearray()
+
+    for token_id in ids:
+        token_id = int(token_id)
+        if token_id == tokenizer.mask_token_id:
+            flush_raw()
+            pieces.append(mask_char)
+        elif token_id in {tokenizer.pad_token_id, tokenizer.bos_token_id, tokenizer.eos_token_id}:
+            flush_raw()
+        elif token_id >= tokenizer.byte_offset:
+            raw.append(token_id - tokenizer.byte_offset)
+        else:
+            flush_raw()
+            pieces.append(tokenizer.special_name(token_id))
+    flush_raw()
+    return "".join(pieces)
+
+
+@torch.no_grad()
+def denoise_ids(
     model: DiffusionTransformer,
     tokenizer: ByteTokenizer,
     *,
-    prompt: str = "",
-    total_tokens: int = 160,
+    initial_tokens: torch.Tensor,
+    frozen: torch.Tensor | None = None,
     steps: int = 48,
     temperature: float = 0.9,
     top_k: int = 64,
@@ -73,38 +107,35 @@ def generate_ids(
     guide: BigramGuide | None = None,
     guidance: float = 0.0,
     schedule: str = "entropy",
-    scaffold: bool = False,
-    scaffold_remask: float = 0.18,
     seed: int = 7,
-) -> torch.Tensor:
+    return_trace: bool = False,
+    trace_preview: bool = False,
+    max_reveal_per_step: int | None = None,
+) -> torch.Tensor | tuple[torch.Tensor, list[dict[str, Any]]]:
     if steps < 1:
         raise ValueError("steps must be >= 1")
     if schedule not in {"entropy", "ribbon"}:
         raise ValueError("schedule must be 'entropy' or 'ribbon'")
     device = next(model.parameters()).device
     generator = torch.Generator(device=device).manual_seed(seed)
-    prompt_ids = tokenizer.encode(prompt, add_bos=True, add_eos=False)
-    total_tokens = min(max(total_tokens, len(prompt_ids) + 8), model.config.seq_len)
-    tokens = torch.full((1, total_tokens), tokenizer.mask_token_id, dtype=torch.long, device=device)
-    tokens[0, : len(prompt_ids)] = torch.tensor(prompt_ids, dtype=torch.long, device=device)
-    if scaffold and guide is not None:
-        scaffold_ids = guide.scaffold_ids(
-            prompt_ids,
-            total_tokens,
-            tokenizer,
-            seed=seed,
-            temperature=temperature,
-        )
-        tokens[0] = torch.tensor(scaffold_ids, dtype=torch.long, device=device)
-        remaskable = torch.zeros_like(tokens, dtype=torch.bool)
-        remaskable[:, len(prompt_ids) :] = True
-        if scaffold_remask > 0:
-            remask_draw = torch.rand(tokens.shape, device=device, generator=generator) < scaffold_remask
-            tokens[remaskable & remask_draw] = tokenizer.mask_token_id
-    frozen = tokens != tokenizer.mask_token_id
-    frozen[:, len(prompt_ids) :] = False
+    tokens = initial_tokens.to(device=device, dtype=torch.long).clone()
+    if tokens.ndim == 1:
+        tokens = tokens.unsqueeze(0)
+    if tokens.ndim != 2 or tokens.shape[0] != 1:
+        raise ValueError("initial_tokens must be a 1D tensor or a single-row 2D tensor")
+    if tokens.shape[1] > model.config.seq_len:
+        raise ValueError(f"initial token length {tokens.shape[1]} exceeds model seq_len {model.config.seq_len}")
+    if frozen is None:
+        frozen_mask = tokens != tokenizer.mask_token_id
+    else:
+        frozen_mask = frozen.to(device=device, dtype=torch.bool).clone()
+        if frozen_mask.ndim == 1:
+            frozen_mask = frozen_mask.unsqueeze(0)
+        if frozen_mask.shape != tokens.shape:
+            raise ValueError("frozen mask must have the same shape as initial_tokens")
     generated_once = torch.zeros_like(tokens, dtype=torch.bool)
-    generated_once[(tokens != tokenizer.mask_token_id) & ~frozen] = True
+    generated_once[(tokens != tokenizer.mask_token_id) & ~frozen_mask] = True
+    trace_rows: list[dict[str, Any]] = []
 
     for step in range(steps):
         remaining_steps = steps - step
@@ -127,13 +158,16 @@ def generate_ids(
         remaining = int(masked.sum().item())
         if remaining == 0:
             break
+        masked_entropy = entropy[masked]
+        mean_masked_entropy = float(masked_entropy.mean().item()) if masked_entropy.numel() else 0.0
         if remaining_steps == 1:
             reveal_count = remaining
         else:
-            masked_entropy = entropy[masked]
-            certainty = 1.0 - float(masked_entropy.mean().item()) if masked_entropy.numel() else 1.0
+            certainty = 1.0 - mean_masked_entropy
             reveal_fraction = max(1.0 / remaining_steps, 0.06 + 0.42 * max(0.0, certainty))
             reveal_count = max(1, min(remaining, int(math.ceil(remaining * reveal_fraction))))
+        if max_reveal_per_step is not None:
+            reveal_count = max(1, min(reveal_count, int(max_reveal_per_step)))
         if schedule == "ribbon":
             masked_flat = torch.nonzero(masked.reshape(-1), as_tuple=False).flatten()
             reveal_flat = masked_flat[:reveal_count]
@@ -145,9 +179,11 @@ def generate_ids(
         cols = reveal_flat % tokens.shape[1]
         tokens[rows, cols] = sample[rows, cols]
         generated_once[rows, cols] = True
+        mean_reveal_confidence = float(confidence[rows, cols].mean().item()) if reveal_count else 0.0
 
+        remask_count = 0
         if remask > 0 and step < steps - 2:
-            eligible = generated_once & ~frozen & (tokens != tokenizer.mask_token_id)
+            eligible = generated_once & ~frozen_mask & (tokens != tokenizer.mask_token_id)
             eligible_count = int(eligible.sum().item())
             remask_count = int(eligible_count * remask)
             if remask_count > 0:
@@ -156,9 +192,85 @@ def generate_ids(
                 r_rows = remask_flat // tokens.shape[1]
                 r_cols = remask_flat % tokens.shape[1]
                 tokens[r_rows, r_cols] = tokenizer.mask_token_id
+        if return_trace:
+            remaining_after = int((tokens == tokenizer.mask_token_id).sum().item())
+            row: dict[str, Any] = {
+                "step": step + 1,
+                "remaining_before": remaining,
+                "revealed": int(reveal_count),
+                "remasked": int(remask_count),
+                "remaining_after": remaining_after,
+                "visible_fraction": round(1.0 - (remaining_after / tokens.numel()), 6),
+                "mean_masked_entropy": round(mean_masked_entropy, 6),
+                "mean_reveal_confidence": round(mean_reveal_confidence, 6),
+            }
+            if trace_preview:
+                row["preview"] = render_tokens_with_masks(tokens[0].detach().cpu(), tokenizer)
+            trace_rows.append(row)
 
     tokens[tokens == tokenizer.mask_token_id] = tokenizer.eos_token_id
-    return tokens[0].detach().cpu()
+    result = tokens[0].detach().cpu()
+    if return_trace:
+        return result, trace_rows
+    return result
+
+
+def generate_ids(
+    model: DiffusionTransformer,
+    tokenizer: ByteTokenizer,
+    *,
+    prompt: str = "",
+    total_tokens: int = 160,
+    steps: int = 48,
+    temperature: float = 0.9,
+    top_k: int = 64,
+    remask: float = 0.05,
+    allow_eos: bool = False,
+    guide: BigramGuide | None = None,
+    guidance: float = 0.0,
+    schedule: str = "entropy",
+    scaffold: bool = False,
+    scaffold_remask: float = 0.18,
+    seed: int = 7,
+) -> torch.Tensor:
+    device = next(model.parameters()).device
+    generator = torch.Generator(device=device).manual_seed(seed)
+    prompt_ids = tokenizer.encode(prompt, add_bos=True, add_eos=False)
+    total_tokens = min(max(total_tokens, len(prompt_ids) + 8), model.config.seq_len)
+    tokens = torch.full((1, total_tokens), tokenizer.mask_token_id, dtype=torch.long, device=device)
+    tokens[0, : len(prompt_ids)] = torch.tensor(prompt_ids, dtype=torch.long, device=device)
+    if scaffold and guide is not None:
+        scaffold_ids = guide.scaffold_ids(
+            prompt_ids,
+            total_tokens,
+            tokenizer,
+            seed=seed,
+            temperature=temperature,
+        )
+        tokens[0] = torch.tensor(scaffold_ids, dtype=torch.long, device=device)
+        remaskable = torch.zeros_like(tokens, dtype=torch.bool)
+        remaskable[:, len(prompt_ids) :] = True
+        if scaffold_remask > 0:
+            remask_draw = torch.rand(tokens.shape, device=device, generator=generator) < scaffold_remask
+            tokens[remaskable & remask_draw] = tokenizer.mask_token_id
+    frozen = tokens != tokenizer.mask_token_id
+    frozen[:, len(prompt_ids) :] = False
+    result = denoise_ids(
+        model,
+        tokenizer,
+        initial_tokens=tokens,
+        frozen=frozen,
+        steps=steps,
+        temperature=temperature,
+        top_k=top_k,
+        remask=remask,
+        allow_eos=allow_eos,
+        guide=guide,
+        guidance=guidance,
+        schedule=schedule,
+        seed=seed,
+    )
+    return result if isinstance(result, torch.Tensor) else result[0]
 
 
 def generate_text(
@@ -192,7 +304,7 @@ def main(argv: list[str] | None = None) -> None:
     device = choose_device(args.device)
     model, tokenizer, payload = load_checkpoint(args.checkpoint, device=device)
     guide = None
-    if args.guide_data and args.guidance > 0:
+    if args.guide_data and (args.guidance > 0 or args.scaffold):
         guide = BigramGuide.from_text(load_text(args.guide_data), tokenizer).to_device(device)
     start = time.perf_counter()
     text = generate_text(

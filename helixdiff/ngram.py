@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import random
 from collections import Counter, defaultdict
+from math import log
 
 import torch
 
@@ -109,4 +110,23 @@ class BigramGuide:
                 right_known = known[:, pos + 1]
                 if bool(right_known.any().item()):
                     out[right_known, pos, :] = out[right_known, pos, :] + self.right_log_probs[right_ids[right_known]]
+            max_context = min(self.order - 1, pos)
+            if max_context <= 0:
+                continue
+            for row in range(batch):
+                for size in range(max_context, 0, -1):
+                    start = pos - size
+                    if not bool(known[row, start:pos].all().item()):
+                        continue
+                    context = tuple(int(token_id) for token_id in tokens[row, start:pos].tolist())
+                    counts = self.transitions.get(context)
+                    if not counts:
+                        continue
+                    total = float(sum(counts.values()))
+                    bonus = out.new_full((vocab,), log(1e-4 / vocab))
+                    denom = total + (1e-4 * vocab)
+                    for token_id, count in counts.items():
+                        bonus[int(token_id)] = log((float(count) + 1e-4) / denom)
+                    out[row, pos, :] = out[row, pos, :] + bonus
+                    break
         return out

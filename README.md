@@ -8,13 +8,14 @@ The included training recipe is deliberately small enough to run on a laptop. Th
 
 | Check | Result |
 | --- | --- |
-| Unit tests | `8` tests passing |
+| Unit tests | `11` tests passing |
 | Scratch verifier | no banned pretrained-model snippets; checkpoint says `scratch_only: true` |
 | Tiny checkpoint | `433,440` parameters, `2,400` steps on Apple MPS |
-| Eval smoke | masked loss `3.095`, masked accuracy `15.0%`, scaffolded sample `120.8` bytes/s |
+| Eval smoke | masked loss `3.105`, masked accuracy `14.6%`, scaffolded sample `189.7` bytes/s |
+| Suture-trace infill | repaired `sentence` exactly from `~~~~~~~~`; frozen context unchanged |
 | Sample | `HelixDiff learns language as an editable field, generation...` |
 
-Proof files are checked into the repo under `proof/`: `scratch_verifier_tiny.json`, `eval_tiny_final.json`, and `sample_tiny_candidate_42.json`. The downloadable checkpoint is `checkpoints/helixdiff_tiny.pt`; the human-readable demo text is `samples/latest.txt`.
+Proof files are checked into the repo under `proof/`: `scratch_verifier_tiny.json`, `eval_tiny_final.json`, `sample_tiny_candidate_42.json`, and `infill_demo.json`. The downloadable checkpoint is `checkpoints/helixdiff_tiny.pt`; the human-readable demo text is `samples/latest.txt`.
 
 ## What Makes It Different
 
@@ -24,6 +25,8 @@ Proof files are checked into the repo under `proof/`: `scratch_verifier_tiny.jso
 - **Entropy-clock sampling.** Generation reveals more tokens only when the model is confident; uncertain regions stay masked longer and receive more denoising passes.
 - **Ribbon decoding.** For language-shaped continuation, the sampler can reveal masked bytes from left to right while still using the bidirectional denoiser at every step.
 - **Confidence remasking.** The sampler can deliberately re-mask low-confidence generated tokens, giving the model a second chance instead of freezing early mistakes.
+- **High-order bridge guidance.** The scratch n-gram guide now uses full visible left anchors, not only adjacent bigrams, so a masked span can be sutured from the phrase that leads into it.
+- **Suture-trace infill.** A dedicated infill path repairs `[[marked]]` spans while preserving every unmasked context byte and emitting a per-step reveal trace.
 - **Corpus scaffold guidance.** An optional scratch n-gram guide can initialize a rough local scaffold, then the diffusion model edits masked holes. No external model or pretrained tokenizer is involved.
 - **Scratch-only verifier.** `helixdiff.verify_scratch` scans code and checkpoints for common pretrained-model shortcuts.
 
@@ -116,6 +119,31 @@ helixdiff-sample \
 
 `--guide-data` trains a local n-gram guide from the text file you provide. `--scaffold` uses it as a scratch-built prior, then masks part of that scaffold for the diffusion transformer to repair. Leave it off for pure blank-page denoising.
 
+## Infill
+
+The most direct demo is span repair. Mark one region with `[[...]]`; HelixDiff replaces only that span with masks, freezes the surrounding context, and runs the same reverse diffusion loop.
+
+```
+helixdiff-infill \
+  --checkpoint checkpoints/helixdiff_tiny.pt \
+  --text "The model begins with a [[sentence]], removes bytes until the page looks damaged." \
+  --guide-data data/seed_corpus.txt \
+  --guidance 2.0 \
+  --schedule ribbon \
+  --max-reveal-per-step 1 \
+  --json-out proof/infill_demo.json
+```
+
+The checked-in proof repairs:
+
+```text
+The model begins with a ~~~~~~~~, removes bytes until the page looks damaged.
+The model begins with a s~~~~~~~, removes bytes until the page looks damaged.
+The model begins with a se~~~~~~, removes bytes until the page looks damaged.
+The model begins with a sen~~~~~, removes bytes until the page looks damaged.
+The model begins with a sentence, removes bytes until the page looks damaged.
+```
+
 ## Evaluate
 
 ```
@@ -144,8 +172,9 @@ helixdiff/
   model.py           full-attention diffusion Transformer
   data.py            byte stream batching
   train.py           scratch training loop
-  sample.py          entropy-clock, ribbon, and scaffolded iterative generation
-  ngram.py           local scratch n-gram guide for optional sampling scaffolds
+  sample.py          entropy-clock, ribbon, trace, and scaffolded denoising
+  infill.py          [[marked span]] repair CLI and JSON proof reporter
+  ngram.py           local scratch n-gram and bridge guide for optional sampling scaffolds
   eval.py            masked-token evaluation and sampler smoke test
   verify_scratch.py  shortcut scanner
 configs/

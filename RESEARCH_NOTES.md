@@ -30,6 +30,29 @@ Autoregressive decoding freezes a token once emitted. HelixDiff can re-mask low-
 
 Blank-page diffusion is brutally underconstrained for a laptop-sized byte model. HelixDiff optionally trains a local n-gram guide from the same user-provided corpus, samples a rough scaffold, masks part of it, and lets the denoising transformer repair the holes. This is not a pretrained crutch; it is a small scratch prior used to make the reverse chain start from a language-shaped field.
 
+### High-Order Bridge Guidance
+
+The first guide only looked one byte left and one byte right, which made infill too myopic: a span beginning after `The model begins with a ` should be able to use that whole anchor, not just the final space. The guide now stores scratch n-gram transitions and, during denoising, adds the strongest available visible left-context distribution for each masked position. In ribbon mode with `--max-reveal-per-step 1`, each newly repaired byte becomes context for the next one.
+
+This is deliberately not a pretrained language model. It is closer to a small phrase memory built from the same local corpus, used as a bridge prior while the Transformer still runs the reverse diffusion step.
+
+### Suture-Trace Infill
+
+`helixdiff.infill` turns the diffusion LM into a visible repair instrument. A user marks one span as `[[missing text]]`; the CLI replaces that span with mask tokens, freezes every other byte, runs the denoising loop, and writes a trace containing remaining masks, reveal counts, remask counts, entropy, confidence, and a preview string.
+
+The current proof repairs `sentence` exactly from eight mask bytes:
+
+```text
+The model begins with a ~~~~~~~~, removes bytes until the page looks damaged.
+The model begins with a s~~~~~~~, removes bytes until the page looks damaged.
+The model begins with a se~~~~~~, removes bytes until the page looks damaged.
+The model begins with a sen~~~~~, removes bytes until the page looks damaged.
+The model begins with a sent~~~~, removes bytes until the page looks damaged.
+The model begins with a sentence, removes bytes until the page looks damaged.
+```
+
+The point is not to overclaim the tiny checkpoint. The point is to expose a diffusion-native behavior that an autoregressive sample cannot show as naturally: anchored text repair with a reversible visible field.
+
 ## Why Byte-Level
 
 A byte tokenizer is not the most efficient tokenizer for a huge LLM, but it is the cleanest scratch boundary. The repo can be downloaded and trained without hidden tokenizer files, pretrained merges, or external model assets.

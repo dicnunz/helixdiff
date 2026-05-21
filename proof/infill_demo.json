@@ -1,0 +1,113 @@
+{
+  "checkpoint": "checkpoints/helixdiff_tiny.pt",
+  "checkpoint_step": 2400,
+  "mechanism": "suture-trace infill",
+  "marked_text": "The model begins with a [[sentence]], removes bytes until the page looks damaged.",
+  "masked_text": "The model begins with a ~~~~~~~~, removes bytes until the page looks damaged.",
+  "target_text": "The model begins with a sentence, removes bytes until the page looks damaged.",
+  "repaired_text": "The model begins with a sentence, removes bytes until the page looks damaged.",
+  "target_hole": "sentence",
+  "predicted_hole": "sentence",
+  "hole_byte_accuracy": 1.0,
+  "hole_length_bytes": 8,
+  "frozen_context_unchanged": true,
+  "steps_requested": 48,
+  "steps_used": 8,
+  "max_reveal_per_step": 1,
+  "elapsed_seconds": 2.677927666984033,
+  "tokens_per_second": 29.50042339604053,
+  "guide_data": "data/seed_corpus.txt",
+  "guidance": 2.0,
+  "schedule": "ribbon",
+  "seed": 1,
+  "trace": [
+    {
+      "step": 1,
+      "remaining_before": 8,
+      "revealed": 1,
+      "remasked": 0,
+      "remaining_after": 7,
+      "visible_fraction": 0.911392,
+      "mean_masked_entropy": 0.019661,
+      "mean_reveal_confidence": 1.0,
+      "preview": "The model begins with a s~~~~~~~, removes bytes until the page looks damaged."
+    },
+    {
+      "step": 2,
+      "remaining_before": 7,
+      "revealed": 1,
+      "remasked": 0,
+      "remaining_after": 6,
+      "visible_fraction": 0.924051,
+      "mean_masked_entropy": 0.020491,
+      "mean_reveal_confidence": 0.99308,
+      "preview": "The model begins with a se~~~~~~, removes bytes until the page looks damaged."
+    },
+    {
+      "step": 3,
+      "remaining_before": 6,
+      "revealed": 1,
+      "remasked": 0,
+      "remaining_after": 5,
+      "visible_fraction": 0.936709,
+      "mean_masked_entropy": 0.019101,
+      "mean_reveal_confidence": 1.0,
+      "preview": "The model begins with a sen~~~~~, removes bytes until the page looks damaged."
+    },
+    {
+      "step": 4,
+      "remaining_before": 5,
+      "revealed": 1,
+      "remasked": 0,
+      "remaining_after": 4,
+      "visible_fraction": 0.949367,
+      "mean_masked_entropy": 0.018657,
+      "mean_reveal_confidence": 1.0,
+      "preview": "The model begins with a sent~~~~, removes bytes until the page looks damaged."
+    },
+    {
+      "step": 5,
+      "remaining_before": 4,
+      "revealed": 1,
+      "remasked": 0,
+      "remaining_after": 3,
+      "visible_fraction": 0.962025,
+      "mean_masked_entropy": 0.017997,
+      "mean_reveal_confidence": 1.0,
+      "preview": "The model begins with a sente~~~, removes bytes until the page looks damaged."
+    },
+    {
+      "step": 6,
+      "remaining_before": 3,
+      "revealed": 1,
+      "remasked": 0,
+      "remaining_after": 2,
+      "visible_fraction": 0.974684,
+      "mean_masked_entropy": 0.016874,
+      "mean_reveal_confidence": 1.0,
+      "preview": "The model begins with a senten~~, removes bytes until the page looks damaged."
+    },
+    {
+      "step": 7,
+      "remaining_before": 2,
+      "revealed": 1,
+      "remasked": 0,
+      "remaining_after": 1,
+      "visible_fraction": 0.987342,
+      "mean_masked_entropy": 0.014562,
+      "mean_reveal_confidence": 1.0,
+      "preview": "The model begins with a sentenc~, removes bytes until the page looks damaged."
+    },
+    {
+      "step": 8,
+      "remaining_before": 1,
+      "revealed": 1,
+      "remasked": 0,
+      "remaining_after": 0,
+      "visible_fraction": 1.0,
+      "mean_masked_entropy": -0.0,
+      "mean_reveal_confidence": 1.0,
+      "preview": "The model begins with a sentence, removes bytes until the page looks damaged."
+    }
+  ]
+}

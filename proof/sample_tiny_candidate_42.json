@@ -3,7 +3,7 @@
   "prompt": "HelixDiff learns",
   "tokens": 192,
   "steps": 32,
-  "elapsed_seconds": 0.9400146660045721,
+  "elapsed_seconds": 0.5845507920021191,
   "guide_data": "data/seed_corpus.txt",
   "guidance": 0.1,
   "schedule": "ribbon",

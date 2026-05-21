@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import random
 import time
 from pathlib import Path
@@ -10,6 +11,7 @@ from typing import Any
 
 import torch
 
+from .adapt import VisibleAdaptConfig, adapt_model_to_visible_context
 from .data import ByteStream, load_text
 from .diffusion import corrupt_batch, masked_accuracy, masked_cross_entropy, restrict_logits_to_ids
 from .infill import parse_marked_infill, score_repair
@@ -33,6 +35,10 @@ def sha256_file(path: str | Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             hasher.update(chunk)
     return hasher.hexdigest()
+
+
+def json_score(value: float) -> float | None:
+    return float(value) if math.isfinite(value) else None
 
 
 def make_marked_cases(
@@ -209,13 +215,14 @@ def infill_case(
         candidate_rows.append(
             {
                 "seed": seed + offset,
-                "score": score,
+                "score": json_score(score),
+                "score_is_finite": math.isfinite(score),
                 "predicted_hole": tokenizer.decode(pred),
                 "byte_accuracy": float((pred == target).float().mean().item()) if target.numel() else 0.0,
                 "exact": bool(torch.equal(pred, target)),
             }
         )
-        if score > best_score:
+        if best_repaired is None or score > best_score:
             best_score = score
             best_repaired = repaired
             best_trace = trace
@@ -235,7 +242,8 @@ def infill_case(
         "frozen_context_unchanged": bool((repaired[example.frozen] == example.target[example.frozen]).all().item()),
         "steps_used": len(best_trace),
         "candidates": max(1, candidates),
-        "selected_candidate_score": best_score,
+        "selected_candidate_score": json_score(best_score),
+        "selected_candidate_score_is_finite": math.isfinite(best_score),
         "candidate_summaries": candidate_rows,
         "elapsed_seconds": time.perf_counter() - started,
     }
@@ -272,7 +280,6 @@ def model_quality_label(masked_acc: float, unguided_infill: float, guided_infill
     return "undertrained"
 
 
-@torch.no_grad()
 def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     device = choose_device(args.device)
     model, tokenizer, payload = load_checkpoint(args.checkpoint, device=device)
@@ -303,6 +310,8 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     bridge_rows: list[dict[str, Any]] = []
     unguided_rows: list[dict[str, Any]] = []
     guided_rows: list[dict[str, Any]] = []
+    adapted_rows: list[dict[str, Any]] = []
+    adapted_guided_rows: list[dict[str, Any]] = []
     for index, marked in enumerate(cases):
         unigram_rows.append(guide_only_case(tokenizer=tokenizer, marked_text=marked, guide=guide, strategy="unigram"))
         bridge = guide_only_case(tokenizer=tokenizer, marked_text=marked, guide=guide, strategy="bridge")
@@ -338,11 +347,63 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
         )
         guided["target_hole_seen_in_train_split"] = guided["target_hole"] in train_text
         guided_rows.append(guided)
+        if args.adapt_visible_steps > 0:
+            adapted_model, adaptation_report = adapt_model_to_visible_context(
+                model=model,
+                tokenizer=tokenizer,
+                example=parse_marked_infill(marked, tokenizer),
+                config=VisibleAdaptConfig(
+                    steps=args.adapt_visible_steps,
+                    batch_size=args.adapt_batch_size,
+                    learning_rate=args.adapt_learning_rate,
+                    span_min=args.adapt_span_min,
+                    span_max=args.adapt_span_max,
+                    train_scope=args.adapt_train_scope,
+                    seed=args.seed + index,
+                ),
+            )
+            adapted = infill_case(
+                model=adapted_model,
+                tokenizer=tokenizer,
+                marked_text=marked,
+                guide=None,
+                guidance=0.0,
+                steps=args.steps,
+                top_k=args.top_k,
+                temperature=args.temperature,
+                schedule=args.schedule,
+                seed=args.seed + index,
+                candidates=args.candidates,
+            )
+            adapted["adaptation"] = adaptation_report
+            adapted["target_hole_seen_in_train_split"] = adapted["target_hole"] in train_text
+            adapted_rows.append(adapted)
+            adapted_guided = infill_case(
+                model=adapted_model,
+                tokenizer=tokenizer,
+                marked_text=marked,
+                guide=guide,
+                guidance=args.guidance,
+                steps=args.steps,
+                top_k=args.top_k,
+                temperature=args.temperature,
+                schedule=args.schedule,
+                seed=args.seed + index,
+                candidates=args.candidates,
+            )
+            adapted_guided["adaptation"] = adaptation_report
+            adapted_guided["target_hole_seen_in_train_split"] = adapted_guided["target_hole"] in train_text
+            adapted_guided_rows.append(adapted_guided)
     unguided_summary = summarize_infill(unguided_rows)
     unigram_summary = summarize_infill(unigram_rows)
     bridge_summary = summarize_infill(bridge_rows)
     guided_summary = summarize_infill(guided_rows)
+    adapted_summary = summarize_infill(adapted_rows)
+    adapted_guided_summary = summarize_infill(adapted_guided_rows)
     bridge_lift = float(guided_summary["byte_accuracy"]) - float(bridge_summary["byte_accuracy"])
+    adapted_lift = float(adapted_summary["byte_accuracy"]) - float(unguided_summary["byte_accuracy"])
+    adapted_vs_bridge = float(adapted_summary["byte_accuracy"]) - float(bridge_summary["byte_accuracy"])
+    adapted_guided_vs_bridge = float(adapted_guided_summary["byte_accuracy"]) - float(bridge_summary["byte_accuracy"])
     label = model_quality_label(
         float(masked["masked_accuracy"]),
         float(unguided_summary["byte_accuracy"]),
@@ -364,6 +425,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
         "case_filter": {
             "require_unseen_hole": bool(args.require_unseen_hole),
             "candidate_count": int(args.candidates),
+            "visible_context_adaptation_steps": int(args.adapt_visible_steps),
         },
         "masked_eval": masked,
         "infill": {
@@ -374,7 +436,15 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "bridge_only_baseline": {"summary": bridge_summary, "cases": bridge_rows},
             "unguided": {"summary": unguided_summary, "cases": unguided_rows},
             "bridge_guided": {"summary": guided_summary, "cases": guided_rows},
+            "visible_context_adapted": {"summary": adapted_summary, "cases": adapted_rows},
+            "visible_context_adapted_bridge_guided": {
+                "summary": adapted_guided_summary,
+                "cases": adapted_guided_rows,
+            },
             "bridge_guided_minus_bridge_only_byte_accuracy": bridge_lift,
+            "adapted_minus_unguided_byte_accuracy": adapted_lift,
+            "adapted_minus_bridge_only_byte_accuracy": adapted_vs_bridge,
+            "adapted_bridge_guided_minus_bridge_only_byte_accuracy": adapted_guided_vs_bridge,
         },
         "quality_label": label,
         "ten_out_of_ten_gate": {
@@ -405,6 +475,12 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--top-k", type=int, default=48)
     parser.add_argument("--guidance", type=float, default=1.5)
     parser.add_argument("--schedule", choices=["entropy", "ribbon"], default="ribbon")
+    parser.add_argument("--adapt-visible-steps", type=int, default=0)
+    parser.add_argument("--adapt-batch-size", type=int, default=8)
+    parser.add_argument("--adapt-learning-rate", type=float, default=1e-4)
+    parser.add_argument("--adapt-span-min", type=int, default=3)
+    parser.add_argument("--adapt-span-max", type=int, default=12)
+    parser.add_argument("--adapt-train-scope", choices=["head", "last_block", "all"], default="last_block")
     parser.add_argument("--json-out")
     args = parser.parse_args(argv)
     report = benchmark(args)

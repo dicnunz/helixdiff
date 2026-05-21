@@ -1,0 +1,106 @@
+{
+  "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt",
+  "checkpoint_sha256": "3d1ae0b04275291f44c17660eeef12c627ed0d8f96132eba3b8caff27bedd9bf",
+  "checkpoint_step": 30000,
+  "mechanism": "suture-trace infill",
+  "marked_text": "The bridge sees both sides: alpha beta [[gamma]] delta alpha beta.",
+  "masked_text": "The bridge sees both sides: alpha beta ~~~~~ delta alpha beta.",
+  "target_text": "The bridge sees both sides: alpha beta gamma delta alpha beta.",
+  "repaired_text": "The bridge sees both sides: alpha beta e    delta alpha beta.",
+  "target_hole": "gamma",
+  "predicted_hole": "e   ",
+  "hole_byte_accuracy": 0.0,
+  "hole_length_bytes": 5,
+  "frozen_context_unchanged": true,
+  "steps_requested": 4,
+  "steps_used": 4,
+  "max_reveal_per_step": 1,
+  "candidates": 1,
+  "selected_candidate_score": null,
+  "selected_candidate_score_is_finite": false,
+  "candidate_summaries": [
+    {
+      "seed": 7,
+      "score": null,
+      "score_is_finite": false,
+      "predicted_hole": "e   ",
+      "hole_byte_accuracy": 0.0
+    }
+  ],
+  "elapsed_seconds": 0.2211195419949945,
+  "tokens_per_second": 289.43620008695916,
+  "guide_data": null,
+  "guidance": 0.0,
+  "schedule": "entropy",
+  "seed": 7,
+  "adaptation": {
+    "enabled": true,
+    "mechanism": "visible_context_suture_tta",
+    "steps": 1,
+    "batch_size": 2,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0,
+    "span_min": 3,
+    "span_max": 12,
+    "train_scope": "head",
+    "seed": 7,
+    "visible_context_sha256": "096ba7b16d60a43214ab014fbd10e9a8b684eaa4641c5d1cdfaa5aea5620c8fd",
+    "visible_context_bytes": 57,
+    "hidden_target_seen_in_visible_context": false,
+    "trainable_parameter_names": [
+      "token_emb.weight",
+      "norm.weight"
+    ],
+    "trainable_parameters": 25056,
+    "first_loss": 2.93691086769104,
+    "final_loss": 2.93691086769104,
+    "mean_masked_accuracy": 0.25,
+    "elapsed_seconds": 0.2771694999828469
+  },
+  "trace": [
+    {
+      "step": 1,
+      "remaining_before": 5,
+      "revealed": 1,
+      "remasked": 0,
+      "remaining_after": 4,
+      "visible_fraction": 0.9375,
+      "mean_masked_entropy": 0.558853,
+      "mean_reveal_confidence": 0.193615,
+      "preview": "The bridge sees both sides: alpha beta ~ ~~~ delta alpha beta."
+    },
+    {
+      "step": 2,
+      "remaining_before": 4,
+      "revealed": 1,
+      "remasked": 0,
+      "remaining_after": 3,
+      "visible_fraction": 0.953125,
+      "mean_masked_entropy": 0.558817,
+      "mean_reveal_confidence": 0.096503,
+      "preview": "The bridge sees both sides: alpha beta e ~~~ delta alpha beta."
+    },
+    {
+      "step": 3,
+      "remaining_before": 3,
+      "revealed": 1,
+      "remasked": 0,
+      "remaining_after": 2,
+      "visible_fraction": 0.96875,
+      "mean_masked_entropy": 0.558893,
+      "mean_reveal_confidence": 0.193492,
+      "preview": "The bridge sees both sides: alpha beta e ~ ~ delta alpha beta."
+    },
+    {
+      "step": 4,
+      "remaining_before": 2,
+      "revealed": 1,
+      "remasked": 0,
+      "remaining_after": 1,
+      "visible_fraction": 0.984375,
+      "mean_masked_entropy": 0.558828,
+      "mean_reveal_confidence": 0.193587,
+      "preview": "The bridge sees both sides: alpha beta e ~   delta alpha beta."
+    }
+  ]
+}

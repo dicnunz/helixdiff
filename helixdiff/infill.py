@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,7 @@ from typing import Any
 
 import torch
 
+from .adapt import VisibleAdaptConfig, adapt_model_to_visible_context
 from .data import load_text
 from .ngram import BigramGuide
 from .sample import _filter_logits, choose_device, denoise_ids, load_checkpoint, render_tokens_with_masks
@@ -75,6 +77,10 @@ def _hole_accuracy(predicted: torch.Tensor, target: torch.Tensor, start: int, en
     return float((pred_hole == target_hole).float().mean().item())
 
 
+def _json_score(value: float) -> float | None:
+    return float(value) if math.isfinite(value) else None
+
+
 @torch.no_grad()
 def score_repair(
     *,
@@ -127,7 +133,6 @@ def score_repair(
     return float(token_scores.mean().item())
 
 
-@torch.no_grad()
 def run_infill(
     *,
     checkpoint: str | Path,
@@ -143,12 +148,34 @@ def run_infill(
     device: str = "auto",
     max_reveal_per_step: int | None = 1,
     candidates: int = 1,
+    adapt_visible_steps: int = 0,
+    adapt_batch_size: int = 8,
+    adapt_learning_rate: float = 1e-4,
+    adapt_span_min: int = 3,
+    adapt_span_max: int = 12,
+    adapt_train_scope: str = "last_block",
 ) -> dict[str, Any]:
     torch_device = choose_device(device)
     model, tokenizer, payload = load_checkpoint(checkpoint, device=torch_device)
     example = parse_marked_infill(marked_text, tokenizer)
     if example.tokens.numel() > model.config.seq_len:
         raise ValueError(f"infill example has {example.tokens.numel()} tokens; checkpoint seq_len is {model.config.seq_len}")
+    adaptation_report: dict[str, Any] = {"enabled": False, "steps": 0}
+    if adapt_visible_steps > 0:
+        model, adaptation_report = adapt_model_to_visible_context(
+            model=model,
+            tokenizer=tokenizer,
+            example=example,
+            config=VisibleAdaptConfig(
+                steps=adapt_visible_steps,
+                batch_size=adapt_batch_size,
+                learning_rate=adapt_learning_rate,
+                span_min=adapt_span_min,
+                span_max=adapt_span_max,
+                train_scope=adapt_train_scope,
+                seed=seed,
+            ),
+        )
     guide = None
     if guide_data and guidance > 0:
         guide = BigramGuide.from_text(load_text(guide_data), tokenizer).to_device(torch_device)
@@ -192,12 +219,13 @@ def run_infill(
         candidate_rows.append(
             {
                 "seed": seed + offset,
-                "score": score,
+                "score": _json_score(score),
+                "score_is_finite": math.isfinite(score),
                 "predicted_hole": tokenizer.decode(repaired_ids[example.hole_start : example.hole_end]),
                 "hole_byte_accuracy": _hole_accuracy(repaired_ids, example.target, example.hole_start, example.hole_end),
             }
         )
-        if score > best_score:
+        if best_ids is None or score > best_score:
             best_score = score
             best_ids = repaired_ids
             best_trace = trace
@@ -227,7 +255,8 @@ def run_infill(
         "steps_used": len(best_trace),
         "max_reveal_per_step": max_reveal_per_step,
         "candidates": max(1, candidates),
-        "selected_candidate_score": best_score,
+        "selected_candidate_score": _json_score(best_score),
+        "selected_candidate_score_is_finite": math.isfinite(best_score),
         "candidate_summaries": candidate_rows,
         "elapsed_seconds": elapsed,
         "tokens_per_second": int(example.tokens.numel()) / max(elapsed, 1e-9),
@@ -235,6 +264,7 @@ def run_infill(
         "guidance": guidance,
         "schedule": schedule,
         "seed": seed,
+        "adaptation": adaptation_report,
         "trace": best_trace,
     }
 
@@ -258,6 +288,12 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--candidates", type=int, default=1)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--device", default="auto")
+    parser.add_argument("--adapt-visible-steps", type=int, default=0)
+    parser.add_argument("--adapt-batch-size", type=int, default=8)
+    parser.add_argument("--adapt-learning-rate", type=float, default=1e-4)
+    parser.add_argument("--adapt-span-min", type=int, default=3)
+    parser.add_argument("--adapt-span-max", type=int, default=12)
+    parser.add_argument("--adapt-train-scope", choices=["head", "last_block", "all"], default="last_block")
     parser.add_argument("--json-out")
     args = parser.parse_args(argv)
     report = run_infill(
@@ -274,6 +310,12 @@ def main(argv: list[str] | None = None) -> None:
         device=args.device,
         max_reveal_per_step=args.max_reveal_per_step,
         candidates=args.candidates,
+        adapt_visible_steps=args.adapt_visible_steps,
+        adapt_batch_size=args.adapt_batch_size,
+        adapt_learning_rate=args.adapt_learning_rate,
+        adapt_span_min=args.adapt_span_min,
+        adapt_span_max=args.adapt_span_max,
+        adapt_train_scope=args.adapt_train_scope,
     )
     print(json.dumps(report, indent=2))
     if args.json_out:

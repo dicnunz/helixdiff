@@ -13,7 +13,7 @@ The included training recipe is deliberately small enough to run on a laptop. Th
 | Latest checkpoint | `439,968` parameters, `30,000` steps on Apple MPS, resumed only from an earlier scratch HelixDiff checkpoint |
 | Slim download | `checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt`, `1.8 MB`, SHA-256 `3d1ae0b04275291f44c17660eeef12c627ed0d8f96132eba3b8caff27bedd9bf` |
 | Eval smoke | masked loss `3.327`, masked accuracy `14.73%`, EMA loaded without migration |
-| Narrow repair bench | 4 unseen validation holes: bridge-only `15.0%`, model-only `20.0%`, model+bridge `20.0%` |
+| Narrow repair bench | 4 held-out validation gaps: bridge-only `15.0%`, model-only `20.0%`, model+bridge `20.0%` |
 | Wider repair bench | 8 unseen validation holes: bridge-only `22.5%`, model-only `18.75%`, model+bridge `20.0%` |
 | Claim gate | failed; `mechanism_only_claim_required_do_not_call_model_sota` |
 
@@ -34,8 +34,9 @@ The current checked-in checkpoint is intentionally not described as a strong lan
 - **High-order bridge guidance.** The scratch n-gram guide now uses full visible left anchors, not only adjacent bigrams, so a masked span can be sutured from the phrase that leads into it.
 - **Suture-trace infill.** A dedicated infill path repairs `[[marked]]` spans while preserving every unmasked context byte and emitting a per-step reveal trace.
 - **Self-suture candidate ranking.** Infill can run several reverse chains, then score each repaired span with leave-one-out denoiser probes inside the proposed repair. That lets the model judge internal coherence plus both frozen boundaries instead of rewarding the most generic blank-hole completion.
+- **Visible-context Suture TTA.** Optional test-time adaptation copies the checkpoint for one inference session, trains selected weights on synthetic holes made only from visible context, reports the visible-context hash and hidden-target exclusion flag, then deletes the temporary weights.
 - **Corpus scaffold guidance.** An optional scratch n-gram guide can initialize a rough local scaffold, then the diffusion model edits masked holes. No external model or pretrained tokenizer is involved.
-- **Non-leaky held-out benchmark.** `helixdiff-bench` builds infill cases only from the validation split, trains the bridge guide only on the training split, and compares unigram, bridge-only, unguided model, and bridge-guided model variants.
+- **Non-leaky held-out benchmark.** `helixdiff-bench` builds infill cases only from the validation split, trains the bridge guide only on the training split, and compares unigram, bridge-only, unguided model, bridge-guided model, visible-context-adapted model, and adapted bridge-guided variants.
 - **Scratch-only verifier.** `helixdiff.verify_scratch` scans code and checkpoints for common pretrained-model shortcuts.
 
 ## Research Lineage
@@ -208,6 +209,21 @@ The model begins with a sen~~~~~, removes bytes until the page looks damaged.
 The model begins with a sentence, removes bytes until the page looks damaged.
 ```
 
+For the experimental Suture TTA path, add visible-context adaptation flags. This does not use the hidden answer; the JSON proof records `hidden_target_seen_in_visible_context`.
+
+```
+helixdiff-infill \
+  --checkpoint checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt \
+  --text "The bridge sees both sides: alpha beta [[gamma]] delta alpha beta." \
+  --steps 4 \
+  --adapt-visible-steps 1 \
+  --adapt-batch-size 2 \
+  --adapt-train-scope head \
+  --json-out proof/infill_suture_tta_smoke.json
+```
+
+The current smoke proves the mechanism and reporting path, not a quality win: frozen context remains true, the hidden target is excluded from visible adaptation, and the sample still misses the held-out word.
+
 ## Evaluate
 
 ```
@@ -232,6 +248,23 @@ helixdiff-bench \
   --json-out proof/bench_seed_tiny.json
 ```
 
+The same flag family can be used in the non-leaky benchmark:
+
+```
+helixdiff-bench \
+  --checkpoint checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt \
+  --data data/tinyshakespeare.txt \
+  --cases 1 \
+  --batches 1 \
+  --require-unseen-hole \
+  --adapt-visible-steps 1 \
+  --adapt-batch-size 2 \
+  --adapt-train-scope head \
+  --json-out proof/bench_suture_tta_smoke.json
+```
+
+The one-case smoke currently reports no byte-accuracy lift. That is kept as proof discipline: Suture TTA is implemented and measurable, but it has not earned a model-quality claim.
+
 The checked-in seed-corpus benchmark result is deliberately unforgiving:
 
 | Variant | Held-out span byte accuracy | Exact span match |
@@ -247,9 +280,9 @@ The latest Tiny Shakespeare suture-curriculum run is harsher and more useful:
 
 | Suite | Bridge-only | Model-only | Model+bridge | Verdict |
 | --- | ---: | ---: | ---: | --- |
-| 4 unseen validation holes, `guidance=0.2` | `15.0%` | `20.0%` | `20.0%` | narrow lift |
+| 4 held-out validation gaps, `guidance=0.2` | `15.0%` | `20.0%` | `20.0%` | narrow lift |
 | 8 unseen validation holes, `guidance=0.2` | `22.5%` | `18.75%` | `20.0%` | wide gate fails |
-| 8 unseen validation holes, `guidance=0.5` | `22.5%` | `18.75%` | `20.0%` | stronger guide does not rescue it |
+| 8-case repeat with `guidance=0.5` | `22.5%` | `18.75%` | `20.0%` | stronger guide does not rescue it |
 
 A real public-quality checkpoint should beat the bridge-only baseline on widened held-out spans and reach the stronger quality label before its samples are marketed as model capability.
 
@@ -299,6 +332,7 @@ helixdiff/
   data.py            byte stream batching
   train.py           scratch training loop
   sample.py          entropy-clock, ribbon, trace, and scaffolded denoising
+  adapt.py           visible-context test-time adaptation for repair sessions
   infill.py          [[marked span]] repair CLI and JSON proof reporter
   ngram.py           local scratch n-gram and bridge guide for optional sampling scaffolds
   eval.py            masked-token evaluation and sampler smoke test

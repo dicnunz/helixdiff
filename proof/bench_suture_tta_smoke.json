@@ -1,0 +1,278 @@
+{
+  "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt",
+  "checkpoint_sha256": "3d1ae0b04275291f44c17660eeef12c627ed0d8f96132eba3b8caff27bedd9bf",
+  "checkpoint_step": 30000,
+  "loaded_state": "model_state",
+  "state_migration": {
+    "missing_initialized": [],
+    "unexpected": []
+  },
+  "parameters": 439968,
+  "data": "data/tinyshakespeare.txt",
+  "data_bytes": 1115394,
+  "val_fraction": 0.08,
+  "train_split_sha256": "3bcee3c77095c0828e0bca96a9d3e56860063e4af1f1a4eb38486fac22f6aa16",
+  "validation_split_sha256": "8d0f7b33b39afc4bc3c80c8060f53b652a90e496a11a81c642cee37f1e028638",
+  "guide_scope": "training_split_only",
+  "case_filter": {
+    "require_unseen_hole": true,
+    "candidate_count": 1,
+    "visible_context_adaptation_steps": 1
+  },
+  "masked_eval": {
+    "loss": 3.193418025970459,
+    "masked_accuracy": 0.14754098653793335,
+    "mask_rate": 0.5,
+    "batches": 1,
+    "batch_size": 2
+  },
+  "infill": {
+    "case_source": "validation_split",
+    "span_chars": 4,
+    "context_chars": 20,
+    "unigram_baseline": {
+      "summary": {
+        "cases": 1,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": ", three-quarters, ha[[lf-y]]ard, quarter, nail!\n",
+          "target_hole": "lf-y",
+          "predicted_hole": "    ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        }
+      ]
+    },
+    "bridge_only_baseline": {
+      "summary": {
+        "cases": 1,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": ", three-quarters, ha[[lf-y]]ard, quarter, nail!\n",
+          "target_hole": "lf-y",
+          "predicted_hole": "th t",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "unguided": {
+      "summary": {
+        "cases": 1,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": ", three-quarters, ha[[lf-y]]ard, quarter, nail!\n",
+          "target_hole": "lf-y",
+          "predicted_hole": "  t ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 1,
+          "selected_candidate_score": -1.4308799505233765,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -1.4308799505233765,
+              "score_is_finite": true,
+              "predicted_hole": "  t ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.13897095900028944
+        }
+      ]
+    },
+    "bridge_guided": {
+      "summary": {
+        "cases": 1,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": ", three-quarters, ha[[lf-y]]ard, quarter, nail!\n",
+          "target_hole": "lf-y",
+          "predicted_hole": "th h",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 1,
+          "selected_candidate_score": -0.539184033870697,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -0.539184033870697,
+              "score_is_finite": true,
+              "predicted_hole": "th h",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.7605777909921017,
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "visible_context_adapted": {
+      "summary": {
+        "cases": 1,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": ", three-quarters, ha[[lf-y]]ard, quarter, nail!\n",
+          "target_hole": "lf-y",
+          "predicted_hole": "  t ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 1,
+          "selected_candidate_score": -1.4308209419250488,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -1.4308209419250488,
+              "score_is_finite": true,
+              "predicted_hole": "  t ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.03378966698073782,
+          "adaptation": {
+            "enabled": true,
+            "mechanism": "visible_context_suture_tta",
+            "steps": 1,
+            "batch_size": 2,
+            "learning_rate": 0.0001,
+            "weight_decay": 0.0,
+            "span_min": 3,
+            "span_max": 12,
+            "train_scope": "head",
+            "seed": 101,
+            "visible_context_sha256": "0f0a0e0bf8ef142af8d1db6411e45371fcd49a72387c6cacf429978631600065",
+            "visible_context_bytes": 40,
+            "hidden_target_seen_in_visible_context": false,
+            "trainable_parameter_names": [
+              "token_emb.weight",
+              "norm.weight"
+            ],
+            "trainable_parameters": 25056,
+            "first_loss": 3.0301907062530518,
+            "final_loss": 3.0301907062530518,
+            "mean_masked_accuracy": 0.0625,
+            "elapsed_seconds": 0.07049195800209418
+          },
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "visible_context_adapted_bridge_guided": {
+      "summary": {
+        "cases": 1,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": ", three-quarters, ha[[lf-y]]ard, quarter, nail!\n",
+          "target_hole": "lf-y",
+          "predicted_hole": "th h",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 1,
+          "selected_candidate_score": -0.5366439819335938,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -0.5366439819335938,
+              "score_is_finite": true,
+              "predicted_hole": "th h",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.8105764999927487,
+          "adaptation": {
+            "enabled": true,
+            "mechanism": "visible_context_suture_tta",
+            "steps": 1,
+            "batch_size": 2,
+            "learning_rate": 0.0001,
+            "weight_decay": 0.0,
+            "span_min": 3,
+            "span_max": 12,
+            "train_scope": "head",
+            "seed": 101,
+            "visible_context_sha256": "0f0a0e0bf8ef142af8d1db6411e45371fcd49a72387c6cacf429978631600065",
+            "visible_context_bytes": 40,
+            "hidden_target_seen_in_visible_context": false,
+            "trainable_parameter_names": [
+              "token_emb.weight",
+              "norm.weight"
+            ],
+            "trainable_parameters": 25056,
+            "first_loss": 3.0301907062530518,
+            "final_loss": 3.0301907062530518,
+            "mean_masked_accuracy": 0.0625,
+            "elapsed_seconds": 0.07049195800209418
+          },
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "bridge_guided_minus_bridge_only_byte_accuracy": 0.0,
+    "adapted_minus_unguided_byte_accuracy": 0.0,
+    "adapted_minus_bridge_only_byte_accuracy": 0.0,
+    "adapted_bridge_guided_minus_bridge_only_byte_accuracy": 0.0
+  },
+  "quality_label": "mechanism_checkpoint",
+  "ten_out_of_ten_gate": {
+    "artifact": "pass_if_tests_verifier_docs_and_benchmarks_pass",
+    "actual_model": "requires strong_laptop_checkpoint or better; otherwise do not claim 10/10 model quality",
+    "public_wow": "requires visible infill trace plus non-leaky heldout benchmark"
+  }
+}

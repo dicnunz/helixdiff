@@ -1,6 +1,6 @@
 {
   "proof_name": "proxy_mask_selector_contract_smoke",
-  "commit": "6968b23",
+  "commit": "1787ea7",
   "git_dirty": false,
   "model_load": false,
   "device": "cpu",
@@ -15,6 +15,33 @@
     "target_span_redacted_before_calibration": true,
     "target_gold_available_to_contract_builder": false,
     "masked_bytes_seen_by_features": false
+  },
+  "proxy_geometry": {
+    "mode": "boundary_only",
+    "pool_per_case": 18,
+    "mechanism": "boundary-matched visible-only pseudo masks",
+    "summaries": [
+      {
+        "case_id": 0,
+        "mode": "boundary_only",
+        "pool_cases": 6,
+        "selected_cases": 6,
+        "pool_mean_geometry_distance": null,
+        "selected_mean_geometry_distance": null,
+        "selected_top_family_match_rate": 0.0,
+        "uses_redacted_target_hole": false
+      },
+      {
+        "case_id": 1,
+        "mode": "boundary_only",
+        "pool_cases": 6,
+        "selected_cases": 6,
+        "pool_mean_geometry_distance": null,
+        "selected_mean_geometry_distance": null,
+        "selected_top_family_match_rate": 0.0,
+        "uses_redacted_target_hole": false
+      }
+    ]
   },
   "candidate_policy": {
     "train_only_retrieval": true,
@@ -33,7 +60,7 @@
     ]
   },
   "selector_contract": {
-    "contract_id": "c45a6f96847214a4",
+    "contract_id": "a5b48c990862643a",
     "contract_ready": true,
     "contract_apply": true,
     "preset_space_frozen": true,
@@ -44,7 +71,7 @@
       "selector_margin": 3.0,
       "source": "proxy_mask_visible_context",
       "recommendation_status": "candidate_anchor_margin",
-      "selection_rule": "maximize proxy-mask fit selected exact, then top4, then avg rank"
+      "selection_rule": "maximize boundary-matched proxy-mask fit selected exact, then top4, then avg rank"
     }
   },
   "pseudo_calibration": {
@@ -129,7 +156,10 @@
     "same_doc_hits_zero": true,
     "near_duplicate_flags_zero": true,
     "pseudo_heldout_beats_shuffle_top4": true,
-    "target_top4_no_worse_than_visible_reranker": true
+    "target_top4_no_worse_than_visible_reranker": true,
+    "proxy_masks_geometry_shaped": true,
+    "proxy_geometry_uses_redacted_target_hole": true,
+    "selected_proxy_geometry_no_worse_than_pool": true
   },
   "useful_ratchet": false,
   "cases": {
@@ -152,7 +182,11 @@
         "visible_reranker_top4_exact": false,
         "pseudo_side": "left",
         "pseudo_offset": 1,
-        "boundary_match": 6
+        "boundary_match": 6,
+        "geometry_distance": null,
+        "target_geometry_top_family": null,
+        "proxy_geometry_top_family": null,
+        "geometry_top_family_match": null
       },
       {
         "case_id": 0,
@@ -172,7 +206,11 @@
         "visible_reranker_top4_exact": false,
         "pseudo_side": "left",
         "pseudo_offset": 12,
-        "boundary_match": 6
+        "boundary_match": 6,
+        "geometry_distance": null,
+        "target_geometry_top_family": null,
+        "proxy_geometry_top_family": null,
+        "geometry_top_family_match": null
       },
       {
         "case_id": 0,
@@ -192,7 +230,11 @@
         "visible_reranker_top4_exact": false,
         "pseudo_side": "left",
         "pseudo_offset": 16,
-        "boundary_match": 6
+        "boundary_match": 6,
+        "geometry_distance": null,
+        "target_geometry_top_family": null,
+        "proxy_geometry_top_family": null,
+        "geometry_top_family_match": null
       },
       {
         "case_id": 0,
@@ -212,7 +254,11 @@
         "visible_reranker_top4_exact": false,
         "pseudo_side": "left",
         "pseudo_offset": 17,
-        "boundary_match": 6
+        "boundary_match": 6,
+        "geometry_distance": null,
+        "target_geometry_top_family": null,
+        "proxy_geometry_top_family": null,
+        "geometry_top_family_match": null
       },
       {
         "case_id": 0,
@@ -232,7 +278,11 @@
         "visible_reranker_top4_exact": false,
         "pseudo_side": "left",
         "pseudo_offset": 19,
-        "boundary_match": 6
+        "boundary_match": 6,
+        "geometry_distance": null,
+        "target_geometry_top_family": null,
+        "proxy_geometry_top_family": null,
+        "geometry_top_family_match": null
       },
       {
         "case_id": 0,
@@ -252,7 +302,11 @@
         "visible_reranker_top4_exact": false,
         "pseudo_side": "left",
         "pseudo_offset": 20,
-        "boundary_match": 6
+        "boundary_match": 6,
+        "geometry_distance": null,
+        "target_geometry_top_family": null,
+        "proxy_geometry_top_family": null,
+        "geometry_top_family_match": null
       }
     ],
     "pseudo_heldout": [
@@ -274,7 +328,11 @@
         "visible_reranker_top4_exact": false,
         "pseudo_side": "left",
         "pseudo_offset": 4,
-        "boundary_match": 6
+        "boundary_match": 6,
+        "geometry_distance": null,
+        "target_geometry_top_family": null,
+        "proxy_geometry_top_family": null,
+        "geometry_top_family_match": null
       },
       {
         "case_id": 1,
@@ -294,7 +352,11 @@
         "visible_reranker_top4_exact": false,
         "pseudo_side": "left",
         "pseudo_offset": 5,
-        "boundary_match": 6
+        "boundary_match": 6,
+        "geometry_distance": null,
+        "target_geometry_top_family": null,
+        "proxy_geometry_top_family": null,
+        "geometry_top_family_match": null
       },
       {
         "case_id": 1,
@@ -314,7 +376,11 @@
         "visible_reranker_top4_exact": false,
         "pseudo_side": "left",
         "pseudo_offset": 7,
-        "boundary_match": 6
+        "boundary_match": 6,
+        "geometry_distance": null,
+        "target_geometry_top_family": null,
+        "proxy_geometry_top_family": null,
+        "geometry_top_family_match": null
       },
       {
         "case_id": 1,
@@ -334,7 +400,11 @@
         "visible_reranker_top4_exact": false,
         "pseudo_side": "left",
         "pseudo_offset": 17,
-        "boundary_match": 6
+        "boundary_match": 6,
+        "geometry_distance": null,
+        "target_geometry_top_family": null,
+        "proxy_geometry_top_family": null,
+        "geometry_top_family_match": null
       },
       {
         "case_id": 1,
@@ -354,7 +424,11 @@
         "visible_reranker_top4_exact": true,
         "pseudo_side": "left",
         "pseudo_offset": 18,
-        "boundary_match": 6
+        "boundary_match": 6,
+        "geometry_distance": null,
+        "target_geometry_top_family": null,
+        "proxy_geometry_top_family": null,
+        "geometry_top_family_match": null
       },
       {
         "case_id": 1,
@@ -374,7 +448,11 @@
         "visible_reranker_top4_exact": false,
         "pseudo_side": "left",
         "pseudo_offset": 22,
-        "boundary_match": 6
+        "boundary_match": 6,
+        "geometry_distance": null,
+        "target_geometry_top_family": null,
+        "proxy_geometry_top_family": null,
+        "geometry_top_family_match": null
       }
     ],
     "target_after_freeze": [

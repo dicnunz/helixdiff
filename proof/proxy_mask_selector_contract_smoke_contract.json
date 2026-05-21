@@ -1,7 +1,7 @@
 {
   "kind": "helixdiff_selector_contract",
   "version": 1,
-  "contract_id": "c45a6f96847214a4",
+  "contract_id": "a5b48c990862643a",
   "status": "ready_for_heldout",
   "ready_for_heldout": true,
   "claim_boundary": "proxy-mask contracts freeze visible-only selector choices; target claims require a later held-out gate",
@@ -12,7 +12,7 @@
     "selector_margin": 3.0,
     "source": "proxy_mask_visible_context",
     "recommendation_status": "candidate_anchor_margin",
-    "selection_rule": "maximize proxy-mask fit selected exact, then top4, then avg rank"
+    "selection_rule": "maximize boundary-matched proxy-mask fit selected exact, then top4, then avg rank"
   },
   "frozen_benchmark_flags": [
     "--lattice-selector-anchor",

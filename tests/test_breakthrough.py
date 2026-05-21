@@ -24,15 +24,20 @@ class BreakthroughPlanTests(unittest.TestCase):
         self.assertIn("frozen_selector_heldout_trial", lane_names)
         self.assertIn("visible_hole_reranker", lane_names)
         self.assertIn("proxy_mask_selector_contract_smoke", lane_names)
-        self.assertTrue(plan["chatgpt_teammate_status"]["usable_this_run"])
-        self.assertEqual(plan["chatgpt_teammate_status"]["model_mode"], "Extended Pro")
-        self.assertIn("chatgpt.com/c/", plan["chatgpt_teammate_status"]["conversation_url"])
-        self.assertIn("proxy-mask selector", plan["chatgpt_teammate_status"]["latest_recommendation"])
+        self.assertIn(
+            "proxy-mask receipts cannot be cited as target-lift evidence unless --require-useful-ratchet passes",
+            plan["release_standard"],
+        )
+        self.assertFalse(plan["chatgpt_teammate_status"]["usable_this_run"])
+        self.assertEqual(plan["chatgpt_teammate_status"]["latest_response_status"], "blocked")
+        self.assertIn("Transport closed", plan["chatgpt_teammate_status"]["blocker"])
+        self.assertIsNone(plan["chatgpt_teammate_status"]["latest_recommendation"])
+        self.assertIn("No fresh GPT-5.5 Pro contribution", plan["chatgpt_teammate_status"]["claim"])
         prior_note = plan["chatgpt_teammate_status"]["recorded_prior_note"]
         self.assertEqual(prior_note["model_mode"], "Extended Pro")
         self.assertIn("chatgpt.com/c/", prior_note["conversation_url"])
         self.assertIn("visible-reranker oracle smoke", prior_note["contribution"])
-        self.assertEqual(prior_note["verification_status"], "current_chrome_readback_reverified_url")
+        self.assertEqual(prior_note["verification_status"], "prior_recorded_note_not_reverified_current_runtime")
 
     def test_top_lane_reuses_predeclared_recipe_and_gate(self) -> None:
         plan = build_breakthrough_plan()
@@ -53,6 +58,8 @@ class BreakthroughPlanTests(unittest.TestCase):
         self.assertFalse(lane["heavy_slot_required"])
         self.assertIn("helixdiff-proxy-mask-selector-contract-smoke", proof_commands)
         self.assertIn("--contract-out proof/proxy_mask_selector_contract_smoke_contract.json", proof_commands)
+        self.assertIn("claim_gate blocks target-lift wording", lane["pass_condition"])
+        self.assertIn("--require-useful-ratchet fails", lane["kill_condition"])
 
     def test_proxy_mask_selector_contract_lane_is_visible_only(self) -> None:
         plan = build_breakthrough_plan()

@@ -402,6 +402,35 @@ def _build_selector_contract(selected: dict[str, Any], receipt_core: dict[str, A
     }
 
 
+def apply_claim_gate(receipt: dict[str, Any], *, require_useful_ratchet: bool = False) -> dict[str, Any]:
+    public_target_lift_claim_allowed = (
+        bool(receipt.get("useful_ratchet"))
+        and receipt.get("verdict") == "pass"
+        and receipt.get("selector_contract", {}).get("target_metric_used_for_selection") is False
+    )
+    passed = public_target_lift_claim_allowed if require_useful_ratchet else True
+    claim_gate = {
+        "require_useful_ratchet": bool(require_useful_ratchet),
+        "passed": bool(passed),
+        "public_target_lift_claim_allowed": bool(public_target_lift_claim_allowed),
+        "blocker": None
+        if passed
+        else "useful_ratchet=false; this receipt is contract readiness only, not target-lift evidence",
+        "claim_boundary": (
+            "Contract readiness only: a proxy-mask selector contract can be ready for held-out use "
+            "without allowing any public target-lift or SOTA-style claim."
+        ),
+    }
+    receipt["claim_gate"] = claim_gate
+    if require_useful_ratchet and not passed:
+        receipt["verdict"] = "fail"
+        reasons = list(receipt.get("failure_reasons", []))
+        if "useful_ratchet_required" not in reasons:
+            reasons.append("useful_ratchet_required")
+        receipt["failure_reasons"] = reasons
+    return receipt
+
+
 def build_receipt(config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     tokenizer = ByteTokenizer()
     text = load_text(str(config["data"]))
@@ -577,7 +606,7 @@ def build_receipt(config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
         ),
     }
     receipt["verdict"] = "pass" if all(checks.values()) else "fail"
-    return receipt, contract
+    return apply_claim_gate(receipt), contract
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -586,8 +615,14 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--out")
     parser.add_argument("--contract-out")
     parser.add_argument("--json", action="store_true")
+    parser.add_argument(
+        "--require-useful-ratchet",
+        action="store_true",
+        help="Fail unless the proxy contract is also safe to cite as target-lift evidence.",
+    )
     args = parser.parse_args(argv)
     receipt, contract = build_receipt(load_config(args.config))
+    receipt = apply_claim_gate(receipt, require_useful_ratchet=args.require_useful_ratchet)
     text = json.dumps(receipt, indent=2)
     if args.out:
         out = Path(args.out)
@@ -598,6 +633,8 @@ def main(argv: list[str] | None = None) -> None:
         contract_out.parent.mkdir(parents=True, exist_ok=True)
         contract_out.write_text(json.dumps(contract, indent=2), encoding="utf-8")
     print(text if args.json or not args.out else f"wrote {args.out}")
+    if args.require_useful_ratchet and not receipt["claim_gate"]["passed"]:
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":

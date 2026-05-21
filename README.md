@@ -314,6 +314,17 @@ helixdiff-proxy-mask-selector-contract-smoke \
 
 It chooses among fixed prior/surface/visible-reranker presets using pseudo masks cut only from visible context, holds out part of those proxy masks for a shuffle check, and records `target_metric_used_for_selection=false`. The emitted contract is `ready_for_heldout`, but target rows in the smoke are after-freeze diagnostics, not a selected-generation claim.
 
+If a release note tries to cite the proxy-mask smoke as target-lift evidence, make it pass the stricter claim gate first:
+
+```
+helixdiff-proxy-mask-selector-contract-smoke \
+  --config configs/proof_proxy_mask_selector_contract_smoke.yaml \
+  --require-useful-ratchet \
+  --json
+```
+
+The checked-in receipt currently has `useful_ratchet=false`, so that claim gate is expected to fail until a later held-out run or stronger proxy selector actually improves the after-freeze target rows. Contract readiness is useful; it is not SOTA evidence.
+
 For the next model-scored run, use `--lattice-prior-rerank-top-k 4 --lattice-verifier-mode dual --lattice-verifier-top-k 0 --lattice-selector-margin 3.0 --lattice-selector-anchor surface --lattice-selector-anchor-sweep prior,surface,visible_reranker --lattice-bi-anchor-candidates 64 --lattice-bi-anchor-sizes 32,24,16,12,8,6,4 --lattice-local-surface-anchor-calibration --lattice-visible-reranker-calibration` to score only the small structural-prior set that the oracle proved contains the answer on this slice while testing whether the non-leaky surface verifier or visible-context reranker is a better selector anchor than raw prior rank. `dual` averages leave-one-out suture scoring with full-hole reconstruction scoring, verifier top-k `0` keeps scoring from masking out candidate bytes that the sampler would not normally pick, and the selector margin prevents a weak diffusion preference from overriding the chosen anchor. The local anchor calibration is a verifier-of-the-verifier: it reports whether same-case visible synthetic holes would have trusted prior, surface, or a prior/surface-weighted visible reranker before the hidden span is scored. The summary now separates raw-verifier exact rate, anchor exact rate, scored-top-k oracle coverage, bi-anchor oracle contribution, surface-verifier and visible-reranker exact/top-k diagnostics, local surface-anchor recommendation, the no-extra-compute `local_surface_anchor_margin_sweep`, margin activation rate, selector effects, outcome categories, anchor-margin gaps, and a counterfactual selector-anchor/margin sweep from the same scored candidates, so the run tells you whether to train the verifier, tune the margin, switch anchors, trust per-case anchor calibration, or widen the lattice instead of hiding all failures inside one accuracy number.
 
 The surface anchor is not yet a model win. The checked-in oracle proof says it is worth testing: `surface_verifier_selected_exact_rate=0.75`, `surface_verifier_top4_exact_rate=1.0`, `surface_verifier_avg_exact_rank=0.5`, and `surface_verifier_harm_count=0` on the 4-case slice. The model-scored widened benchmark still has to prove that this improves selected repair accuracy.

@@ -100,9 +100,15 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
             "repo_move": "Emit a ready selector contract from visible-only proxy masks while redacting target spans from calibration.",
             "proof_commands": [proxy_mask_contract_command],
-            "pass_condition": "receipt has contract_ready=true, target_metric_used_for_selection=false, pseudo-heldout beats shuffle, and target metrics remain diagnostic",
+            "pass_condition": (
+                "receipt has contract_ready=true, target_metric_used_for_selection=false, pseudo-heldout beats shuffle, "
+                "target metrics remain diagnostic, and claim_gate blocks target-lift wording unless useful_ratchet=true"
+            ),
             "claim_if_passes": "visible-only selector predeclaration smoke only",
-            "kill_condition": "proxy heldout fails shuffle, target gold leaks into selection, or target metrics are used to choose the contract",
+            "kill_condition": (
+                "proxy heldout fails shuffle, target gold leaks into selection, target metrics are used to choose the contract, "
+                "or --require-useful-ratchet fails for any target-lift claim"
+            ),
             "heavy_slot_required": False,
         },
         {
@@ -210,13 +216,17 @@ def build_breakthrough_plan() -> dict[str, Any]:
         "source_refresh_date": SOURCE_REFRESH_DATE,
         "chatgpt_teammate_status": {
             "requested": True,
-            "usable_this_run": True,
-            "model_mode": "Extended Pro",
-            "conversation_url": "https://chatgpt.com/c/6a0f1cf7-b734-83ea-afa1-1a92152682f1",
-            "latest_request": "next cheap breakthrough critique after selector-contract lane",
-            "latest_response_status": "answered",
-            "latest_recommendation": "proxy-mask selector self-calibration",
-            "claim": "Extended Pro recommended a visible-only proxy-mask selector contract; the repo implements a smoke proof for that lane.",
+            "usable_this_run": False,
+            "model_mode": "unverified_current_runtime",
+            "conversation_url": None,
+            "latest_request": "fresh GPT-5.5 Pro teammate re-probe for selector-contract continuation",
+            "latest_response_status": "blocked",
+            "latest_recommendation": None,
+            "blocker": "node_repl/js Transport closed before the Chrome browser-client could list ChatGPT tabs",
+            "claim": (
+                "No fresh GPT-5.5 Pro contribution is claimed in this run; current work proceeds from "
+                "local proofs, source-backed constraints, and recorded prior notes only."
+            ),
             "recorded_prior_note": {
                 "model_mode": "Extended Pro",
                 "conversation_url": "https://chatgpt.com/c/6a0f1cf7-b734-83ea-afa1-1a92152682f1",
@@ -224,7 +234,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
                     "Recorded prior note: test the model-free visible-reranker oracle smoke "
                     "before spending Mac heat on model scoring."
                 ),
-                "verification_status": "current_chrome_readback_reverified_url",
+                "verification_status": "prior_recorded_note_not_reverified_current_runtime",
             },
         },
         "claim_boundary": CLAIM_BOUNDARY,
@@ -237,6 +247,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "held-out bytes excluded from adaptation and calibration examples",
             "frozen visible context preserved exactly",
             "bridge-only and nearest-visible baselines reported",
+            "proxy-mask receipts cannot be cited as target-lift evidence unless --require-useful-ratchet passes",
             "global model-quality language forbidden unless helixdiff-gate model_quality_passed is true",
         ],
     }

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import copy
 import unittest
 
 from helixdiff.contract import selector_settings_from_contract
-from helixdiff.proofs.proxy_mask_selector_contract_smoke import build_receipt, load_config
+from helixdiff.proofs.proxy_mask_selector_contract_smoke import apply_claim_gate, build_receipt, load_config
 
 
 class ProxyMaskSelectorContractSmokeTests(unittest.TestCase):
@@ -32,10 +33,36 @@ class ProxyMaskSelectorContractSmokeTests(unittest.TestCase):
         self.assertFalse(receipt["selector_contract"]["target_metric_used_for_selection"])
         self.assertGreater(receipt["pseudo_calibration"]["heldout"]["top4_exact"], receipt["shuffle_falsification"]["top4_exact"])
         self.assertTrue(receipt["checks"]["pseudo_heldout_beats_shuffle_top4"])
+        self.assertFalse(receipt["claim_gate"]["require_useful_ratchet"])
+        self.assertFalse(receipt["claim_gate"]["public_target_lift_claim_allowed"])
+        self.assertIn("Contract readiness only", receipt["claim_gate"]["claim_boundary"])
         self.assertTrue(contract["ready_for_heldout"])
         settings = selector_settings_from_contract(contract, require_ready=True)
         self.assertIn(settings["selector_anchor"], {"prior", "surface", "visible_reranker"})
         self.assertEqual(settings["selector_margin"], 3.0)
+
+    def test_useful_ratchet_gate_blocks_public_target_lift_claims(self) -> None:
+        config = load_config(None)
+        config.update(
+            {
+                "data": "data/tinyshakespeare.txt",
+                "cases": 2,
+                "span_chars": 4,
+                "context_chars": 36,
+                "pseudo_masks_per_case": 6,
+                "max_candidates_per_example": 64,
+                "shuffle_trials": 16,
+            }
+        )
+        receipt, _ = build_receipt(config)
+
+        gated = apply_claim_gate(copy.deepcopy(receipt), require_useful_ratchet=True)
+
+        self.assertEqual(gated["verdict"], "fail")
+        self.assertFalse(gated["claim_gate"]["passed"])
+        self.assertFalse(gated["claim_gate"]["public_target_lift_claim_allowed"])
+        self.assertIn("useful_ratchet_required", gated["failure_reasons"])
+        self.assertIn("useful_ratchet=false", gated["claim_gate"]["blocker"])
 
 
 if __name__ == "__main__":

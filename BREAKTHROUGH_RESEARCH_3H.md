@@ -230,6 +230,7 @@ Suture TTA shipped and did not clear the stronger gate. Retrieval-lattice select
 1. train or calibrate a tiny diffusion verifier on synthetic visible-document holes;
 2. rerank only the structural-prior top-4 candidates with `--lattice-prior-rerank-top-k 4 --lattice-verifier-mode dual --lattice-verifier-top-k 0 --lattice-selector-margin 3.0`;
 3. sweep selector margins with `--lattice-selector-margin-sweep` from the same scored candidates so margin calibration is measured rather than guessed;
-4. report oracle-in-lattice, prior top-k coverage, raw-verifier accuracy, anchor accuracy, margin activation, selected accuracy, and failure category per case.
+4. run `helixdiff-calibrate-selector` on the resulting benchmark JSON to pick the lowest safe observed margin frontier without pretending calibration is held-out proof;
+5. report oracle-in-lattice, prior top-k coverage, raw-verifier accuracy, anchor accuracy, margin activation, selected accuracy, and failure category per case.
 
 Only call DocForge impressive after verifier-guided lattice selection beats nearest-visible and bridge-only on widened held-out spans. The public line stays severe: **Mac-local SOTA for visible-context document repair, not a general language model.**

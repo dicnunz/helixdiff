@@ -284,6 +284,15 @@ helixdiff-bench \
 
 For the next model-scored run, use `--lattice-prior-rerank-top-k 4 --lattice-verifier-mode dual --lattice-verifier-top-k 0 --lattice-selector-margin 3.0` to score only the small structural-prior set that the oracle proved contains the answer on this slice. `dual` averages leave-one-out suture scoring with full-hole reconstruction scoring, verifier top-k `0` keeps scoring from masking out candidate bytes that the sampler would not normally pick, and the selector margin prevents a weak diffusion preference from overriding the structural-prior anchor. The summary now separates raw-verifier exact rate, prior-anchor exact rate, scored-top-k oracle coverage, margin activation rate, selector effects, outcome categories, anchor-margin gaps, and a counterfactual selector-margin sweep from the same scored candidates, so the run tells you whether to train the verifier, tune the margin, or widen the lattice instead of hiding all failures inside one accuracy number.
 
+After a scored run, turn the sweep into a calibration receipt:
+
+```
+helixdiff-calibrate-selector proof/bench_prior_topk_dual_smoke.json \
+  --json-out proof/selector_margin_calibration_smoke.json
+```
+
+The calibrator reports exact rate, byte accuracy, rescue/block rates, anchor-gap pressure, and the lowest safe margin on the observed frontier. Its own claim boundary is strict: a margin chosen from this output is diagnostic until it is predeclared and evaluated on separate held-out cases.
+
 The checked-in seed-corpus benchmark result is deliberately unforgiving:
 
 | Variant | Held-out span byte accuracy | Exact span match |

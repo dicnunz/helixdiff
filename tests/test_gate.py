@@ -216,11 +216,15 @@ class GateTests(unittest.TestCase):
         current["infill"]["retrieval_lattice"] = _strict_lattice_variant(0.6, 0.5, cases=8)
         current["case_filter"].update(
             {
+                "lattice_prior_rerank_top_k": 4,
+                "lattice_verifier_mode": "dual",
+                "lattice_verifier_top_k": 0,
                 "lattice_selector_margin": 3.0,
                 "lattice_selector_anchor": "surface",
                 "lattice_selector_anchor_sweep": ["prior", "surface"],
                 "lattice_selector_margin_sweep": [0, 1, 2, 3, 5],
                 "lattice_local_surface_anchor_calibration": True,
+                "lattice_apply_local_surface_anchor_calibration": False,
             }
         )
 
@@ -229,6 +233,40 @@ class GateTests(unittest.TestCase):
         self.assertTrue(report["passed"])
         self.assertTrue(report["repair_proof_contract"]["passed"])
         self.assertEqual(report["claim_boundary"], "narrow_repair_lattice_claim_allowed_not_model_sota")
+
+    def test_required_repair_proof_contract_blocks_non_predeclared_recipe(self) -> None:
+        current = _report(
+            loss=3.2,
+            acc=0.14,
+            bridge=0.1,
+            unguided=0.1,
+            guided=0.1,
+            nearest=0.4,
+            lattice=None,
+            nearest_exact=0.25,
+            lattice_exact=0.5,
+        )
+        current["infill"]["retrieval_lattice"] = _strict_lattice_variant(0.6, 0.5, cases=8)
+        current["case_filter"].update(
+            {
+                "lattice_prior_rerank_top_k": 8,
+                "lattice_verifier_mode": "dual",
+                "lattice_verifier_top_k": 0,
+                "lattice_selector_margin": 3.0,
+                "lattice_selector_anchor": "surface",
+                "lattice_selector_anchor_sweep": ["prior", "surface"],
+                "lattice_selector_margin_sweep": [0.0, 1.0, 2.0, 3.0, 5.0],
+                "lattice_local_surface_anchor_calibration": True,
+                "lattice_apply_local_surface_anchor_calibration": False,
+            }
+        )
+
+        report = evaluate_repair_lattice_gate(current, min_cases=4, require_proof_contract=True)
+
+        self.assertFalse(report["passed"])
+        contract = report["repair_proof_contract"]
+        self.assertFalse(contract["checks"]["predeclared_strict_recipe_matched"])
+        self.assertIn("prior_rerank_top_k_is_4", contract["strict_repair_recipe"]["missing"])
 
 
 if __name__ == "__main__":

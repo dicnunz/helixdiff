@@ -75,7 +75,8 @@
         "surface_verifier_diagnostics_reported",
         "selector_anchor_margin_sweep_reported",
         "local_surface_anchor_calibration_reported",
-        "local_surface_anchor_margin_sweep_reported"
+        "local_surface_anchor_margin_sweep_reported",
+        "predeclared_strict_recipe_matched"
       ],
       "checks": {
         "checkpoint_sha256_recorded": true,
@@ -89,7 +90,65 @@
         "selector_margin_sweep_reported": true,
         "selector_anchor_margin_sweep_reported": false,
         "local_surface_anchor_calibration_reported": false,
-        "local_surface_anchor_margin_sweep_reported": false
+        "local_surface_anchor_margin_sweep_reported": false,
+        "predeclared_strict_recipe_matched": false
+      },
+      "strict_repair_recipe": {
+        "passed": false,
+        "missing": [
+          "selector_anchor_is_surface",
+          "selector_anchor_sweep_is_prior_surface",
+          "local_surface_anchor_calibration_enabled",
+          "local_surface_anchor_calibration_not_applied"
+        ],
+        "checks": {
+          "prior_rerank_top_k_is_4": true,
+          "verifier_mode_is_dual": true,
+          "verifier_top_k_is_0": true,
+          "selector_margin_is_3": true,
+          "selector_anchor_is_surface": false,
+          "selector_anchor_sweep_is_prior_surface": false,
+          "selector_margin_sweep_is_0_1_2_3_5": true,
+          "local_surface_anchor_calibration_enabled": false,
+          "local_surface_anchor_calibration_not_applied": false
+        },
+        "expected": {
+          "lattice_prior_rerank_top_k": 4,
+          "lattice_verifier_mode": "dual",
+          "lattice_verifier_top_k": 0,
+          "lattice_selector_margin": 3.0,
+          "lattice_selector_anchor": "surface",
+          "lattice_selector_anchor_sweep": [
+            "prior",
+            "surface"
+          ],
+          "lattice_selector_margin_sweep": [
+            0.0,
+            1.0,
+            2.0,
+            3.0,
+            5.0
+          ],
+          "lattice_local_surface_anchor_calibration": true,
+          "lattice_apply_local_surface_anchor_calibration": false
+        },
+        "actual": {
+          "lattice_prior_rerank_top_k": 4,
+          "lattice_verifier_mode": "dual",
+          "lattice_verifier_top_k": 0,
+          "lattice_selector_margin": 3.0,
+          "lattice_selector_anchor": null,
+          "lattice_selector_anchor_sweep": null,
+          "lattice_selector_margin_sweep": [
+            0.0,
+            1.0,
+            2.0,
+            3.0,
+            5.0
+          ],
+          "lattice_local_surface_anchor_calibration": null,
+          "lattice_apply_local_surface_anchor_calibration": null
+        }
       },
       "current": {
         "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt",

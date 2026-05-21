@@ -7,6 +7,17 @@ from typing import Any
 
 
 REPAIR_PROOF_CONTRACT_BOUNDARY = "repair_lattice_claim_requires_predeclared_heldout_proof_contract"
+STRICT_REPAIR_RECIPE = {
+    "lattice_prior_rerank_top_k": 4,
+    "lattice_verifier_mode": "dual",
+    "lattice_verifier_top_k": 0,
+    "lattice_selector_margin": 3.0,
+    "lattice_selector_anchor": "surface",
+    "lattice_selector_anchor_sweep": ["prior", "surface"],
+    "lattice_selector_margin_sweep": [0.0, 1.0, 2.0, 3.0, 5.0],
+    "lattice_local_surface_anchor_calibration": True,
+    "lattice_apply_local_surface_anchor_calibration": False,
+}
 
 
 def _masked_loss(report: dict[str, Any]) -> float:
@@ -57,11 +68,67 @@ def _any_case_has(cases: list[dict[str, Any]], field: str) -> bool:
     return any(bool(case.get(field)) for case in cases)
 
 
+def _float_equal(left: Any, right: float) -> bool:
+    try:
+        return abs(float(left) - float(right)) < 1e-9
+    except (TypeError, ValueError):
+        return False
+
+
+def _numeric_list_equal(left: Any, right: list[float]) -> bool:
+    if not isinstance(left, list) or len(left) != len(right):
+        return False
+    return all(_float_equal(item, expected) for item, expected in zip(left, right, strict=True))
+
+
+def evaluate_strict_repair_recipe(case_filter: dict[str, Any]) -> dict[str, Any]:
+    checks = {
+        "prior_rerank_top_k_is_4": case_filter.get("lattice_prior_rerank_top_k")
+        == STRICT_REPAIR_RECIPE["lattice_prior_rerank_top_k"],
+        "verifier_mode_is_dual": case_filter.get("lattice_verifier_mode")
+        == STRICT_REPAIR_RECIPE["lattice_verifier_mode"],
+        "verifier_top_k_is_0": case_filter.get("lattice_verifier_top_k")
+        == STRICT_REPAIR_RECIPE["lattice_verifier_top_k"],
+        "selector_margin_is_3": _float_equal(
+            case_filter.get("lattice_selector_margin"),
+            float(STRICT_REPAIR_RECIPE["lattice_selector_margin"]),
+        ),
+        "selector_anchor_is_surface": case_filter.get("lattice_selector_anchor")
+        == STRICT_REPAIR_RECIPE["lattice_selector_anchor"],
+        "selector_anchor_sweep_is_prior_surface": case_filter.get("lattice_selector_anchor_sweep")
+        == STRICT_REPAIR_RECIPE["lattice_selector_anchor_sweep"],
+        "selector_margin_sweep_is_0_1_2_3_5": _numeric_list_equal(
+            case_filter.get("lattice_selector_margin_sweep"),
+            STRICT_REPAIR_RECIPE["lattice_selector_margin_sweep"],
+        ),
+        "local_surface_anchor_calibration_enabled": case_filter.get(
+            "lattice_local_surface_anchor_calibration"
+        )
+        is True,
+        "local_surface_anchor_calibration_not_applied": case_filter.get(
+            "lattice_apply_local_surface_anchor_calibration"
+        )
+        is False,
+    }
+    missing = [name for name, passed in checks.items() if not passed]
+    return {
+        "passed": not missing,
+        "missing": missing,
+        "checks": checks,
+        "expected": STRICT_REPAIR_RECIPE,
+        "actual": {
+            key: case_filter.get(key)
+            for key in STRICT_REPAIR_RECIPE
+        },
+    }
+
+
 def evaluate_repair_proof_contract(report: dict[str, Any]) -> dict[str, Any]:
     """Check whether a repair-lattice metric run carries enough proof to be claimable."""
 
     case_filter = report.get("case_filter", {})
     case_filter = case_filter if isinstance(case_filter, dict) else {}
+    strict_recipe = evaluate_strict_repair_recipe(case_filter)
     lattice_summary = _variant_summary(report, "retrieval_lattice")
     lattice_cases = _case_count(report, "retrieval_lattice") if _has_variant(report, "retrieval_lattice") else 0
     lattice_rows = _variant_cases(report, "retrieval_lattice")
@@ -99,6 +166,7 @@ def evaluate_repair_proof_contract(report: dict[str, Any]) -> dict[str, Any]:
             lattice_summary.get("local_surface_anchor_margin_sweep")
         )
         or _any_case_has(lattice_rows, "local_surface_anchor_margin_sweep"),
+        "predeclared_strict_recipe_matched": bool(strict_recipe["passed"]),
     }
     missing = [name for name, passed in checks.items() if not passed]
     passed = not missing
@@ -109,6 +177,7 @@ def evaluate_repair_proof_contract(report: dict[str, Any]) -> dict[str, Any]:
         ),
         "missing": missing,
         "checks": checks,
+        "strict_repair_recipe": strict_recipe,
         "current": {
             "checkpoint": report.get("checkpoint"),
             "cases": lattice_cases,

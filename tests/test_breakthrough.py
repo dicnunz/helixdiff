@@ -29,6 +29,7 @@ class BreakthroughPlanTests(unittest.TestCase):
             plan["release_standard"],
         )
         self.assertFalse(plan["chatgpt_teammate_status"]["usable_this_run"])
+        self.assertEqual(plan["chatgpt_teammate_status"]["model_mode"], "unverified_current_runtime")
         self.assertEqual(plan["chatgpt_teammate_status"]["latest_response_status"], "blocked")
         self.assertIn("Transport closed", plan["chatgpt_teammate_status"]["blocker"])
         self.assertIsNone(plan["chatgpt_teammate_status"]["latest_recommendation"])

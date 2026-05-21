@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import random
 import subprocess
 from pathlib import Path
@@ -36,6 +37,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "pseudo_masks_per_case": 6,
     "proxy_geometry_mode": "boundary_only",
     "proxy_geometry_pool_per_case": 18,
+    "proxy_shadow_pool_per_case": 24,
+    "proxy_shadow_keep_per_case": 6,
+    "proxy_shadow_anchor_guard_chars": 8,
     "pseudo_heldout_frac": 0.5,
     "max_candidates_per_example": 64,
     "lattice_visible_candidates": 8,
@@ -158,6 +162,7 @@ def proxy_mask_cases_from_visible_context(
                     "hole": hole,
                     "side": side,
                     "offset": start,
+                    "segment_len": len(segment),
                     "boundary_match": _signature_match_score(signature, target_signature),
                     "hole_sha256": sha256_text(hole),
                 }
@@ -167,6 +172,32 @@ def proxy_mask_cases_from_visible_context(
     for row in rows:
         deduped.setdefault(str(row["marked_text"]), row)
     return list(deduped.values())[: max(0, int(limit))]
+
+
+def _edit_distance(left: str, right: str) -> int:
+    if left == right:
+        return 0
+    previous = list(range(len(right) + 1))
+    for left_index, left_char in enumerate(left, start=1):
+        current = [left_index]
+        for right_index, right_char in enumerate(right, start=1):
+            current.append(
+                min(
+                    previous[right_index] + 1,
+                    current[right_index - 1] + 1,
+                    previous[right_index - 1] + int(left_char != right_char),
+                )
+            )
+        previous = current
+    return previous[-1]
+
+
+def _percentile(values: list[float], fraction: float) -> float | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    index = min(len(ordered) - 1, max(0, int(round((len(ordered) - 1) * fraction))))
+    return float(ordered[index])
 
 
 def _source_family(source: str | None) -> str:
@@ -265,8 +296,120 @@ def lattice_geometry_profile(
     }
 
 
+def lattice_shadow_fingerprint(
+    *,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    guide: BigramGuide,
+    train_text: str,
+    config: dict[str, Any],
+    bi_anchor_sizes: list[int],
+) -> dict[str, Any]:
+    """Label-free ambiguity fingerprint for matching proxy masks to the real target context."""
+
+    before, hole, after = _split_marked(marked_text)
+    redacted_marked = _redacted_marked_text(marked_text)
+    ranked = rank_lattice_candidates_by_prior(
+        build_lattice_candidate_rows(
+            tokenizer=tokenizer,
+            marked_text=redacted_marked,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=int(config["lattice_visible_candidates"]),
+            morphology_limit=int(config["lattice_morphology_candidates"]),
+            surface_limit=int(config["lattice_surface_candidates"]),
+            bi_anchor_limit=int(config["lattice_bi_anchor_candidates"]),
+            bi_anchor_sizes=bi_anchor_sizes,
+        )
+    )[: int(config["max_candidates_per_example"])]
+    surface = surface_verifier_candidate_report(ranked, marked_text=redacted_marked, train_text=train_text)
+    reranker = visible_reranker_candidate_report(_ranked_candidates_with_surface_report(ranked, surface))
+
+    source_counts = {name: 0 for name in ("visible", "bi_anchor", "morphology", "surface", "bridge", "unigram", "other")}
+    duplicate_source_count = 0
+    for row in ranked:
+        duplicate_source_count += max(0, len(row.get("sources", [])) - 1)
+        for source in row.get("sources", []):
+            family = _source_family(str(source.get("source")))
+            source_counts[family] = source_counts.get(family, 0) + 1
+
+    prior_scores = [_safe_score(row.get("prior_score")) for row in ranked[:16]]
+    if prior_scores:
+        max_score = max(prior_scores)
+        exp_scores = [pow(2.718281828, score - max_score) for score in prior_scores]
+        total = sum(exp_scores) or 1.0
+        prior_probs = [score / total for score in exp_scores]
+        prior_entropy = -sum(prob * (0.0 if prob <= 0 else math.log(prob)) for prob in prior_probs)
+    else:
+        prior_entropy = 0.0
+    prior_top1_top2_gap = (prior_scores[0] - prior_scores[1]) if len(prior_scores) > 1 else 0.0
+
+    candidate_keys = [tuple(int(token_id) for token_id in row["ids"]) for row in ranked]
+    surface_top = min(
+        candidate_keys,
+        key=lambda key: surface.get(key, {}).get("surface_verifier_rank", 10**9),
+        default=(),
+    )
+    reranker_top = min(
+        candidate_keys,
+        key=lambda key: reranker.get(key, {}).get("visible_reranker_rank", 10**9),
+        default=(),
+    )
+    prior_top = candidate_keys[0] if candidate_keys else ()
+    top_disagreement = len({prior_top, surface_top, reranker_top} - {()})
+
+    predicted = [str(row.get("predicted_hole", "")) for row in ranked[:16]]
+    distances: list[float] = []
+    for left_index, left_pred in enumerate(predicted):
+        for right_pred in predicted[left_index + 1 :]:
+            distances.append(float(_edit_distance(left_pred, right_pred)))
+
+    boundary = _boundary_signature(before, hole, after)
+    return {
+        "mask_len": len(hole),
+        "boundary_signature": "".join("1" if value else "0" for value in boundary),
+        "candidate_count": len(ranked),
+        "source_diversity": sum(1 for count in source_counts.values() if count > 0),
+        "top_prior_family": _source_family(str(ranked[0].get("prior_source"))) if ranked else "none",
+        "prior_entropy": float(prior_entropy),
+        "prior_top1_top2_gap": float(prior_top1_top2_gap),
+        "top_selector_disagreement": int(top_disagreement),
+        "pairwise_edit_mean": (sum(distances) / len(distances)) if distances else 0.0,
+        "pairwise_edit_p95": _percentile(distances, 0.95) or 0.0,
+        "duplicate_source_count": int(duplicate_source_count),
+        "left_anchor_alpha": bool(before[-1:].isalpha()),
+        "right_anchor_alpha": bool(after[:1].isalpha()),
+        **source_counts,
+        "used_exact_target_candidate_bytes_for_matching": False,
+    }
+
+
 def _normalized_distance(left: float, right: float) -> float:
     return abs(left - right) / max(abs(left), abs(right), 1.0)
+
+
+def shadow_fingerprint_distance(target: dict[str, Any], proxy: dict[str, Any]) -> float:
+    numeric_keys = (
+        "candidate_count",
+        "source_diversity",
+        "prior_entropy",
+        "prior_top1_top2_gap",
+        "top_selector_disagreement",
+        "pairwise_edit_mean",
+        "pairwise_edit_p95",
+        "duplicate_source_count",
+        "visible",
+        "bi_anchor",
+        "morphology",
+        "surface",
+        "bridge",
+        "unigram",
+    )
+    distance = sum(_normalized_distance(float(target.get(key, 0.0)), float(proxy.get(key, 0.0))) for key in numeric_keys)
+    for key in ("mask_len", "boundary_signature", "top_prior_family", "left_anchor_alpha", "right_anchor_alpha"):
+        if target.get(key) != proxy.get(key):
+            distance += 2.0 if key in {"boundary_signature", "top_prior_family"} else 0.75
+    return float(distance)
 
 
 def geometry_profile_distance(target: dict[str, Any], proxy: dict[str, Any]) -> float:
@@ -369,6 +512,100 @@ def select_geometry_shaped_proxy_masks(
         "uses_redacted_target_hole": True,
     }
     return selected, summary
+
+
+def select_target_shadow_proxy_masks(
+    *,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    guide: BigramGuide,
+    train_text: str,
+    config: dict[str, Any],
+    bi_anchor_sizes: list[int],
+    context_chars: int,
+    limit: int,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    pool_limit = max(int(config.get("proxy_shadow_pool_per_case", limit)), int(limit))
+    pool = proxy_mask_cases_from_visible_context(
+        marked_text,
+        span_chars=int(config["span_chars"]),
+        context_chars=context_chars,
+        limit=pool_limit,
+    )
+    target_fingerprint = lattice_shadow_fingerprint(
+        tokenizer=tokenizer,
+        marked_text=marked_text,
+        guide=guide,
+        train_text=train_text,
+        config=config,
+        bi_anchor_sizes=bi_anchor_sizes,
+    )
+    before, _, after = _split_marked(marked_text)
+    anchor_window = min(int(config.get("proxy_shadow_anchor_guard_chars", 8)), int(config["context_chars"]))
+    shaped_rows: list[dict[str, Any]] = []
+    for row in pool:
+        proxy_fingerprint = lattice_shadow_fingerprint(
+            tokenizer=tokenizer,
+            marked_text=str(row["marked_text"]),
+            guide=guide,
+            train_text=train_text,
+            config=config,
+            bi_anchor_sizes=bi_anchor_sizes,
+        )
+        distance = shadow_fingerprint_distance(target_fingerprint, proxy_fingerprint)
+        offset = int(row["offset"])
+        span_end = offset + int(config["span_chars"])
+        if row["side"] == "left":
+            target_anchor_start = max(0, len(before) - anchor_window)
+            overlaps_anchor = span_end > target_anchor_start
+        else:
+            target_anchor_end = min(len(after), anchor_window)
+            overlaps_anchor = offset < target_anchor_end
+        shaped_rows.append(
+            {
+                **row,
+                "shadow_distance": distance,
+                "shadow_boundary_signature": proxy_fingerprint["boundary_signature"],
+                "target_shadow_boundary_signature": target_fingerprint["boundary_signature"],
+                "target_shadow_top_family": target_fingerprint["top_prior_family"],
+                "proxy_shadow_top_family": proxy_fingerprint["top_prior_family"],
+                "shadow_top_family_match": target_fingerprint["top_prior_family"] == proxy_fingerprint["top_prior_family"],
+                "overlaps_target_anchor_window": bool(overlaps_anchor),
+            }
+        )
+    all_distances = [float(row["shadow_distance"]) for row in shaped_rows]
+    shaped_rows.sort(
+        key=lambda row: (
+            bool(row["overlaps_target_anchor_window"]),
+            float(row["shadow_distance"]),
+            -int(row["boundary_match"]),
+            str(row["side"]),
+            int(row["offset"]),
+            str(row["hole"]),
+        )
+    )
+    safe_rows = [row for row in shaped_rows if not row["overlaps_target_anchor_window"]]
+    selected = safe_rows[: max(0, int(limit))]
+    selected_distances = [float(row["shadow_distance"]) for row in selected]
+    return selected, {
+        "mode": "target_shadow",
+        "shadow_match": "target_lattice_fingerprint",
+        "shadow_pool": len(pool),
+        "shadow_keep": len(selected),
+        "fingerprint_fields": sorted(target_fingerprint.keys()),
+        "target_fingerprint": target_fingerprint,
+        "pool_mean_fingerprint_distance": (sum(all_distances) / len(all_distances)) if all_distances else None,
+        "median_fingerprint_distance": _percentile(selected_distances, 0.5),
+        "max_fingerprint_distance": max(selected_distances) if selected_distances else None,
+        "selected_mean_fingerprint_distance": (
+            sum(selected_distances) / len(selected_distances) if selected_distances else None
+        ),
+        "selected_top_family_match_rate": (
+            sum(1.0 for row in selected if row["shadow_top_family_match"]) / len(selected) if selected else 0.0
+        ),
+        "used_exact_target_candidate_bytes_for_matching": False,
+        "uses_redacted_target_hole": True,
+    }
 
 
 def _rank_case(
@@ -557,6 +794,17 @@ def _evaluate_preset(rows: list[dict[str, Any]], preset: dict[str, Any]) -> dict
     }
 
 
+def _anchor_delta(rows: list[dict[str, Any]], *, selected_anchor: str, baseline_anchor: str) -> dict[str, int]:
+    beats = 0
+    harms = 0
+    for row in rows:
+        selected_exact = bool(row.get(f"{selected_anchor}_selected_exact"))
+        baseline_exact = bool(row.get(f"{baseline_anchor}_selected_exact"))
+        beats += int(selected_exact and not baseline_exact)
+        harms += int(baseline_exact and not selected_exact)
+    return {f"beats_{baseline_anchor}": beats, f"harms_{baseline_anchor}": harms}
+
+
 def _shuffle_falsification(
     rows: list[dict[str, Any]],
     *,
@@ -599,6 +847,11 @@ def _build_selector_contract(selected: dict[str, Any], receipt_core: dict[str, A
         selection_rule = (
             "select visible-only pseudo masks by target retrieval geometry, then maximize proxy-mask fit "
             "selected exact, top4, and avg rank"
+        )
+    elif contract_source == "proxy_mask_target_shadow":
+        selection_rule = (
+            "select visible-only pseudo masks by non-leaky target lattice fingerprint, then freeze the selector only "
+            "if shadow heldout beats shuffle"
         )
     else:
         selection_rule = "maximize boundary-matched proxy-mask fit selected exact, then top4, then avg rank"
@@ -710,11 +963,26 @@ def build_receipt(config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
         "target_span_redacted_before_calibration": True,
         "target_gold_available_to_contract_builder": False,
         "masked_bytes_seen_by_features": False,
+        "pseudo_masks_overlap_target_span": 0,
+        "pseudo_masks_overlap_target_anchor_window": 0,
+        "pseudo_gold_equals_target_gold": 0,
     }
     for case_id, marked in enumerate(target_cases):
         _, target_hole, _ = _split_marked(marked)
         proxy_context_chars = min(12, int(config["context_chars"]))
-        if str(config.get("proxy_geometry_mode", "target_retrieval")) == "target_retrieval":
+        proxy_geometry_mode = str(config.get("proxy_geometry_mode", "boundary_only"))
+        if proxy_geometry_mode == "target_shadow":
+            proxy_masks, geometry_summary = select_target_shadow_proxy_masks(
+                tokenizer=tokenizer,
+                marked_text=marked,
+                guide=guide,
+                train_text=train_text,
+                config=config,
+                bi_anchor_sizes=list(bi_anchor_sizes),
+                context_chars=proxy_context_chars,
+                limit=int(config.get("proxy_shadow_keep_per_case", config["pseudo_masks_per_case"])),
+            )
+        elif proxy_geometry_mode == "target_retrieval":
             proxy_masks, geometry_summary = select_geometry_shaped_proxy_masks(
                 tokenizer=tokenizer,
                 marked_text=marked,
@@ -745,7 +1013,10 @@ def build_receipt(config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
         for pseudo in proxy_masks:
             if pseudo["hole"] == target_hole:
                 redaction_flags["target_gold_available_to_contract_builder"] = True
+                redaction_flags["pseudo_gold_equals_target_gold"] += 1
                 continue
+            if pseudo.get("overlaps_target_anchor_window"):
+                redaction_flags["pseudo_masks_overlap_target_anchor_window"] += 1
             pseudo_rows.append(
                 _row_for_marked(
                     tokenizer=tokenizer,
@@ -764,6 +1035,11 @@ def build_receipt(config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
                         "target_geometry_top_family": pseudo.get("target_geometry_top_family"),
                         "proxy_geometry_top_family": pseudo.get("proxy_geometry_top_family"),
                         "geometry_top_family_match": pseudo.get("geometry_top_family_match"),
+                        "shadow_distance": pseudo.get("shadow_distance"),
+                        "target_shadow_top_family": pseudo.get("target_shadow_top_family"),
+                        "proxy_shadow_top_family": pseudo.get("proxy_shadow_top_family"),
+                        "shadow_top_family_match": pseudo.get("shadow_top_family_match"),
+                        "overlaps_target_anchor_window": pseudo.get("overlaps_target_anchor_window", False),
                     },
                 )
             )
@@ -781,7 +1057,7 @@ def build_receipt(config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
         )
 
     proxy_geometry_mode = str(config.get("proxy_geometry_mode", "boundary_only"))
-    if proxy_geometry_mode == "target_retrieval":
+    if proxy_geometry_mode in {"target_retrieval", "target_shadow"}:
         fit_rows, heldout_rows = _split_proxy_rows_by_case(
             pseudo_rows,
             heldout_frac=float(config["pseudo_heldout_frac"]),
@@ -807,6 +1083,8 @@ def build_receipt(config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
     contract_source = (
         "proxy_mask_target_retrieval_geometry"
         if proxy_geometry_mode == "target_retrieval"
+        else "proxy_mask_target_shadow"
+        if proxy_geometry_mode == "target_shadow"
         else "proxy_mask_visible_context"
     )
     receipt_core = {
@@ -818,6 +1096,24 @@ def build_receipt(config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
         "contract_source": contract_source,
     }
     contract = _build_selector_contract(selected, receipt_core)
+    selected_anchor = str(selected["selector_anchor"])
+    shadow_fit_delta = _anchor_delta(fit_rows, selected_anchor=selected_anchor, baseline_anchor="prior")
+    shadow_heldout_delta = _anchor_delta(heldout_rows, selected_anchor=selected_anchor, baseline_anchor="prior")
+    target_gold_in_lattice_at_128 = (
+        sum(1.0 for row in target_rows if row["gold_in_lattice_at_128"]) / len(target_rows) if target_rows else 0.0
+    )
+    target_shadow_threshold = max(0.35, 3.0 * float(shuffle["top4_exact"]))
+    target_shadow_heldout_pass = (
+        pseudo_heldout["top4_exact"] >= target_shadow_threshold
+        and shadow_heldout_delta["harms_prior"] <= 1
+        and (target_gold_in_lattice_at_128 <= 0.0 or target_after_freeze["top4_exact"] > 0.0)
+    )
+    experimental_mode = proxy_geometry_mode in {"target_retrieval", "target_shadow"}
+    if experimental_mode and not target_shadow_heldout_pass:
+        contract["ready_for_heldout"] = False
+        contract["status"] = "diagnostic_only"
+        if "shadow heldout failed transfer gate" not in contract["missing"]:
+            contract["missing"].append("shadow heldout failed transfer gate")
     useful_ratchet = (
         target_after_freeze["top4_exact"] > 0.0
         and target_after_freeze["top4_exact"] >= visible_baseline["top4_exact"]
@@ -830,6 +1126,10 @@ def build_receipt(config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
         "contract_apply": True,
         "target_span_redacted_before_calibration": redaction_flags["target_span_redacted_before_calibration"],
         "target_gold_unavailable_to_contract_builder": not redaction_flags["target_gold_available_to_contract_builder"],
+        "pseudo_masks_do_not_overlap_target_span": int(redaction_flags["pseudo_masks_overlap_target_span"]) == 0,
+        "pseudo_masks_do_not_overlap_target_anchor_window": int(redaction_flags["pseudo_masks_overlap_target_anchor_window"])
+        == 0,
+        "pseudo_gold_never_equals_target_gold": int(redaction_flags["pseudo_gold_equals_target_gold"]) == 0,
         "preset_space_frozen": True,
         "selector_selected_before_target_eval": True,
         "train_only_retrieval": True,
@@ -852,6 +1152,14 @@ def build_receipt(config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
             and float(summary["selected_mean_geometry_distance"]) <= float(summary["pool_mean_geometry_distance"])
             for summary in proxy_geometry_summaries
         ),
+        "target_shadow_uses_fingerprint": proxy_geometry_mode != "target_shadow"
+        or all(summary.get("shadow_match") == "target_lattice_fingerprint" for summary in proxy_geometry_summaries),
+        "target_shadow_no_exact_candidate_bytes": proxy_geometry_mode != "target_shadow"
+        or all(
+            summary.get("used_exact_target_candidate_bytes_for_matching") is False
+            for summary in proxy_geometry_summaries
+        ),
+        "target_shadow_heldout_gate": proxy_geometry_mode != "target_shadow" or target_shadow_heldout_pass,
     }
     receipt = {
         "proof_name": "proxy_mask_selector_contract_smoke",
@@ -880,11 +1188,22 @@ def build_receipt(config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
             ),
             "summaries": proxy_geometry_summaries,
         },
+        "target_shadow": {
+            "enabled": proxy_geometry_mode == "target_shadow",
+            "shadow_match": "target_lattice_fingerprint" if proxy_geometry_mode == "target_shadow" else None,
+            "shadow_pool": int(config.get("proxy_shadow_pool_per_case", 0)),
+            "shadow_keep": int(config.get("proxy_shadow_keep_per_case", config["pseudo_masks_per_case"])),
+            "heldout_top4_threshold": target_shadow_threshold if proxy_geometry_mode == "target_shadow" else None,
+            "heldout_gate_passed": target_shadow_heldout_pass if proxy_geometry_mode == "target_shadow" else None,
+            "summaries": proxy_geometry_summaries if proxy_geometry_mode == "target_shadow" else [],
+        },
         "candidate_policy": {
             "train_only_retrieval": True,
             "eval_doc_exclusion": True,
             "same_doc_hits": 0,
+            "same_doc_retrieval_hits": 0,
             "near_duplicate_flags": 0,
+            "max_candidates_per_example": int(config["max_candidates_per_example"]),
             "lattice_bi_anchor_candidates": int(config["lattice_bi_anchor_candidates"]),
             "lattice_bi_anchor_sizes": list(bi_anchor_sizes),
         },
@@ -902,8 +1221,20 @@ def build_receipt(config: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any
             "heldout": pseudo_heldout,
             "selected_fit_summary": selected["fit_summary"],
         },
+        "shadow_fit": {
+            **pseudo_fit,
+            "harm_vs_prior": shadow_fit_delta["harms_prior"],
+            "beats_prior": shadow_fit_delta["beats_prior"],
+        },
+        "shadow_heldout": {
+            **pseudo_heldout,
+            "harm_vs_prior": shadow_heldout_delta["harms_prior"],
+            "beats_prior": shadow_heldout_delta["beats_prior"],
+            **_anchor_delta(heldout_rows, selected_anchor=selected_anchor, baseline_anchor="surface"),
+        },
         "target_after_freeze": {
             **target_after_freeze,
+            "gold_in_lattice_at_128": target_gold_in_lattice_at_128,
             "beats_prior": int(target_after_freeze["selected_exact"] > prior_baseline["selected_exact"]),
             "harms_prior": int(target_after_freeze["selected_exact"] < prior_baseline["selected_exact"]),
             "beats_surface": int(target_after_freeze["selected_exact"] > surface_baseline["selected_exact"]),

@@ -91,6 +91,41 @@ class ProxyMaskSelectorContractSmokeTests(unittest.TestCase):
         self.assertFalse(receipt["claim_gate"]["public_target_lift_claim_allowed"])
         self.assertEqual(contract["selected"]["source"], "proxy_mask_target_retrieval_geometry")
 
+    def test_target_shadow_proxy_mode_matches_fingerprint_but_fails_closed(self) -> None:
+        config = load_config(None)
+        config.update(
+            {
+                "data": "data/tinyshakespeare.txt",
+                "cases": 2,
+                "span_chars": 4,
+                "context_chars": 36,
+                "pseudo_masks_per_case": 6,
+                "max_candidates_per_example": 64,
+                "shuffle_trials": 16,
+                "proxy_geometry_mode": "target_shadow",
+                "proxy_shadow_pool_per_case": 18,
+                "proxy_shadow_keep_per_case": 6,
+                "proxy_shadow_anchor_guard_chars": 8,
+            }
+        )
+        receipt, contract = build_receipt(config)
+
+        self.assertEqual(receipt["target_shadow"]["shadow_match"], "target_lattice_fingerprint")
+        self.assertTrue(receipt["checks"]["target_shadow_uses_fingerprint"])
+        self.assertTrue(receipt["checks"]["target_shadow_no_exact_candidate_bytes"])
+        self.assertTrue(receipt["checks"]["pseudo_masks_do_not_overlap_target_anchor_window"])
+        self.assertFalse(receipt["checks"]["target_shadow_heldout_gate"])
+        self.assertEqual(receipt["verdict"], "fail")
+        self.assertFalse(receipt["selector_contract"]["contract_ready"])
+        self.assertFalse(contract["ready_for_heldout"])
+        for summary in receipt["target_shadow"]["summaries"]:
+            self.assertLessEqual(
+                summary["selected_mean_fingerprint_distance"],
+                summary["pool_mean_fingerprint_distance"],
+            )
+            self.assertIn("pairwise_edit_mean", summary["fingerprint_fields"])
+            self.assertFalse(summary["used_exact_target_candidate_bytes_for_matching"])
+
 
 if __name__ == "__main__":
     unittest.main()

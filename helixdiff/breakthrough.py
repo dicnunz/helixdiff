@@ -96,9 +96,9 @@ def build_breakthrough_plan() -> dict[str, Any]:
         {
             "rank": 2,
             "name": "proxy_mask_selector_contract_smoke",
-            "thesis": "Choose a selector contract from visible proxy masks before target scoring, or do not trust the selector.",
+            "thesis": "Choose a selector contract from visible proxy masks before target scoring, and make proxy masks target-shaped without target leakage.",
             "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
-            "repo_move": "Emit a ready selector contract from visible-only proxy masks while redacting target spans from calibration.",
+            "repo_move": "Emit a ready boundary-only selector contract plus fail-closed target-shadow and target-geometry proxy probes.",
             "proof_commands": [proxy_mask_contract_command],
             "pass_condition": (
                 "receipt has contract_ready=true, target_metric_used_for_selection=false, pseudo-heldout beats shuffle, "
@@ -107,7 +107,8 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "claim_if_passes": "visible-only selector predeclaration smoke only",
             "kill_condition": (
                 "proxy heldout fails shuffle, target gold leaks into selection, target metrics are used to choose the contract, "
-                "target-retrieval geometry fails its pseudo-heldout shuffle check, or --require-useful-ratchet fails for any target-lift claim"
+                "target-retrieval geometry or target-shadow proxies fail their pseudo-heldout shuffle checks, "
+                "or --require-useful-ratchet fails for any target-lift claim"
             ),
             "heavy_slot_required": False,
         },
@@ -219,7 +220,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "usable_this_run": False,
             "model_mode": "unverified_current_runtime",
             "conversation_url": None,
-            "latest_request": "fresh GPT-5.5 Pro teammate re-probe for selector-contract continuation",
+            "latest_request": "fresh GPT-5.5 Pro teammate re-probe for target-shadow proxy calibration",
             "latest_response_status": "blocked",
             "latest_recommendation": None,
             "blocker": "node_repl/js Transport closed before the Chrome browser-client could list ChatGPT tabs",

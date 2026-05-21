@@ -5,9 +5,9 @@ context_chars: 36
 val_fraction: 0.08
 seed: 151
 pseudo_masks_per_case: 6
-proxy_geometry_mode: boundary_only
+proxy_geometry_mode: target_shadow
 proxy_geometry_pool_per_case: 18
-proxy_shadow_pool_per_case: 24
+proxy_shadow_pool_per_case: 18
 proxy_shadow_keep_per_case: 6
 proxy_shadow_anchor_guard_chars: 8
 pseudo_heldout_frac: 0.5

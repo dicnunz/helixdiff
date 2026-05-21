@@ -28,16 +28,17 @@ class BreakthroughPlanTests(unittest.TestCase):
             "proxy-mask receipts cannot be cited as target-lift evidence unless --require-useful-ratchet passes",
             plan["release_standard"],
         )
-        self.assertFalse(plan["chatgpt_teammate_status"]["usable_this_run"])
-        self.assertEqual(plan["chatgpt_teammate_status"]["latest_response_status"], "blocked")
-        self.assertIn("Transport closed", plan["chatgpt_teammate_status"]["blocker"])
-        self.assertIsNone(plan["chatgpt_teammate_status"]["latest_recommendation"])
-        self.assertIn("No fresh GPT-5.5 Pro contribution", plan["chatgpt_teammate_status"]["claim"])
+        self.assertTrue(plan["chatgpt_teammate_status"]["usable_this_run"])
+        self.assertEqual(plan["chatgpt_teammate_status"]["model_mode"], "Extended Pro")
+        self.assertEqual(plan["chatgpt_teammate_status"]["latest_response_status"], "partial_but_actionable")
+        self.assertIn("target retrieval geometry", plan["chatgpt_teammate_status"]["latest_recommendation"])
+        self.assertIsNone(plan["chatgpt_teammate_status"]["blocker"])
+        self.assertIn("fail-closed probe", plan["chatgpt_teammate_status"]["claim"])
         prior_note = plan["chatgpt_teammate_status"]["recorded_prior_note"]
         self.assertEqual(prior_note["model_mode"], "Extended Pro")
         self.assertIn("chatgpt.com/c/", prior_note["conversation_url"])
         self.assertIn("visible-reranker oracle smoke", prior_note["contribution"])
-        self.assertEqual(prior_note["verification_status"], "prior_recorded_note_not_reverified_current_runtime")
+        self.assertEqual(prior_note["verification_status"], "current_chrome_readback_reverified_url")
 
     def test_top_lane_reuses_predeclared_recipe_and_gate(self) -> None:
         plan = build_breakthrough_plan()

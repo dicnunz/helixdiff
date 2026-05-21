@@ -1,0 +1,14 @@
+.venv/
+.codex/
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+checkpoints/*.pt
+samples/*.txt
+samples/*.json
+proof/*.json
+proof/*.txt
+wandb/

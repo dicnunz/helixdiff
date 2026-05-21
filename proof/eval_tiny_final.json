@@ -1,0 +1,13 @@
+{
+  "checkpoint": "checkpoints/helixdiff_tiny.pt",
+  "checkpoint_step": 2400,
+  "loss": 3.094769755999247,
+  "masked_accuracy": 0.15009093036254248,
+  "mask_rate": 0.5,
+  "batches": 12,
+  "sample_elapsed_seconds": 0.7862577499763574,
+  "sample_bytes_per_second": 120.82551809868535,
+  "sample_schedule": "ribbon",
+  "sample_scaffold": true,
+  "sample": "HelixDiff learns language as an editable field, generation.\n\nLater to writes:\n\n  A masked noise"
+}

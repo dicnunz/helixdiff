@@ -1,0 +1,22 @@
+HelixDiff learns language by erasing it.
+
+The model begins with a sentence, removes bytes until the page looks damaged, and trains a transformer to restore what disappeared. It does not walk left to right. It listens to both sides of a missing region, studies the shape of uncertainty, and chooses which positions are ready to become visible.
+
+In this corpus the machine is a small laboratory. The lab has notebooks, instruments, proofs, and strange habits. A researcher writes:
+
+  A token should not be trusted merely because it arrived early.
+  A masked span should be repaired with evidence from both edges.
+  A sampler should pause over uncertain regions instead of rushing through them.
+
+The byte alphabet is simple. The behavior is not. A byte can be a letter, a newline, a quote, a space, or the hinge of a longer pattern. When the model predicts a byte, it is predicting a local mark and a global rhythm at the same time.
+
+The first experiments are tiny. Tiny experiments are useful when they prove the mechanism. A clean small model can show that the code runs, that the loss falls, that samples are born from masked noise, and that no pretrained machinery is hiding behind the curtain.
+
+Later the corpus can become a library. The context can grow. The denoiser can become wider and deeper. The same reverse process can reveal paragraphs, repair holes, and draft text in an order chosen by confidence rather than by position.
+
+Diffusion is an unusual way to write. It starts with silence, opens a few bright spots, revises the dim areas, and keeps returning to the places where the sentence is least sure of itself.
+
+A good model should know when not to freeze its first guess. A better model should be willing to cover the weak guess again and ask the whole context for a stronger answer.
+
+This is the promise of HelixDiff: language as an editable field, generation as controlled denoising, and from-scratch training as an engineering fact rather than a slogan.
+

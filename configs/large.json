@@ -1,0 +1,19 @@
+{
+  "name": "helixdiff-large",
+  "seq_len": 1024,
+  "dim": 1024,
+  "layers": 24,
+  "heads": 16,
+  "ff_mult": 4,
+  "dropout": 0.1,
+  "batch_size": 128,
+  "learning_rate": 0.00018,
+  "min_lr_ratio": 0.1,
+  "weight_decay": 0.1,
+  "warmup_steps": 10000,
+  "min_mask_rate": 0.02,
+  "max_mask_rate": 0.98,
+  "span_prob": 0.3,
+  "max_span_fraction": 0.16,
+  "ribbon_prob": 0.2
+}

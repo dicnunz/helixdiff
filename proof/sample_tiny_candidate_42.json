@@ -1,0 +1,14 @@
+{
+  "checkpoint": "checkpoints/helixdiff_tiny.pt",
+  "prompt": "HelixDiff learns",
+  "tokens": 192,
+  "steps": 32,
+  "elapsed_seconds": 0.9400146660045721,
+  "guide_data": "data/seed_corpus.txt",
+  "guidance": 0.1,
+  "schedule": "ribbon",
+  "scaffold": true,
+  "scaffold_remask": 0.01,
+  "checkpoint_step": 2400,
+  "text": "HelixDiff learns language by erasing, and training to freeze it is a few bright spots, removes "
+}

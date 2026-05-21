@@ -1,0 +1,19 @@
+{
+  "name": "helixdiff-tiny",
+  "seq_len": 96,
+  "dim": 96,
+  "layers": 3,
+  "heads": 4,
+  "ff_mult": 3,
+  "dropout": 0.05,
+  "batch_size": 24,
+  "learning_rate": 0.0008,
+  "min_lr_ratio": 0.05,
+  "weight_decay": 0.05,
+  "warmup_steps": 40,
+  "min_mask_rate": 0.08,
+  "max_mask_rate": 0.92,
+  "span_prob": 0.45,
+  "max_span_fraction": 0.22,
+  "ribbon_prob": 0.35
+}

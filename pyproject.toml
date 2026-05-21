@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "helixdiff"
+version = "0.1.0"
+description = "A from-scratch byte-level diffusion language model with ribbon diffusion sampling."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { text = "MIT" }
+authors = [{ name = "Nicholas Dunzelman" }]
+dependencies = [
+  "numpy>=1.26",
+  "torch>=2.2",
+  "tqdm>=4.66",
+]
+
+[project.scripts]
+helixdiff-train = "helixdiff.train:main"
+helixdiff-sample = "helixdiff.sample:main"
+helixdiff-eval = "helixdiff.eval:main"
+helixdiff-verify-scratch = "helixdiff.verify_scratch:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["helixdiff*"]

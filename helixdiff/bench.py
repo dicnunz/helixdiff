@@ -784,6 +784,115 @@ def visible_self_calibration_cases(
     return list(deduped.keys())[: max(0, limit)]
 
 
+def training_word_counts(text: str) -> Counter[str]:
+    return Counter(word.lower() for word in re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", text))
+
+
+def repair_surface_verifier_features(
+    *,
+    marked_text: str,
+    predicted_hole: str,
+    train_text: str = "",
+    word_counts: Counter[str] | None = None,
+) -> dict[str, Any]:
+    before, rest = marked_text.split("[[", 1)
+    _, after = rest.split("]]", 1)
+    words = word_counts if word_counts is not None else training_word_counts(train_text)
+    left_match = re.search(r"[A-Za-z']+$", before)
+    right_match = re.match(r"[A-Za-z']+", after)
+    left_tail = left_match.group(0) if left_match else ""
+    right_head = right_match.group(0) if right_match else ""
+    normalized_candidate = re.sub(r"[^A-Za-z':-]", "", predicted_hole)
+    full_word = re.sub(r"[^A-Za-z']", "", f"{left_tail}{normalized_candidate}{right_head}").lower()
+    full_word_count = words[full_word] if full_word else 0
+
+    dash_left_count = 0
+    dash_right_count = 0
+    dash_bridge_score = 0.0
+    if "-" in normalized_candidate:
+        parts = [part for part in normalized_candidate.split("-") if part]
+        if parts:
+            dash_left = re.sub(r"[^A-Za-z']", "", f"{left_tail}{parts[0]}").lower()
+            dash_right = re.sub(r"[^A-Za-z']", "", f"{parts[-1]}{right_head}").lower()
+            dash_left_count = words[dash_left] if dash_left else 0
+            dash_right_count = words[dash_right] if dash_right else 0
+            if dash_left_count > 0 and dash_right_count > 0:
+                dash_bridge_score = (
+                    3.0
+                    + math.log1p(dash_left_count)
+                    + math.log1p(dash_right_count)
+                    + min(dash_left_count, dash_right_count, 8) / 8.0
+                )
+
+    label_text = re.sub(r"[^A-Za-z']", "", f"{left_tail}{normalized_candidate.rstrip(':')}")
+    label_word = label_text.lower()
+    label_count = words[label_word] if label_word else 0
+    line_prefix = before.rsplit("\n", 1)[-1]
+    speaker_label_shape = (
+        bool(left_tail)
+        and bool(line_prefix)
+        and line_prefix[:1].isupper()
+        and normalized_candidate.endswith(":")
+        and after.startswith("\n")
+    )
+    speaker_label_score = (4.0 + math.log1p(label_count)) if speaker_label_shape else 0.0
+    full_word_score = math.log1p(full_word_count)
+    score = max(full_word_score, dash_bridge_score, speaker_label_score)
+    return {
+        "score": float(score),
+        "full_word": full_word or None,
+        "full_word_count": int(full_word_count),
+        "dash_left_count": int(dash_left_count),
+        "dash_right_count": int(dash_right_count),
+        "dash_bridge_score": float(dash_bridge_score),
+        "speaker_label_shape": bool(speaker_label_shape),
+        "speaker_label_word": label_word or None,
+        "speaker_label_count": int(label_count),
+        "speaker_label_score": float(speaker_label_score),
+    }
+
+
+def surface_verifier_candidate_report(
+    candidates: list[dict[str, Any]],
+    *,
+    marked_text: str,
+    train_text: str,
+) -> dict[tuple[int, ...], dict[str, Any]]:
+    words = training_word_counts(train_text)
+    rows: list[dict[str, Any]] = []
+    for candidate in candidates:
+        features = repair_surface_verifier_features(
+            marked_text=marked_text,
+            predicted_hole=str(candidate["predicted_hole"]),
+            word_counts=words,
+        )
+        prior_score = float(candidate["prior_score"]) if candidate.get("prior_score") is not None else float("-inf")
+        rows.append(
+            {
+                "ids": tuple(int(token_id) for token_id in candidate["ids"]),
+                "surface_verifier_score": features["score"],
+                "surface_verifier_features": features,
+                "prior_score": prior_score,
+                "predicted_hole": str(candidate["predicted_hole"]),
+            }
+        )
+    rows.sort(
+        key=lambda row: (
+            -float(row["surface_verifier_score"]),
+            -float(row["prior_score"]),
+            str(row["predicted_hole"]),
+        )
+    )
+    report: dict[tuple[int, ...], dict[str, Any]] = {}
+    for rank, row in enumerate(rows):
+        report[row["ids"]] = {
+            "surface_verifier_rank": rank,
+            "surface_verifier_score": float(row["surface_verifier_score"]),
+            "surface_verifier_features": row["surface_verifier_features"],
+        }
+    return report
+
+
 def exact_rank_for_prior_weights(
     *,
     tokenizer: ByteTokenizer,
@@ -1140,10 +1249,16 @@ def lattice_oracle_case(
         morphology_weight=effective_morphology_weight,
         surface_weight=effective_surface_weight,
     )
+    surface_report = surface_verifier_candidate_report(
+        ranked_candidates,
+        marked_text=marked_text,
+        train_text=train_text,
+    )
     for candidate in ranked_candidates:
         pred = torch.tensor(candidate["ids"], dtype=torch.long)
         exact = bool(torch.equal(pred, target))
         sources = candidate["sources"]
+        candidate_surface = surface_report[tuple(int(token_id) for token_id in candidate["ids"])]
         if exact:
             exact_sources.extend(str(source["source"]) for source in sources)
         summaries.append(
@@ -1154,11 +1269,23 @@ def lattice_oracle_case(
                 "prior_source": candidate["prior_source"],
                 "exact": exact,
                 "prior_rank": candidate["prior_rank"],
+                **candidate_surface,
             }
         )
     prior_selected = summaries[0] if summaries else None
     exact_prior_ranks = [int(row["prior_rank"]) for row in summaries if row["exact"]]
     best_exact_prior_rank = min(exact_prior_ranks) if exact_prior_ranks else None
+    exact_surface_ranks = [int(row["surface_verifier_rank"]) for row in summaries if row["exact"]]
+    best_exact_surface_rank = min(exact_surface_ranks) if exact_surface_ranks else None
+    surface_selected = min(
+        summaries,
+        key=lambda row: (
+            int(row["surface_verifier_rank"]),
+            int(row["prior_rank"]),
+            str(row["predicted_hole"]),
+        ),
+        default=None,
+    )
 
     return {
         "marked_text": marked_text,
@@ -1175,6 +1302,11 @@ def lattice_oracle_case(
         "prior_selected_exact": bool(prior_selected["exact"]) if prior_selected is not None else False,
         "prior_selected_score": prior_selected["prior_score"] if prior_selected is not None else None,
         "prior_selected_source": prior_selected["prior_source"] if prior_selected is not None else None,
+        "surface_verifier_selected_hole": surface_selected["predicted_hole"] if surface_selected is not None else None,
+        "surface_verifier_selected_exact": bool(surface_selected["exact"]) if surface_selected is not None else False,
+        "surface_verifier_exact_rank": best_exact_surface_rank,
+        "surface_verifier_exact_in_top4": best_exact_surface_rank is not None and best_exact_surface_rank < 4,
+        "surface_verifier_selector": "training_split_repair_surface_features_without_model",
         "effective_lattice_suture_weight": effective_suture_weight,
         "effective_lattice_morphology_weight": effective_morphology_weight,
         "effective_lattice_surface_weight": effective_surface_weight,
@@ -1318,6 +1450,31 @@ def retrieval_lattice_case(
         if torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)
     ]
     prior_exact_rank = min(exact_prior_ranks) if exact_prior_ranks else None
+    surface_report = surface_verifier_candidate_report(
+        ranked_candidates,
+        marked_text=marked_text,
+        train_text=train_text,
+    )
+    exact_surface_ranks = [
+        int(surface_report[tuple(int(token_id) for token_id in candidate["ids"])]["surface_verifier_rank"])
+        for candidate in ranked_candidates
+        if torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)
+    ]
+    best_exact_surface_rank = min(exact_surface_ranks) if exact_surface_ranks else None
+    surface_selected = min(
+        ranked_candidates,
+        key=lambda candidate: (
+            int(surface_report[tuple(int(token_id) for token_id in candidate["ids"])]["surface_verifier_rank"]),
+            int(candidate["prior_rank"]),
+            str(candidate["predicted_hole"]),
+        ),
+        default=None,
+    )
+    surface_selected_exact = (
+        bool(torch.equal(torch.tensor(surface_selected["ids"], dtype=torch.long), target))
+        if surface_selected is not None
+        else False
+    )
     if prior_rerank_top_k > 0:
         candidates_to_score = ranked_candidates[:prior_rerank_top_k]
     else:
@@ -1331,6 +1488,7 @@ def retrieval_lattice_case(
     for candidate in candidates_to_score:
         repaired = example.tokens.clone()
         repaired[example.hole_start : example.hole_end] = torch.tensor(candidate["ids"], dtype=torch.long)
+        candidate_surface = surface_report[tuple(int(token_id) for token_id in candidate["ids"])]
         score, verifier_scores = score_lattice_verifier(
             model=model,
             tokenizer=tokenizer,
@@ -1353,6 +1511,7 @@ def retrieval_lattice_case(
             "prior_rank": int(candidate["prior_rank"]),
             "prior_score": candidate["prior_score"],
             "prior_source": candidate["prior_source"],
+            **candidate_surface,
             "diffusion_score": json_score(score),
             "verifier_mode": verifier_mode,
             "verifier_scores": verifier_scores,
@@ -1408,6 +1567,11 @@ def retrieval_lattice_case(
         "prior_exact_in_rerank_set": oracle_exact_in_scored_set,
         "prior_selected_hole": ranked_candidates[0]["predicted_hole"] if ranked_candidates else None,
         "prior_selected_exact": bool(prior_exact_rank == 0),
+        "surface_verifier_selected_hole": surface_selected["predicted_hole"] if surface_selected is not None else None,
+        "surface_verifier_selected_exact": surface_selected_exact,
+        "surface_verifier_exact_rank": best_exact_surface_rank,
+        "surface_verifier_exact_in_top4": best_exact_surface_rank is not None and best_exact_surface_rank < 4,
+        "surface_verifier_selector": "training_split_repair_surface_features_without_model",
         "candidate_summaries": scored_rows,
         "unscored_prior_candidate_summaries": [
             {
@@ -1416,6 +1580,7 @@ def retrieval_lattice_case(
                 "prior_rank": int(candidate["prior_rank"]),
                 "prior_score": candidate["prior_score"],
                 "prior_source": candidate["prior_source"],
+                **surface_report[tuple(int(token_id) for token_id in candidate["ids"])],
                 "exact": bool(torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)),
             }
             for candidate in ranked_candidates
@@ -1577,6 +1742,13 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "selector_margin_applied_rate": 0.0,
                 "avg_scored_candidate_count": 0.0,
                 "avg_prior_exact_rank": None,
+                "prior_top4_exact_rate": 0.0,
+                "surface_verifier_selected_exact_rate": 0.0,
+                "surface_verifier_top4_exact_rate": 0.0,
+                "surface_verifier_avg_exact_rank": None,
+                "surface_verifier_top4_delta_vs_prior": 0.0,
+                "surface_verifier_harm_count": 0,
+                "surface_verifier_help_count": 0,
                 "outcome_categories": {},
                 "selector_effects": {},
                 "margin_rescued_exact_rate": 0.0,
@@ -1590,6 +1762,12 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
         return summary
 
     prior_rank_rows = [row for row in rows if row.get("prior_exact_rank") is not None]
+    prior_top4_rate = (
+        sum(1.0 for row in rows if row.get("prior_exact_rank") is not None and int(row["prior_exact_rank"]) < 4)
+        / len(rows)
+    )
+    surface_rank_rows = [row for row in rows if row.get("surface_verifier_exact_rank") is not None]
+    surface_top4_rate = sum(1.0 for row in rows if row.get("surface_verifier_exact_in_top4")) / len(rows)
     exact_anchor_rows = [row for row in rows if row.get("anchor_exact")]
     outcome_categories = Counter(str(row.get("outcome_category", "unknown")) for row in rows)
     selector_effects = Counter(str(row.get("selector_effect", "unknown")) for row in rows)
@@ -1611,6 +1789,31 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 sum(float(row["prior_exact_rank"]) for row in prior_rank_rows) / len(prior_rank_rows)
                 if prior_rank_rows
                 else None
+            ),
+            "prior_top4_exact_rate": prior_top4_rate,
+            "surface_verifier_selected_exact_rate": sum(
+                1.0 for row in rows if row.get("surface_verifier_selected_exact")
+            )
+            / len(rows),
+            "surface_verifier_top4_exact_rate": surface_top4_rate,
+            "surface_verifier_avg_exact_rank": (
+                sum(float(row["surface_verifier_exact_rank"]) for row in surface_rank_rows) / len(surface_rank_rows)
+                if surface_rank_rows
+                else None
+            ),
+            "surface_verifier_top4_delta_vs_prior": surface_top4_rate - prior_top4_rate,
+            "surface_verifier_harm_count": sum(
+                1
+                for row in rows
+                if row.get("prior_exact_rank") is not None
+                and int(row["prior_exact_rank"]) < 4
+                and not row.get("surface_verifier_exact_in_top4")
+            ),
+            "surface_verifier_help_count": sum(
+                1
+                for row in rows
+                if not (row.get("prior_exact_rank") is not None and int(row["prior_exact_rank"]) < 4)
+                and row.get("surface_verifier_exact_in_top4")
             ),
             "outcome_categories": dict(sorted(outcome_categories.items())),
             "selector_effects": dict(sorted(selector_effects.items())),
@@ -1654,6 +1857,12 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "prior_top4_exact_rate": 0.0,
             "prior_top8_exact_rate": 0.0,
             "avg_prior_exact_rank": None,
+            "surface_verifier_selected_exact_rate": 0.0,
+            "surface_verifier_top4_exact_rate": 0.0,
+            "surface_verifier_avg_exact_rank": None,
+            "surface_verifier_top4_delta_vs_prior": 0.0,
+            "surface_verifier_harm_count": 0,
+            "surface_verifier_help_count": 0,
             "local_prior_calibration_cases": 0,
             "local_prior_suggested_top4_exact_rate": None,
             "local_prior_suggested_avg_prior_exact_rank": None,
@@ -1667,6 +1876,8 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
         row for row in local_rows if row.get("local_prior_calibration_suggested_prior_exact_rank") is not None
     ]
     prior_top4_rate = sum(1.0 for row in rows if row["prior_exact_in_top4"]) / len(rows)
+    surface_rank_rows = [row for row in rows if row.get("surface_verifier_exact_rank") is not None]
+    surface_top4_rate = sum(1.0 for row in rows if row.get("surface_verifier_exact_in_top4")) / len(rows)
     local_top4_rate = (
         sum(1.0 for row in local_rank_rows if row.get("local_prior_calibration_suggested_prior_top4_exact"))
         / len(rows)
@@ -1691,6 +1902,25 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
         )
         if any(row["prior_exact_rank"] is not None for row in rows)
         else None,
+        "surface_verifier_selected_exact_rate": sum(1.0 for row in rows if row.get("surface_verifier_selected_exact"))
+        / len(rows),
+        "surface_verifier_top4_exact_rate": surface_top4_rate,
+        "surface_verifier_avg_exact_rank": (
+            sum(float(row["surface_verifier_exact_rank"]) for row in surface_rank_rows) / len(surface_rank_rows)
+            if surface_rank_rows
+            else None
+        ),
+        "surface_verifier_top4_delta_vs_prior": surface_top4_rate - prior_top4_rate,
+        "surface_verifier_harm_count": sum(
+            1
+            for row in rows
+            if row.get("prior_exact_in_top4") and not row.get("surface_verifier_exact_in_top4")
+        ),
+        "surface_verifier_help_count": sum(
+            1
+            for row in rows
+            if not row.get("prior_exact_in_top4") and row.get("surface_verifier_exact_in_top4")
+        ),
         "local_prior_calibration_cases": len(local_rows),
         "local_prior_suggested_top4_exact_rate": local_top4_rate,
         "local_prior_suggested_avg_prior_exact_rank": (

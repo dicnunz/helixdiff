@@ -16,9 +16,11 @@ from helixdiff.bench import (
     nearest_visible_case,
     parse_selector_margin_sweep,
     rank_lattice_candidates_by_prior,
+    repair_surface_verifier_features,
     score_lattice_verifier,
     select_lattice_row_with_margin,
     selector_margin_sweep_report,
+    surface_verifier_candidate_report,
     surface_splice_candidates,
     summarize_lattice_oracle,
     summarize_retrieval_lattice,
@@ -191,6 +193,55 @@ class BenchTest(unittest.TestCase):
         )
         self.assertIn("p--d", {row["predicted_hole"] for row in rows})
 
+    def test_repair_surface_verifier_scores_dash_bridge_words_from_train_split(self) -> None:
+        exact = repair_surface_verifier_features(
+            marked_text="Thou let'st thy fortune slee[[p--d]]ie, rather;",
+            predicted_hole="p--d",
+            train_text="sleep sleep die die die fie.",
+        )
+        wrong = repair_surface_verifier_features(
+            marked_text="Thou let'st thy fortune slee[[p--d]]ie, rather;",
+            predicted_hole="p--f",
+            train_text="sleep sleep die die die fie.",
+        )
+        one_sided = repair_surface_verifier_features(
+            marked_text="Thou let'st thy fortune slee[[p--d]]ie, rather;",
+            predicted_hole="p--x",
+            train_text="sleep sleep die die die fie.",
+        )
+        self.assertEqual(exact["dash_left_count"], 2)
+        self.assertEqual(exact["dash_right_count"], 3)
+        self.assertGreater(exact["score"], wrong["score"])
+        self.assertEqual(one_sided["dash_bridge_score"], 0.0)
+
+    def test_surface_verifier_report_prefers_speaker_label_seen_in_train_split(self) -> None:
+        tokenizer = ByteTokenizer()
+        candidates = [
+            {
+                "ids": tokenizer.encode("nte:", add_bos=False, add_eos=False),
+                "predicted_hole": "nte:",
+                "prior_score": 3.0,
+            },
+            {
+                "ids": tokenizer.encode("lor:", add_bos=False, add_eos=False),
+                "predicted_hole": "lor:",
+                "prior_score": 1.0,
+            },
+        ]
+        report = surface_verifier_candidate_report(
+            candidates,
+            marked_text="Tai[[lor:]]\nBring me the measure.",
+            train_text="Tailor Tailor Tainted.",
+        )
+        exact_key = tuple(tokenizer.encode("lor:", add_bos=False, add_eos=False))
+        wrong_key = tuple(tokenizer.encode("nte:", add_bos=False, add_eos=False))
+        self.assertEqual(report[exact_key]["surface_verifier_rank"], 0)
+        self.assertLess(
+            report[exact_key]["surface_verifier_rank"],
+            report[wrong_key]["surface_verifier_rank"],
+        )
+        self.assertEqual(report[exact_key]["surface_verifier_features"]["speaker_label_count"], 2)
+
     def test_lattice_oracle_case_reports_morphology_hit(self) -> None:
         tokenizer = ByteTokenizer()
         train_text = "Nathaniel's book and Michael's cloak are nearby."
@@ -226,6 +277,9 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(row["candidate_summaries"][0]["prior_rank"], 0)
         self.assertEqual(row["prior_exact_rank"], 0)
         self.assertTrue(row["prior_exact_in_top4"])
+        self.assertTrue(row["surface_verifier_selected_exact"])
+        self.assertEqual(row["surface_verifier_exact_rank"], 0)
+        self.assertEqual(row["candidate_summaries"][0]["surface_verifier_rank"], 0)
 
     def test_prior_topk_can_isolate_reranker_candidates_without_model(self) -> None:
         tokenizer = ByteTokenizer()
@@ -468,6 +522,9 @@ class BenchTest(unittest.TestCase):
                 ],
                 "scored_candidate_count": 4,
                 "prior_exact_rank": 0,
+                "surface_verifier_selected_exact": False,
+                "surface_verifier_exact_rank": 5,
+                "surface_verifier_exact_in_top4": False,
             },
             {
                 "byte_accuracy": 0.5,
@@ -503,6 +560,9 @@ class BenchTest(unittest.TestCase):
                 ],
                 "scored_candidate_count": 4,
                 "prior_exact_rank": 7,
+                "surface_verifier_selected_exact": True,
+                "surface_verifier_exact_rank": 2,
+                "surface_verifier_exact_in_top4": True,
             },
         ]
         summary = summarize_retrieval_lattice(rows)
@@ -516,6 +576,13 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(summary["selector_margin_applied_rate"], 0.5)
         self.assertEqual(summary["avg_scored_candidate_count"], 4.0)
         self.assertEqual(summary["avg_prior_exact_rank"], 3.5)
+        self.assertEqual(summary["prior_top4_exact_rate"], 0.5)
+        self.assertEqual(summary["surface_verifier_selected_exact_rate"], 0.5)
+        self.assertEqual(summary["surface_verifier_top4_exact_rate"], 0.5)
+        self.assertEqual(summary["surface_verifier_avg_exact_rank"], 3.5)
+        self.assertEqual(summary["surface_verifier_top4_delta_vs_prior"], 0.0)
+        self.assertEqual(summary["surface_verifier_harm_count"], 1)
+        self.assertEqual(summary["surface_verifier_help_count"], 1)
         self.assertEqual(summary["outcome_categories"], {"oracle_outside_scored_set": 1, "selected_exact": 1})
         self.assertEqual(
             summary["selector_effects"],
@@ -547,6 +614,9 @@ class BenchTest(unittest.TestCase):
                 "prior_exact_in_top4": True,
                 "prior_exact_in_top8": True,
                 "prior_exact_rank": 0,
+                "surface_verifier_selected_exact": False,
+                "surface_verifier_exact_rank": 5,
+                "surface_verifier_exact_in_top4": False,
                 "local_prior_calibration": {"applied": False},
                 "local_prior_calibration_suggested_prior_exact_rank": 7,
                 "local_prior_calibration_suggested_prior_top4_exact": False,
@@ -563,6 +633,9 @@ class BenchTest(unittest.TestCase):
                 "prior_exact_in_top4": False,
                 "prior_exact_in_top8": False,
                 "prior_exact_rank": None,
+                "surface_verifier_selected_exact": True,
+                "surface_verifier_exact_rank": 2,
+                "surface_verifier_exact_in_top4": True,
                 "local_prior_calibration": {"applied": False},
                 "local_prior_calibration_suggested_prior_exact_rank": 2,
                 "local_prior_calibration_suggested_prior_top4_exact": True,
@@ -577,6 +650,12 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(summary["prior_top4_exact_rate"], 0.5)
         self.assertEqual(summary["prior_top8_exact_rate"], 0.5)
         self.assertEqual(summary["avg_prior_exact_rank"], 0.0)
+        self.assertEqual(summary["surface_verifier_selected_exact_rate"], 0.5)
+        self.assertEqual(summary["surface_verifier_top4_exact_rate"], 0.5)
+        self.assertEqual(summary["surface_verifier_avg_exact_rank"], 3.5)
+        self.assertEqual(summary["surface_verifier_top4_delta_vs_prior"], 0.0)
+        self.assertEqual(summary["surface_verifier_harm_count"], 1)
+        self.assertEqual(summary["surface_verifier_help_count"], 1)
         self.assertEqual(summary["local_prior_calibration_cases"], 2)
         self.assertEqual(summary["local_prior_suggested_top4_exact_rate"], 0.5)
         self.assertEqual(summary["local_prior_suggested_top4_delta"], 0.0)

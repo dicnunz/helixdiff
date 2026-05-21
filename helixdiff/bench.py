@@ -2025,6 +2025,26 @@ def summarize_selector_anchor_margin_sweep(rows: list[dict[str, Any]]) -> dict[s
     return summary
 
 
+def summarize_local_surface_anchor_margin_sweep(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    buckets: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        local_report = row.get("local_surface_anchor_calibration")
+        if not isinstance(local_report, dict):
+            continue
+        selected_anchor = str(local_report.get("selected_selector_anchor", ""))
+        if selected_anchor not in {"prior", "surface"}:
+            continue
+        for sweep_row in row.get("selector_anchor_margin_sweep", []):
+            if str(sweep_row.get("selector_anchor", "")) != selected_anchor:
+                continue
+            margin_key = format_selector_margin(float(sweep_row["selector_margin"]))
+            buckets.setdefault(margin_key, []).append(sweep_row)
+    return {
+        margin_key: summarize_selector_sweep_rows(sweep_rows)
+        for margin_key, sweep_rows in sorted(buckets.items(), key=lambda item: float(item[0]))
+    }
+
+
 def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
     summary = summarize_infill(rows)
     if not rows:
@@ -2062,6 +2082,7 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "max_exact_anchor_margin_gap": None,
                 "selector_margin_sweep": {},
                 "selector_anchor_margin_sweep": {},
+                "local_surface_anchor_margin_sweep": {},
             }
         )
         return summary
@@ -2181,6 +2202,7 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
             ),
             "selector_margin_sweep": summarize_selector_margin_sweep(rows),
             "selector_anchor_margin_sweep": summarize_selector_anchor_margin_sweep(rows),
+            "local_surface_anchor_margin_sweep": summarize_local_surface_anchor_margin_sweep(rows),
         }
     )
     return summary

@@ -27,6 +27,7 @@ from helixdiff.bench import (
     surface_verifier_candidate_report,
     surface_splice_candidates,
     summarize_lattice_oracle,
+    summarize_local_surface_anchor_margin_sweep,
     summarize_retrieval_lattice,
     summarize_selector_margin_sweep,
     sha256_text,
@@ -839,6 +840,9 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(summary["selector_margin_sweep"]["0.5"]["selector_margin_applied_rate"], 0.5)
         self.assertEqual(summary["selector_anchor_margin_sweep"]["prior"]["0.5"]["exact_match_rate"], 0.5)
         self.assertEqual(summary["selector_anchor_margin_sweep"]["surface"]["0.5"]["exact_match_rate"], 0.5)
+        self.assertEqual(summary["local_surface_anchor_margin_sweep"]["0.5"]["cases"], 2)
+        self.assertEqual(summary["local_surface_anchor_margin_sweep"]["0.5"]["exact_match_rate"], 1.0)
+        self.assertEqual(summary["local_surface_anchor_margin_sweep"]["0.5"]["byte_accuracy"], 1.0)
         self.assertEqual(
             summary["selector_anchor_margin_sweep"]["surface"]["0.5"]["outcome_categories"],
             {"scored_exact_not_selected": 1, "selected_exact": 1},
@@ -846,6 +850,7 @@ class BenchTest(unittest.TestCase):
 
     def test_selector_margin_sweep_summary_handles_empty_rows(self) -> None:
         self.assertEqual(summarize_selector_margin_sweep([]), {})
+        self.assertEqual(summarize_local_surface_anchor_margin_sweep([]), {})
 
     def test_lattice_oracle_summary_splits_sources(self) -> None:
         rows = [

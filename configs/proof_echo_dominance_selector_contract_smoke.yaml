@@ -1,0 +1,16 @@
+data: data/tinyshakespeare.txt
+cases: 8
+span_chars: 4
+context_chars: 36
+val_fraction: 0.08
+seed: 42
+max_candidates_per_example: 128
+anchor_window_bytes: 64
+anchor_sizes: 32,24,16,12,8,6,4
+lattice_visible_candidates: 8
+lattice_morphology_candidates: 64
+lattice_surface_candidates: 64
+lattice_bi_anchor_candidates: 8
+min_real_null_margin: 2.0
+max_rank_promotions: 1
+shuffle_trials: 32

@@ -33,6 +33,7 @@ helixdiff-visible-reranker-oracle-smoke = "helixdiff.proofs.visible_reranker_ora
 helixdiff-proxy-mask-selector-contract-smoke = "helixdiff.proofs.proxy_mask_selector_contract_smoke:main"
 helixdiff-canvas-boundary-smoke = "helixdiff.proofs.canvas_boundary_smoke:main"
 helixdiff-in-document-echo-oracle-smoke = "helixdiff.proofs.in_document_echo_oracle_smoke:main"
+helixdiff-echo-dominance-selector-contract-smoke = "helixdiff.proofs.echo_dominance_selector_contract_smoke:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

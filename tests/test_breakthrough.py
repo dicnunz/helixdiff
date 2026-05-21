@@ -25,6 +25,7 @@ class BreakthroughPlanTests(unittest.TestCase):
         self.assertIn("visible_reranker_oracle_smoke", lane_names)
         self.assertIn("proxy_mask_selector_contract_smoke", lane_names)
         self.assertIn("redacted_in_document_echo_lattice", lane_names)
+        self.assertIn("causal_echo_dominance_selector_contract", lane_names)
         self.assertIn("gold_blind_bi_anchor_oracle", lane_names)
         self.assertIn("frozen_selector_heldout_trial", lane_names)
         self.assertIn("visible_hole_reranker", lane_names)
@@ -39,8 +40,8 @@ class BreakthroughPlanTests(unittest.TestCase):
         self.assertEqual(plan["chatgpt_teammate_status"]["model_mode"], "Extended Pro")
         self.assertEqual(plan["chatgpt_teammate_status"]["latest_response_status"], "answered")
         self.assertIsNone(plan["chatgpt_teammate_status"]["blocker"])
-        self.assertIn("redacted in-document echo", plan["chatgpt_teammate_status"]["latest_recommendation"])
-        self.assertIn("same-document echo lattice", plan["chatgpt_teammate_status"]["claim"])
+        self.assertIn("causal echo-dominance", plan["chatgpt_teammate_status"]["latest_recommendation"])
+        self.assertIn("kills direct promotion", plan["chatgpt_teammate_status"]["claim"])
         prior_note = plan["chatgpt_teammate_status"]["recorded_prior_note"]
         self.assertEqual(prior_note["model_mode"], "Extended Pro")
         self.assertIn("chatgpt.com/c/", prior_note["conversation_url"])
@@ -68,17 +69,28 @@ class BreakthroughPlanTests(unittest.TestCase):
         self.assertIn("helixdiff-visible-reranker-oracle-smoke", proof_commands)
         self.assertIn("--out proof/visible_reranker_oracle_smoke.json", proof_commands)
 
-    def test_current_best_move_is_in_document_echo_lattice(self) -> None:
+    def test_current_best_move_is_echo_dominance_selector_contract(self) -> None:
         plan = build_breakthrough_plan()
         lane = [lane for lane in plan["lanes"] if lane["name"] == plan["current_best_move"]][0]
         proof_commands = "\n".join(lane["proof_commands"])
 
-        self.assertEqual(lane["name"], "redacted_in_document_echo_lattice")
+        self.assertEqual(lane["name"], "causal_echo_dominance_selector_contract")
+        self.assertFalse(lane["heavy_slot_required"])
+        self.assertIn("helixdiff-echo-dominance-selector-contract-smoke", proof_commands)
+        self.assertIn("proof/echo_dominance_selector_contract_smoke.json", proof_commands)
+        self.assertIn("target_metric_used_for_selection=false", lane["pass_condition"])
+        self.assertIn("direct echo promotion", lane["kill_condition"])
+
+    def test_in_document_echo_lattice_remains_containment_only(self) -> None:
+        plan = build_breakthrough_plan()
+        lane = [lane for lane in plan["lanes"] if lane["name"] == "redacted_in_document_echo_lattice"][0]
+        proof_commands = "\n".join(lane["proof_commands"])
+
         self.assertFalse(lane["heavy_slot_required"])
         self.assertIn("helixdiff-in-document-echo-oracle-smoke", proof_commands)
         self.assertIn("proof/in_document_echo_oracle_smoke.json", proof_commands)
         self.assertIn("combined K=128 containment lift", lane["pass_condition"])
-        self.assertIn("zero K=128 containment lift", lane["kill_condition"])
+        self.assertIn("containment lift only", lane["claim_if_passes"])
 
     def test_proxy_mask_selector_contract_lane_is_visible_only(self) -> None:
         plan = build_breakthrough_plan()

@@ -739,6 +739,18 @@ def parse_selector_margin_sweep(value: str) -> list[float]:
     return sorted(set(margins))
 
 
+def parse_selector_anchor_sweep(value: str) -> list[str]:
+    anchors: list[str] = []
+    for chunk in value.split(","):
+        stripped = chunk.strip()
+        if not stripped:
+            continue
+        if stripped not in {"prior", "surface"}:
+            raise ValueError(f"unknown selector anchor: {stripped}")
+        anchors.append(stripped)
+    return sorted(set(anchors), key=lambda anchor: ("prior", "surface").index(anchor))
+
+
 def parse_prior_weight_grid(value: str) -> list[float]:
     weights: list[float] = []
     for chunk in value.split(","):
@@ -1197,6 +1209,28 @@ def selector_margin_sweep_report(
     return report
 
 
+def selector_anchor_margin_sweep_report(
+    scored_options: list[tuple[float, torch.Tensor, dict[str, Any]]],
+    *,
+    selector_margins: list[float],
+    selector_anchors: list[str],
+    oracle_candidate_exact: bool,
+    oracle_candidate_exact_in_scored_set: bool,
+) -> list[dict[str, Any]]:
+    report: list[dict[str, Any]] = []
+    for anchor in selector_anchors:
+        report.extend(
+            selector_margin_sweep_report(
+                scored_options,
+                selector_margins=selector_margins,
+                selector_anchor=anchor,
+                oracle_candidate_exact=oracle_candidate_exact,
+                oracle_candidate_exact_in_scored_set=oracle_candidate_exact_in_scored_set,
+            )
+        )
+    return report
+
+
 def lattice_oracle_case(
     *,
     tokenizer: ByteTokenizer,
@@ -1407,6 +1441,7 @@ def retrieval_lattice_case(
     selector_margin: float = 0.0,
     selector_anchor: str = "prior",
     selector_margin_sweep: list[float] | None = None,
+    selector_anchor_sweep: list[str] | None = None,
     local_prior_calibration: bool = False,
     apply_local_prior_calibration: bool = False,
     prior_weight_grid: list[float] | None = None,
@@ -1558,6 +1593,13 @@ def retrieval_lattice_case(
         oracle_candidate_exact=prior_exact_rank is not None,
         oracle_candidate_exact_in_scored_set=oracle_exact_in_scored_set,
     )
+    anchor_sweep_report = selector_anchor_margin_sweep_report(
+        scored_options,
+        selector_margins=selector_margin_sweep or [],
+        selector_anchors=selector_anchor_sweep or [selector_anchor],
+        oracle_candidate_exact=prior_exact_rank is not None,
+        oracle_candidate_exact_in_scored_set=oracle_exact_in_scored_set,
+    )
     pred = best_repaired[example.hole_start : example.hole_end]
     result = {
         "marked_text": marked_text,
@@ -1615,6 +1657,7 @@ def retrieval_lattice_case(
         "oracle_candidate_exact": prior_exact_rank is not None,
         "oracle_candidate_exact_in_scored_set": oracle_exact_in_scored_set,
         "selector_margin_sweep": sweep_report,
+        "selector_anchor_margin_sweep": anchor_sweep_report,
     }
     result["outcome_category"] = classify_retrieval_lattice_outcome(result)
     return result
@@ -1733,6 +1776,20 @@ def summarize_infill(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def summarize_selector_sweep_rows(sweep_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    outcome_categories = Counter(str(row.get("outcome_category", "unknown")) for row in sweep_rows)
+    selector_effects = Counter(str(row.get("selector_effect", "unknown")) for row in sweep_rows)
+    return {
+        "cases": len(sweep_rows),
+        "exact_match_rate": sum(1.0 for row in sweep_rows if row.get("exact")) / len(sweep_rows),
+        "byte_accuracy": sum(float(row.get("byte_accuracy", 0.0)) for row in sweep_rows) / len(sweep_rows),
+        "selector_margin_applied_rate": sum(1.0 for row in sweep_rows if row.get("selector_margin_applied"))
+        / len(sweep_rows),
+        "outcome_categories": dict(sorted(outcome_categories.items())),
+        "selector_effects": dict(sorted(selector_effects.items())),
+    }
+
+
 def summarize_selector_margin_sweep(rows: list[dict[str, Any]]) -> dict[str, Any]:
     buckets: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
@@ -1741,17 +1798,20 @@ def summarize_selector_margin_sweep(rows: list[dict[str, Any]]) -> dict[str, Any
             buckets.setdefault(key, []).append(sweep_row)
     summary: dict[str, Any] = {}
     for key, sweep_rows in sorted(buckets.items(), key=lambda item: float(item[0])):
-        outcome_categories = Counter(str(row.get("outcome_category", "unknown")) for row in sweep_rows)
-        selector_effects = Counter(str(row.get("selector_effect", "unknown")) for row in sweep_rows)
-        summary[key] = {
-            "cases": len(sweep_rows),
-            "exact_match_rate": sum(1.0 for row in sweep_rows if row.get("exact")) / len(sweep_rows),
-            "byte_accuracy": sum(float(row.get("byte_accuracy", 0.0)) for row in sweep_rows) / len(sweep_rows),
-            "selector_margin_applied_rate": sum(1.0 for row in sweep_rows if row.get("selector_margin_applied"))
-            / len(sweep_rows),
-            "outcome_categories": dict(sorted(outcome_categories.items())),
-            "selector_effects": dict(sorted(selector_effects.items())),
-        }
+        summary[key] = summarize_selector_sweep_rows(sweep_rows)
+    return summary
+
+
+def summarize_selector_anchor_margin_sweep(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    buckets: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for row in rows:
+        for sweep_row in row.get("selector_anchor_margin_sweep", []):
+            anchor = str(sweep_row.get("selector_anchor", "prior"))
+            margin_key = format_selector_margin(float(sweep_row["selector_margin"]))
+            buckets.setdefault((anchor, margin_key), []).append(sweep_row)
+    summary: dict[str, Any] = {}
+    for (anchor, margin_key), sweep_rows in sorted(buckets.items(), key=lambda item: (item[0][0], float(item[0][1]))):
+        summary.setdefault(anchor, {})[margin_key] = summarize_selector_sweep_rows(sweep_rows)
     return summary
 
 
@@ -1783,6 +1843,7 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "avg_exact_anchor_margin_gap": None,
                 "max_exact_anchor_margin_gap": None,
                 "selector_margin_sweep": {},
+                "selector_anchor_margin_sweep": {},
             }
         )
         return summary
@@ -1863,6 +1924,7 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 else None
             ),
             "selector_margin_sweep": summarize_selector_margin_sweep(rows),
+            "selector_anchor_margin_sweep": summarize_selector_anchor_margin_sweep(rows),
         }
     )
     return summary
@@ -2097,6 +2159,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     adapted_rows: list[dict[str, Any]] = []
     adapted_guided_rows: list[dict[str, Any]] = []
     selector_margin_sweep = parse_selector_margin_sweep(args.lattice_selector_margin_sweep)
+    selector_anchor_sweep = parse_selector_anchor_sweep(args.lattice_selector_anchor_sweep)
     prior_weight_grid = parse_prior_weight_grid(args.lattice_prior_weight_grid)
     for index, marked in enumerate(cases):
         unigram_rows.append(guide_only_case(tokenizer=tokenizer, marked_text=marked, guide=guide, strategy="unigram"))
@@ -2125,6 +2188,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             selector_margin=args.lattice_selector_margin,
             selector_anchor=args.lattice_selector_anchor,
             selector_margin_sweep=selector_margin_sweep,
+            selector_anchor_sweep=selector_anchor_sweep,
             local_prior_calibration=args.lattice_local_prior_calibration,
             apply_local_prior_calibration=args.lattice_apply_local_prior_calibration,
             prior_weight_grid=prior_weight_grid,
@@ -2264,6 +2328,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_selector_margin": float(args.lattice_selector_margin),
             "lattice_selector_anchor": args.lattice_selector_anchor,
             "lattice_selector_margin_sweep": parse_selector_margin_sweep(args.lattice_selector_margin_sweep),
+            "lattice_selector_anchor_sweep": selector_anchor_sweep,
             "lattice_local_prior_calibration": bool(args.lattice_local_prior_calibration),
             "lattice_apply_local_prior_calibration": bool(args.lattice_apply_local_prior_calibration),
             "lattice_prior_weight_grid": prior_weight_grid,
@@ -2336,6 +2401,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--lattice-verifier-top-k", type=int, default=0)
     parser.add_argument("--lattice-selector-margin", type=float, default=0.0)
     parser.add_argument("--lattice-selector-anchor", choices=["prior", "surface"], default="prior")
+    parser.add_argument("--lattice-selector-anchor-sweep", default="prior,surface")
     parser.add_argument("--lattice-selector-margin-sweep", default="0,1,2,3,5")
     parser.add_argument("--lattice-local-prior-calibration", action="store_true")
     parser.add_argument("--lattice-apply-local-prior-calibration", action="store_true")

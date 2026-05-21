@@ -7,6 +7,8 @@
       "checkpoint_sha256": "3d1ae0b04275291f44c17660eeef12c627ed0d8f96132eba3b8caff27bedd9bf",
       "cases": 1,
       "configured_selector_margin": 3.0,
+      "configured_selector_anchor": null,
+      "configured_selector_anchor_sweep": null,
       "summary_exact_match_rate": 1.0,
       "summary_byte_accuracy": 1.0
     }
@@ -99,6 +101,98 @@
       }
     }
   },
+  "anchor_margins": {
+    "prior:0": {
+      "selector_anchor": "prior",
+      "margin": 0.0,
+      "cases": 1,
+      "exact_match_rate": 0.0,
+      "byte_accuracy": 0.25,
+      "selector_margin_applied_rate": 0.0,
+      "margin_rescued_exact_anchor_rate": 0.0,
+      "margin_blocked_exact_raw_rate": 0.0,
+      "raw_verifier_overrode_exact_anchor_rate": 1.0,
+      "scored_exact_not_selected_rate": 0.0,
+      "outcome_categories": {
+        "raw_verifier_overrode_exact_anchor": 1
+      },
+      "selector_effects": {
+        "raw_verifier_overrode_exact_anchor": 1
+      }
+    },
+    "prior:1": {
+      "selector_anchor": "prior",
+      "margin": 1.0,
+      "cases": 1,
+      "exact_match_rate": 0.0,
+      "byte_accuracy": 0.25,
+      "selector_margin_applied_rate": 0.0,
+      "margin_rescued_exact_anchor_rate": 0.0,
+      "margin_blocked_exact_raw_rate": 0.0,
+      "raw_verifier_overrode_exact_anchor_rate": 1.0,
+      "scored_exact_not_selected_rate": 0.0,
+      "outcome_categories": {
+        "raw_verifier_overrode_exact_anchor": 1
+      },
+      "selector_effects": {
+        "raw_verifier_overrode_exact_anchor": 1
+      }
+    },
+    "prior:2": {
+      "selector_anchor": "prior",
+      "margin": 2.0,
+      "cases": 1,
+      "exact_match_rate": 0.0,
+      "byte_accuracy": 0.25,
+      "selector_margin_applied_rate": 0.0,
+      "margin_rescued_exact_anchor_rate": 0.0,
+      "margin_blocked_exact_raw_rate": 0.0,
+      "raw_verifier_overrode_exact_anchor_rate": 1.0,
+      "scored_exact_not_selected_rate": 0.0,
+      "outcome_categories": {
+        "raw_verifier_overrode_exact_anchor": 1
+      },
+      "selector_effects": {
+        "raw_verifier_overrode_exact_anchor": 1
+      }
+    },
+    "prior:3": {
+      "selector_anchor": "prior",
+      "margin": 3.0,
+      "cases": 1,
+      "exact_match_rate": 1.0,
+      "byte_accuracy": 1.0,
+      "selector_margin_applied_rate": 1.0,
+      "margin_rescued_exact_anchor_rate": 1.0,
+      "margin_blocked_exact_raw_rate": 0.0,
+      "raw_verifier_overrode_exact_anchor_rate": 0.0,
+      "scored_exact_not_selected_rate": 0.0,
+      "outcome_categories": {
+        "selected_exact": 1
+      },
+      "selector_effects": {
+        "margin_rescued_exact_anchor": 1
+      }
+    },
+    "prior:5": {
+      "selector_anchor": "prior",
+      "margin": 5.0,
+      "cases": 1,
+      "exact_match_rate": 1.0,
+      "byte_accuracy": 1.0,
+      "selector_margin_applied_rate": 1.0,
+      "margin_rescued_exact_anchor_rate": 1.0,
+      "margin_blocked_exact_raw_rate": 0.0,
+      "raw_verifier_overrode_exact_anchor_rate": 0.0,
+      "scored_exact_not_selected_rate": 0.0,
+      "outcome_categories": {
+        "selected_exact": 1
+      },
+      "selector_effects": {
+        "margin_rescued_exact_anchor": 1
+      }
+    }
+  },
   "anchor_gap_diagnostics": {
     "avg_anchor_margin_gap": 2.5397194766998297,
     "avg_exact_anchor_margin_gap": 2.5397194766998297,
@@ -111,6 +205,16 @@
     "diagnostic_best_margin": 3.0,
     "reason": "best observed margin has only 1 cases; require at least 4",
     "selection_rule": "maximize exact_match_rate, then byte_accuracy, then avoid blocking exact raw verifier hits, then choose the lower margin",
+    "claim_boundary": "selector calibration is diagnostic unless the margin is chosen on a calibration split and then predeclared for a separate held-out benchmark"
+  },
+  "anchor_recommendation": {
+    "status": "diagnostic_only_insufficient_cases",
+    "recommended_selector_anchor": null,
+    "recommended_margin": null,
+    "diagnostic_best_selector_anchor": "prior",
+    "diagnostic_best_margin": 3.0,
+    "reason": "best observed anchor/margin has only 1 cases; require at least 4",
+    "selection_rule": "maximize exact_match_rate, then byte_accuracy, then avoid blocking exact raw verifier hits, then choose lower margin and conservative prior anchor on ties",
     "claim_boundary": "selector calibration is diagnostic unless the margin is chosen on a calibration split and then predeclared for a separate held-out benchmark"
   },
   "claim_boundary": "selector calibration is diagnostic unless the margin is chosen on a calibration split and then predeclared for a separate held-out benchmark"

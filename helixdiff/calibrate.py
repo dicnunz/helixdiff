@@ -17,6 +17,10 @@ def format_margin(margin: float) -> str:
     return f"{float(margin):g}"
 
 
+def format_anchor_margin(anchor: str, margin: float) -> str:
+    return f"{anchor}:{format_margin(margin)}"
+
+
 def _mean(values: Iterable[float]) -> float | None:
     values = list(values)
     if not values:
@@ -85,6 +89,8 @@ def summarize_reports(reports: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "checkpoint_sha256": report.get("checkpoint_sha256"),
                 "cases": len(retrieval_lattice_cases(report)),
                 "configured_selector_margin": case_filter.get("lattice_selector_margin"),
+                "configured_selector_anchor": case_filter.get("lattice_selector_anchor"),
+                "configured_selector_anchor_sweep": case_filter.get("lattice_selector_anchor_sweep"),
                 "summary_exact_match_rate": lattice.get("summary", {}).get("exact_match_rate"),
                 "summary_byte_accuracy": lattice.get("summary", {}).get("byte_accuracy"),
             }
@@ -99,6 +105,19 @@ def collect_selector_margin_sweeps(cases: list[dict[str, Any]]) -> dict[str, lis
             if not isinstance(row, dict) or "selector_margin" not in row:
                 continue
             key = format_margin(float(row["selector_margin"]))
+            buckets.setdefault(key, []).append(row)
+    return buckets
+
+
+def collect_selector_anchor_margin_sweeps(cases: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    buckets: dict[str, list[dict[str, Any]]] = {}
+    for case in cases:
+        rows = case.get("selector_anchor_margin_sweep") or case.get("selector_margin_sweep", [])
+        for row in rows:
+            if not isinstance(row, dict) or "selector_margin" not in row:
+                continue
+            anchor = str(row.get("selector_anchor", "prior"))
+            key = format_anchor_margin(anchor, float(row["selector_margin"]))
             buckets.setdefault(key, []).append(row)
     return buckets
 
@@ -125,12 +144,50 @@ def summarize_selector_margins(cases: list[dict[str, Any]]) -> dict[str, dict[st
     return summaries
 
 
+def summarize_selector_anchor_margins(cases: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    buckets = collect_selector_anchor_margin_sweeps(cases)
+    summaries: dict[str, dict[str, Any]] = {}
+    for key, rows in sorted(
+        buckets.items(),
+        key=lambda item: (item[0].split(":", 1)[0], float(item[0].split(":", 1)[1])),
+    ):
+        anchor, margin = key.split(":", 1)
+        outcome_categories = Counter(str(row.get("outcome_category", "unknown")) for row in rows)
+        selector_effects = Counter(str(row.get("selector_effect", "unknown")) for row in rows)
+        summaries[key] = {
+            "selector_anchor": anchor,
+            "margin": float(margin),
+            "cases": len(rows),
+            "exact_match_rate": _rate(rows, "exact"),
+            "byte_accuracy": _mean(float(row.get("byte_accuracy", 0.0)) for row in rows) or 0.0,
+            "selector_margin_applied_rate": _rate(rows, "selector_margin_applied"),
+            "margin_rescued_exact_anchor_rate": _effect_rate(rows, "margin_rescued_exact_anchor"),
+            "margin_blocked_exact_raw_rate": _effect_rate(rows, "margin_blocked_exact_raw"),
+            "raw_verifier_overrode_exact_anchor_rate": _outcome_rate(rows, "raw_verifier_overrode_exact_anchor"),
+            "scored_exact_not_selected_rate": _outcome_rate(rows, "scored_exact_not_selected"),
+            "outcome_categories": dict(sorted(outcome_categories.items())),
+            "selector_effects": dict(sorted(selector_effects.items())),
+        }
+    return summaries
+
+
 def _rank_margin(summary: dict[str, Any]) -> tuple[float, float, float, float]:
     return (
         float(summary["exact_match_rate"]),
         float(summary["byte_accuracy"]),
         -float(summary["margin_blocked_exact_raw_rate"]),
         -float(summary["margin"]),
+    )
+
+
+def _rank_anchor_margin(summary: dict[str, Any]) -> tuple[float, float, float, float, float]:
+    prior_tie_break = 0.0 if summary.get("selector_anchor") == "prior" else -1.0
+    return (
+        float(summary["exact_match_rate"]),
+        float(summary["byte_accuracy"]),
+        -float(summary["margin_blocked_exact_raw_rate"]),
+        -float(summary["margin"]),
+        prior_tie_break,
     )
 
 
@@ -205,6 +262,85 @@ def recommend_selector_margin(
     }
 
 
+def recommend_selector_anchor_margin(
+    anchor_margin_summaries: dict[str, dict[str, Any]],
+    *,
+    min_cases: int = 4,
+    allow_blocked_exact_raw: bool = False,
+) -> dict[str, Any]:
+    if not anchor_margin_summaries:
+        return {
+            "status": "no_selector_anchor_margin_sweep",
+            "recommended_selector_anchor": None,
+            "recommended_margin": None,
+            "diagnostic_best_selector_anchor": None,
+            "diagnostic_best_margin": None,
+            "reason": "no per-case selector_anchor_margin_sweep rows were found",
+            "claim_boundary": CLAIM_BOUNDARY,
+        }
+
+    all_candidates = sorted(anchor_margin_summaries.values(), key=_rank_anchor_margin, reverse=True)
+    diagnostic_best = all_candidates[0]
+    eligible = [row for row in all_candidates if int(row["cases"]) >= min_cases]
+    if not eligible:
+        return {
+            "status": "diagnostic_only_insufficient_cases",
+            "recommended_selector_anchor": None,
+            "recommended_margin": None,
+            "diagnostic_best_selector_anchor": diagnostic_best["selector_anchor"],
+            "diagnostic_best_margin": diagnostic_best["margin"],
+            "reason": f"best observed anchor/margin has only {diagnostic_best['cases']} cases; require at least {min_cases}",
+            "selection_rule": (
+                "maximize exact_match_rate, then byte_accuracy, then avoid blocking exact raw verifier hits, "
+                "then choose lower margin and conservative prior anchor on ties"
+            ),
+            "claim_boundary": CLAIM_BOUNDARY,
+        }
+
+    safe_candidates = (
+        eligible
+        if allow_blocked_exact_raw
+        else [row for row in eligible if float(row["margin_blocked_exact_raw_rate"]) == 0.0]
+    )
+    if not safe_candidates:
+        return {
+            "status": "blocked_exact_raw_risk",
+            "recommended_selector_anchor": None,
+            "recommended_margin": None,
+            "diagnostic_best_selector_anchor": diagnostic_best["selector_anchor"],
+            "diagnostic_best_margin": diagnostic_best["margin"],
+            "reason": "every eligible anchor/margin blocked at least one raw verifier exact hit",
+            "selection_rule": (
+                "maximize exact_match_rate, then byte_accuracy, then avoid blocking exact raw verifier hits, "
+                "then choose lower margin and conservative prior anchor on ties"
+            ),
+            "claim_boundary": CLAIM_BOUNDARY,
+        }
+
+    best = sorted(safe_candidates, key=_rank_anchor_margin, reverse=True)[0]
+    prior_zero = anchor_margin_summaries.get("prior:0")
+    exact_lift_vs_prior_zero = None
+    byte_lift_vs_prior_zero = None
+    if prior_zero is not None:
+        exact_lift_vs_prior_zero = float(best["exact_match_rate"]) - float(prior_zero["exact_match_rate"])
+        byte_lift_vs_prior_zero = float(best["byte_accuracy"]) - float(prior_zero["byte_accuracy"])
+    return {
+        "status": "candidate_anchor_margin",
+        "recommended_selector_anchor": best["selector_anchor"],
+        "recommended_margin": best["margin"],
+        "diagnostic_best_selector_anchor": diagnostic_best["selector_anchor"],
+        "diagnostic_best_margin": diagnostic_best["margin"],
+        "reason": "selected the lowest safe anchor/margin on the best exact/byte-accuracy frontier",
+        "exact_lift_vs_prior_margin_0": exact_lift_vs_prior_zero,
+        "byte_accuracy_lift_vs_prior_margin_0": byte_lift_vs_prior_zero,
+        "selection_rule": (
+            "maximize exact_match_rate, then byte_accuracy, then avoid blocking exact raw verifier hits, "
+            "then choose lower margin and conservative prior anchor on ties"
+        ),
+        "claim_boundary": CLAIM_BOUNDARY,
+    }
+
+
 def calibrate_selector_margins(
     reports: list[dict[str, Any]],
     *,
@@ -215,6 +351,7 @@ def calibrate_selector_margins(
     for report in reports:
         cases.extend(retrieval_lattice_cases(report))
     margin_summaries = summarize_selector_margins(cases)
+    anchor_margin_summaries = summarize_selector_anchor_margins(cases)
     exact_anchor_gaps = [
         float(case["anchor_margin_gap"])
         for case in cases
@@ -228,6 +365,7 @@ def calibrate_selector_margins(
         "reports": summarize_reports(reports),
         "cases": len(cases),
         "margins": margin_summaries,
+        "anchor_margins": anchor_margin_summaries,
         "anchor_gap_diagnostics": {
             "avg_anchor_margin_gap": _mean(all_anchor_gaps),
             "avg_exact_anchor_margin_gap": _mean(exact_anchor_gaps),
@@ -236,6 +374,11 @@ def calibrate_selector_margins(
         },
         "recommendation": recommend_selector_margin(
             margin_summaries,
+            min_cases=min_cases,
+            allow_blocked_exact_raw=allow_blocked_exact_raw,
+        ),
+        "anchor_recommendation": recommend_selector_anchor_margin(
+            anchor_margin_summaries,
             min_cases=min_cases,
             allow_blocked_exact_raw=allow_blocked_exact_raw,
         ),

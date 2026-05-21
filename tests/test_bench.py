@@ -12,6 +12,7 @@ from helixdiff.bench import (
     make_marked_cases,
     model_quality_label,
     morphology_candidates,
+    parse_selector_anchor_sweep,
     parse_prior_weight_grid,
     nearest_visible_case,
     parse_selector_margin_sweep,
@@ -19,6 +20,7 @@ from helixdiff.bench import (
     repair_surface_verifier_features,
     score_lattice_verifier,
     select_lattice_row_with_margin,
+    selector_anchor_margin_sweep_report,
     selector_margin_sweep_report,
     surface_verifier_candidate_report,
     surface_splice_candidates,
@@ -429,8 +431,53 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(sweep[1]["selector_effect"], "margin_rescued_exact_anchor")
         self.assertTrue(sweep[1]["selector_margin_clears_anchor_gap"])
 
+    def test_selector_anchor_margin_sweep_reuses_same_scored_options(self) -> None:
+        prior_anchor = torch.tensor([1])
+        surface_anchor = torch.tensor([2])
+        rows = [
+            (
+                1.0,
+                prior_anchor,
+                {
+                    "predicted_hole": "prior",
+                    "prior_rank": 0,
+                    "surface_verifier_rank": 3,
+                    "exact": False,
+                    "byte_accuracy": 0.0,
+                },
+            ),
+            (
+                1.2,
+                surface_anchor,
+                {
+                    "predicted_hole": "surface",
+                    "prior_rank": 1,
+                    "surface_verifier_rank": 0,
+                    "exact": True,
+                    "byte_accuracy": 1.0,
+                },
+            ),
+        ]
+        sweep = selector_anchor_margin_sweep_report(
+            rows,
+            selector_margins=[0.0, 0.5],
+            selector_anchors=["prior", "surface"],
+            oracle_candidate_exact=True,
+            oracle_candidate_exact_in_scored_set=True,
+        )
+        self.assertEqual({row["selector_anchor"] for row in sweep}, {"prior", "surface"})
+        self.assertEqual(len(sweep), 4)
+        surface_rescue = [row for row in sweep if row["selector_anchor"] == "surface" and row["selector_margin"] == 0.5]
+        self.assertEqual(surface_rescue[0]["selected_hole"], "surface")
+        self.assertTrue(surface_rescue[0]["exact"])
+
     def test_parse_selector_margin_sweep_dedupes_and_sorts(self) -> None:
         self.assertEqual(parse_selector_margin_sweep("3, 0,1,3,,2"), [0.0, 1.0, 2.0, 3.0])
+
+    def test_parse_selector_anchor_sweep_dedupes_and_validates(self) -> None:
+        self.assertEqual(parse_selector_anchor_sweep("surface, prior, surface"), ["prior", "surface"])
+        with self.assertRaises(ValueError):
+            parse_selector_anchor_sweep("prior,weird")
 
     def test_parse_prior_weight_grid_dedupes_and_rejects_negative(self) -> None:
         self.assertEqual(parse_prior_weight_grid("4, 1, 0.5,1"), [0.5, 1.0, 4.0])
@@ -580,6 +627,26 @@ class BenchTest(unittest.TestCase):
                 "surface_verifier_selected_exact": False,
                 "surface_verifier_exact_rank": 5,
                 "surface_verifier_exact_in_top4": False,
+                "selector_anchor_margin_sweep": [
+                    {
+                        "selector_anchor": "prior",
+                        "selector_margin": 0.5,
+                        "exact": True,
+                        "byte_accuracy": 1.0,
+                        "selector_margin_applied": True,
+                        "selector_effect": "margin_rescued_exact_anchor",
+                        "outcome_category": "selected_exact",
+                    },
+                    {
+                        "selector_anchor": "surface",
+                        "selector_margin": 0.5,
+                        "exact": False,
+                        "byte_accuracy": 0.0,
+                        "selector_margin_applied": False,
+                        "selector_effect": "raw_verifier_selected_nonexact",
+                        "outcome_category": "scored_exact_not_selected",
+                    },
+                ],
             },
             {
                 "byte_accuracy": 0.5,
@@ -618,6 +685,26 @@ class BenchTest(unittest.TestCase):
                 "surface_verifier_selected_exact": True,
                 "surface_verifier_exact_rank": 2,
                 "surface_verifier_exact_in_top4": True,
+                "selector_anchor_margin_sweep": [
+                    {
+                        "selector_anchor": "prior",
+                        "selector_margin": 0.5,
+                        "exact": False,
+                        "byte_accuracy": 0.5,
+                        "selector_margin_applied": False,
+                        "selector_effect": "raw_verifier_selected_nonexact",
+                        "outcome_category": "oracle_outside_scored_set",
+                    },
+                    {
+                        "selector_anchor": "surface",
+                        "selector_margin": 0.5,
+                        "exact": True,
+                        "byte_accuracy": 1.0,
+                        "selector_margin_applied": True,
+                        "selector_effect": "margin_rescued_exact_anchor",
+                        "outcome_category": "selected_exact",
+                    },
+                ],
             },
         ]
         summary = summarize_retrieval_lattice(rows)
@@ -651,6 +738,12 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(summary["selector_margin_sweep"]["0"]["exact_match_rate"], 0.0)
         self.assertEqual(summary["selector_margin_sweep"]["0.5"]["exact_match_rate"], 0.5)
         self.assertEqual(summary["selector_margin_sweep"]["0.5"]["selector_margin_applied_rate"], 0.5)
+        self.assertEqual(summary["selector_anchor_margin_sweep"]["prior"]["0.5"]["exact_match_rate"], 0.5)
+        self.assertEqual(summary["selector_anchor_margin_sweep"]["surface"]["0.5"]["exact_match_rate"], 0.5)
+        self.assertEqual(
+            summary["selector_anchor_margin_sweep"]["surface"]["0.5"]["outcome_categories"],
+            {"scored_exact_not_selected": 1, "selected_exact": 1},
+        )
 
     def test_selector_margin_sweep_summary_handles_empty_rows(self) -> None:
         self.assertEqual(summarize_selector_margin_sweep([]), {})

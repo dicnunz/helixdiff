@@ -1,0 +1,1487 @@
+{
+  "checkpoint": "checkpoints/helixdiff_tiny_shakespeare_clock_suture_30k_slim.pt",
+  "checkpoint_sha256": "3d1ae0b04275291f44c17660eeef12c627ed0d8f96132eba3b8caff27bedd9bf",
+  "checkpoint_step": 30000,
+  "loaded_state": "model_state",
+  "state_migration": {
+    "missing_initialized": [],
+    "unexpected": []
+  },
+  "parameters": 439968,
+  "data": "data/tinyshakespeare.txt",
+  "data_bytes": 1115394,
+  "val_fraction": 0.08,
+  "train_split_sha256": "3bcee3c77095c0828e0bca96a9d3e56860063e4af1f1a4eb38486fac22f6aa16",
+  "validation_split_sha256": "8d0f7b33b39afc4bc3c80c8060f53b652a90e496a11a81c642cee37f1e028638",
+  "guide_scope": "training_split_only",
+  "case_filter": {
+    "require_unseen_hole": true,
+    "candidate_count": 1,
+    "lattice_visible_candidates": 8,
+    "lattice_morphology_candidates": 64,
+    "lattice_surface_candidates": 64,
+    "lattice_suture_weight": 2.0,
+    "lattice_morphology_weight": 1.0,
+    "lattice_surface_weight": 1.0,
+    "lattice_prior_rerank_top_k": 4,
+    "lattice_verifier_mode": "dual",
+    "lattice_verifier_top_k": 0,
+    "lattice_selector_margin": 3.0,
+    "visible_context_adaptation_steps": 0
+  },
+  "masked_eval": {
+    "loss": 3.340157985687256,
+    "masked_accuracy": 0.12068965286016464,
+    "mask_rate": 0.5,
+    "batches": 1,
+    "batch_size": 2
+  },
+  "infill": {
+    "case_source": "validation_split",
+    "span_chars": 4,
+    "context_chars": 36,
+    "unigram_baseline": {
+      "summary": {
+        "cases": 1,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd [[Gabr]]iel's pumps were all unpink'd i' the",
+          "target_hole": "Gabr",
+          "predicted_hole": "    ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "unigram"
+        }
+      ]
+    },
+    "bridge_only_baseline": {
+      "summary": {
+        "cases": 1,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd [[Gabr]]iel's pumps were all unpink'd i' the",
+          "target_hole": "Gabr",
+          "predicted_hole": "the ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "bridge",
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "nearest_visible_baseline": {
+      "summary": {
+        "cases": 1,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd [[Gabr]]iel's pumps were all unpink'd i' the",
+          "target_hole": "Gabr",
+          "predicted_hole": "i' t",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "nearest_visible",
+          "nearest_visible_source": "after",
+          "nearest_visible_score": 2,
+          "nearest_visible_context_window": 16
+        }
+      ]
+    },
+    "retrieval_lattice": {
+      "summary": {
+        "cases": 1,
+        "byte_accuracy": 1.0,
+        "exact_match_rate": 1.0,
+        "pass_at_k_exact": 1.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd [[Gabr]]iel's pumps were all unpink'd i' the",
+          "target_hole": "Gabr",
+          "predicted_hole": "Gabr",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 1.0,
+          "exact": true,
+          "frozen_context_unchanged": true,
+          "strategy": "retrieval_lattice_diffusion_scored",
+          "selected_source": "morphology_name_stem_prefix",
+          "selected_candidate_score": 0.8514676094055176,
+          "selected_candidate_score_is_finite": true,
+          "selector": "diffusion_score_plus_structural_prior_topk",
+          "selector_margin": 3.0,
+          "selector_margin_applied": true,
+          "raw_best_hole": "Nath",
+          "raw_best_score": 3.3911870861053472,
+          "anchor_hole": "Gabr",
+          "anchor_score": 0.8514676094055176,
+          "lattice_verifier_mode": "dual",
+          "lattice_verifier_top_k": 0,
+          "lattice_suture_weight": 2.0,
+          "lattice_morphology_weight": 1.0,
+          "lattice_surface_weight": 1.0,
+          "candidate_count": 74,
+          "scored_candidate_count": 4,
+          "prior_rerank_top_k": 4,
+          "prior_exact_rank": 0,
+          "prior_exact_in_rerank_set": true,
+          "prior_selected_hole": "Gabr",
+          "prior_selected_exact": true,
+          "candidate_summaries": [
+            {
+              "source": "morphology_name_stem_prefix",
+              "predicted_hole": "Gabr",
+              "sources": [
+                {
+                  "source": "morphology_name_stem_prefix",
+                  "rank": 0,
+                  "suture_score": null,
+                  "morphology_score": 12.0,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 0,
+              "prior_score": 12.0,
+              "prior_source": "morphology_name_stem_prefix",
+              "diffusion_score": -11.148532390594482,
+              "verifier_mode": "dual",
+              "verifier_scores": {
+                "suture_loo": -13.9926176071167,
+                "full_hole": -8.304447174072266
+              },
+              "diffusion_score_is_finite": true,
+              "combined_score": 0.8514676094055176,
+              "byte_accuracy": 1.0,
+              "exact": true
+            },
+            {
+              "source": "morphology_name_stem_prefix",
+              "predicted_hole": "Nath",
+              "sources": [
+                {
+                  "source": "morphology_name_stem_prefix",
+                  "rank": 1,
+                  "suture_score": null,
+                  "morphology_score": 11.9,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 1,
+              "prior_score": 11.89,
+              "prior_source": "morphology_name_stem_prefix",
+              "diffusion_score": -8.498812913894653,
+              "verifier_mode": "dual",
+              "verifier_scores": {
+                "suture_loo": -10.12243366241455,
+                "full_hole": -6.875192165374756
+              },
+              "diffusion_score_is_finite": true,
+              "combined_score": 3.3911870861053472,
+              "byte_accuracy": 0.25,
+              "exact": false
+            },
+            {
+              "source": "morphology_name_stem_prefix",
+              "predicted_hole": "Ezek",
+              "sources": [
+                {
+                  "source": "morphology_name_stem_prefix",
+                  "rank": 2,
+                  "suture_score": null,
+                  "morphology_score": 11.85,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 2,
+              "prior_score": 11.83,
+              "prior_source": "morphology_name_stem_prefix",
+              "diffusion_score": -15.623120307922363,
+              "verifier_mode": "dual",
+              "verifier_scores": {
+                "suture_loo": -19.926685333251953,
+                "full_hole": -11.319555282592773
+              },
+              "diffusion_score_is_finite": true,
+              "combined_score": -3.793120307922363,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "morphology_hyphen_prefix",
+              "predicted_hole": "run-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 3,
+                  "suture_score": null,
+                  "morphology_score": 10.03125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 3,
+              "prior_score": 10.00125,
+              "prior_source": "morphology_hyphen_prefix",
+              "diffusion_score": -10.406067371368408,
+              "verifier_mode": "dual",
+              "verifier_scores": {
+                "suture_loo": -12.464695930480957,
+                "full_hole": -8.34743881225586
+              },
+              "diffusion_score_is_finite": true,
+              "combined_score": -0.40481737136840756,
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "unscored_prior_candidate_summaries": [
+            {
+              "predicted_hole": "pin-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 4,
+                  "suture_score": null,
+                  "morphology_score": 9.28125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 4,
+              "prior_score": 9.24125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "foe-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 5,
+                  "suture_score": null,
+                  "morphology_score": 9.15625,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 5,
+              "prior_score": 9.10625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "ros-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 6,
+                  "suture_score": null,
+                  "morphology_score": 8.8125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 6,
+              "prior_score": 8.7525,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "sly-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 7,
+                  "suture_score": null,
+                  "morphology_score": 8.53125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 7,
+              "prior_score": 8.46125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "age-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 8,
+                  "suture_score": null,
+                  "morphology_score": 8.5,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 8,
+              "prior_score": 8.42,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "get-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 9,
+                  "suture_score": null,
+                  "morphology_score": 8.4375,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 9,
+              "prior_score": 8.3475,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "dog-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 10,
+                  "suture_score": null,
+                  "morphology_score": 8.40625,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 10,
+              "prior_score": 8.30625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "fit-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 11,
+                  "suture_score": null,
+                  "morphology_score": 8.3125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 11,
+              "prior_score": 8.2025,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "bit-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 12,
+                  "suture_score": null,
+                  "morphology_score": 8.28125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 12,
+              "prior_score": 8.16125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "twa-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 13,
+                  "suture_score": null,
+                  "morphology_score": 8.25,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 13,
+              "prior_score": 8.12,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "doe-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 14,
+                  "suture_score": null,
+                  "morphology_score": 8.15625,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 14,
+              "prior_score": 8.01625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "ask-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 15,
+                  "suture_score": null,
+                  "morphology_score": 8.0625,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 15,
+              "prior_score": 7.9125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "pot-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 16,
+                  "suture_score": null,
+                  "morphology_score": 8.03125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 16,
+              "prior_score": 7.87125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "rag-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 17,
+                  "suture_score": null,
+                  "morphology_score": 7.96875,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 17,
+              "prior_score": 7.79875,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "cut-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 18,
+                  "suture_score": null,
+                  "morphology_score": 7.75,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 18,
+              "prior_score": 7.57,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "goe-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 19,
+                  "suture_score": null,
+                  "morphology_score": 7.53125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 19,
+              "prior_score": 7.34125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "rid-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 20,
+                  "suture_score": null,
+                  "morphology_score": 7.5,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 20,
+              "prior_score": 7.3,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "pay-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 21,
+                  "suture_score": null,
+                  "morphology_score": 7.46875,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 21,
+              "prior_score": 7.25875,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "add-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 22,
+                  "suture_score": null,
+                  "morphology_score": 7.34375,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 22,
+              "prior_score": 7.12375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "rob-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 23,
+                  "suture_score": null,
+                  "morphology_score": 7.3125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 23,
+              "prior_score": 7.0825,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "ope-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 24,
+                  "suture_score": null,
+                  "morphology_score": 7.1875,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 24,
+              "prior_score": 6.9475,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "owe-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 25,
+                  "suture_score": null,
+                  "morphology_score": 7.125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 25,
+              "prior_score": 6.875,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "leg-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 26,
+                  "suture_score": null,
+                  "morphology_score": 7.09375,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 26,
+              "prior_score": 6.83375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "pie-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 27,
+                  "suture_score": null,
+                  "morphology_score": 7.0625,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 27,
+              "prior_score": 6.7925,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "tie-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 28,
+                  "suture_score": null,
+                  "morphology_score": 7.0625,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 28,
+              "prior_score": 6.7825,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "hie-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 29,
+                  "suture_score": null,
+                  "morphology_score": 6.96875,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 29,
+              "prior_score": 6.67875,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "lip-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 30,
+                  "suture_score": null,
+                  "morphology_score": 6.9375,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 30,
+              "prior_score": 6.6375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "pen-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 31,
+                  "suture_score": null,
+                  "morphology_score": 6.875,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 31,
+              "prior_score": 6.565,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "hid-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 32,
+                  "suture_score": null,
+                  "morphology_score": 6.84375,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 32,
+              "prior_score": 6.52375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "nap-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 33,
+                  "suture_score": null,
+                  "morphology_score": 6.84375,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 33,
+              "prior_score": 6.51375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "hew-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 34,
+                  "suture_score": null,
+                  "morphology_score": 6.71875,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 34,
+              "prior_score": 6.37875,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "vow-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 35,
+                  "suture_score": null,
+                  "morphology_score": 6.6875,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 35,
+              "prior_score": 6.3375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "bow-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 36,
+                  "suture_score": null,
+                  "morphology_score": 6.53125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 36,
+              "prior_score": 6.17125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "sum-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 37,
+                  "suture_score": null,
+                  "morphology_score": 6.53125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 37,
+              "prior_score": 6.16125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "bon-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 38,
+                  "suture_score": null,
+                  "morphology_score": 6.46875,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 38,
+              "prior_score": 6.08875,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "mes-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 39,
+                  "suture_score": null,
+                  "morphology_score": 6.4375,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 39,
+              "prior_score": 6.0475,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "woo-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 40,
+                  "suture_score": null,
+                  "morphology_score": 6.34375,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 40,
+              "prior_score": 5.94375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "its-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 41,
+                  "suture_score": null,
+                  "morphology_score": 6.3125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 41,
+              "prior_score": 5.9025,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "saw-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 42,
+                  "suture_score": null,
+                  "morphology_score": 6.25,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 42,
+              "prior_score": 5.83,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "eat-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 43,
+                  "suture_score": null,
+                  "morphology_score": 6.1875,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 43,
+              "prior_score": 5.7575,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "tun-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 44,
+                  "suture_score": null,
+                  "morphology_score": 6.15625,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 44,
+              "prior_score": 5.71625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "vic-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 45,
+                  "suture_score": null,
+                  "morphology_score": 6.15625,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 45,
+              "prior_score": 5.70625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "bag-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 46,
+                  "suture_score": null,
+                  "morphology_score": 6.125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 46,
+              "prior_score": 5.665,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "kis-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 47,
+                  "suture_score": null,
+                  "morphology_score": 6.09375,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 47,
+              "prior_score": 5.62375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "odd-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 48,
+                  "suture_score": null,
+                  "morphology_score": 6.09375,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 48,
+              "prior_score": 5.61375,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "bat-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 49,
+                  "suture_score": null,
+                  "morphology_score": 6.0625,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 49,
+              "prior_score": 5.5725,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "cry-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 50,
+                  "suture_score": null,
+                  "morphology_score": 6.0625,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 50,
+              "prior_score": 5.5625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "oft-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 51,
+                  "suture_score": null,
+                  "morphology_score": 6.0625,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 51,
+              "prior_score": 5.5525,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "fly-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 52,
+                  "suture_score": null,
+                  "morphology_score": 6.03125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 52,
+              "prior_score": 5.51125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "top-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 53,
+                  "suture_score": null,
+                  "morphology_score": 6.03125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 53,
+              "prior_score": 5.50125,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "paw-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 54,
+                  "suture_score": null,
+                  "morphology_score": 6.0,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 54,
+              "prior_score": 5.46,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "sad-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 55,
+                  "suture_score": null,
+                  "morphology_score": 6.0,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 55,
+              "prior_score": 5.45,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "sue-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 56,
+                  "suture_score": null,
+                  "morphology_score": 6.0,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 56,
+              "prior_score": 5.4399999999999995,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "aim-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 57,
+                  "suture_score": null,
+                  "morphology_score": 5.9375,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 57,
+              "prior_score": 5.3675,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "red-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 58,
+                  "suture_score": null,
+                  "morphology_score": 5.90625,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 58,
+              "prior_score": 5.32625,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "bad-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 59,
+                  "suture_score": null,
+                  "morphology_score": 5.875,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 59,
+              "prior_score": 5.285,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "dew-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 60,
+                  "suture_score": null,
+                  "morphology_score": 5.875,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 60,
+              "prior_score": 5.275,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "bud-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 61,
+                  "suture_score": null,
+                  "morphology_score": 5.8125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 61,
+              "prior_score": 5.2025,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "key-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 62,
+                  "suture_score": null,
+                  "morphology_score": 5.8125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 62,
+              "prior_score": 5.1925,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "yes-",
+              "sources": [
+                {
+                  "source": "morphology_hyphen_prefix",
+                  "rank": 63,
+                  "suture_score": null,
+                  "morphology_score": 5.8125,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 63,
+              "prior_score": 5.1825,
+              "prior_source": "morphology_hyphen_prefix",
+              "exact": false
+            },
+            {
+              "predicted_hole": "i' t",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 0,
+                  "suture_score": 2,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 64,
+              "prior_score": 4.0,
+              "prior_source": "visible_after",
+              "exact": false
+            },
+            {
+              "predicted_hole": "pump",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 1,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 65,
+              "prior_score": 1.99,
+              "prior_source": "visible_after",
+              "exact": false
+            },
+            {
+              "predicted_hole": "were",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 2,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 66,
+              "prior_score": 1.98,
+              "prior_source": "visible_after",
+              "exact": false
+            },
+            {
+              "predicted_hole": "all ",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 3,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 67,
+              "prior_score": 1.97,
+              "prior_source": "visible_after",
+              "exact": false
+            },
+            {
+              "predicted_hole": " unp",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 4,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 68,
+              "prior_score": 1.96,
+              "prior_source": "visible_after",
+              "exact": false
+            },
+            {
+              "predicted_hole": "unpi",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 5,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 69,
+              "prior_score": 1.95,
+              "prior_source": "visible_after",
+              "exact": false
+            },
+            {
+              "predicted_hole": "k'd ",
+              "sources": [
+                {
+                  "source": "visible_after",
+                  "rank": 6,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 70,
+              "prior_score": 1.94,
+              "prior_source": "visible_after",
+              "exact": false
+            },
+            {
+              "predicted_hole": "coat",
+              "sources": [
+                {
+                  "source": "visible_before",
+                  "rank": 7,
+                  "suture_score": 1,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 71,
+              "prior_score": 1.93,
+              "prior_source": "visible_before",
+              "exact": false
+            },
+            {
+              "predicted_hole": "the ",
+              "sources": [
+                {
+                  "source": "bridge",
+                  "rank": 0,
+                  "suture_score": null,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 72,
+              "prior_score": 0.25,
+              "prior_source": "bridge",
+              "exact": false
+            },
+            {
+              "predicted_hole": "    ",
+              "sources": [
+                {
+                  "source": "unigram",
+                  "rank": 0,
+                  "suture_score": null,
+                  "morphology_score": null,
+                  "surface_score": null
+                }
+              ],
+              "prior_rank": 73,
+              "prior_score": 0.0,
+              "prior_source": "unigram",
+              "exact": false
+            }
+          ],
+          "oracle_candidate_exact": true,
+          "oracle_candidate_exact_in_scored_set": true,
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "unguided": {
+      "summary": {
+        "cases": 1,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd [[Gabr]]iel's pumps were all unpink'd i' the",
+          "target_hole": "Gabr",
+          "predicted_hole": "au h",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 1,
+          "selected_candidate_score": -2.886540412902832,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -2.886540412902832,
+              "score_is_finite": true,
+              "predicted_hole": "au h",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 0.13056883300305344
+        }
+      ]
+    },
+    "bridge_guided": {
+      "summary": {
+        "cases": 1,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd [[Gabr]]iel's pumps were all unpink'd i' the",
+          "target_hole": "Gabr",
+          "predicted_hole": "the ",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "steps_used": 4,
+          "candidates": 1,
+          "selected_candidate_score": -0.017369013279676437,
+          "selected_candidate_score_is_finite": true,
+          "candidate_summaries": [
+            {
+              "seed": 101,
+              "score": -0.017369013279676437,
+              "score_is_finite": true,
+              "predicted_hole": "the ",
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "elapsed_seconds": 1.7761601250094827,
+          "target_hole_seen_in_train_split": false
+        }
+      ]
+    },
+    "visible_context_adapted": {
+      "summary": {
+        "cases": 0,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0
+      },
+      "cases": []
+    },
+    "visible_context_adapted_bridge_guided": {
+      "summary": {
+        "cases": 0,
+        "byte_accuracy": 0.0,
+        "exact_match_rate": 0.0,
+        "pass_at_k_exact": 0.0
+      },
+      "cases": []
+    },
+    "bridge_guided_minus_bridge_only_byte_accuracy": 0.0,
+    "adapted_minus_unguided_byte_accuracy": 0.0,
+    "adapted_minus_bridge_only_byte_accuracy": 0.0,
+    "adapted_bridge_guided_minus_bridge_only_byte_accuracy": 0.0,
+    "adapted_minus_nearest_visible_byte_accuracy": 0.0,
+    "adapted_bridge_guided_minus_nearest_visible_byte_accuracy": 0.0,
+    "retrieval_lattice_minus_nearest_visible_byte_accuracy": 1.0
+  },
+  "quality_label": "mechanism_checkpoint",
+  "ten_out_of_ten_gate": {
+    "artifact": "pass_if_tests_verifier_docs_and_benchmarks_pass",
+    "actual_model": "requires strong_laptop_checkpoint or better; otherwise do not claim 10/10 model quality",
+    "public_wow": "requires visible infill trace plus non-leaky heldout benchmark"
+  }
+}

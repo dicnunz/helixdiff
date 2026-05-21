@@ -1,5 +1,7 @@
 import unittest
 
+import torch
+
 from helixdiff.bench import (
     build_lattice_candidate_rows,
     lattice_oracle_case,
@@ -8,6 +10,8 @@ from helixdiff.bench import (
     morphology_candidates,
     nearest_visible_case,
     rank_lattice_candidates_by_prior,
+    score_lattice_verifier,
+    select_lattice_row_with_margin,
     surface_splice_candidates,
     summarize_lattice_oracle,
     sha256_text,
@@ -16,6 +20,27 @@ from helixdiff.bench import (
 )
 from helixdiff.ngram import BigramGuide
 from helixdiff.tokenizer import ByteTokenizer
+
+
+class _ProbeModel(torch.nn.Module):
+    def __init__(self, vocab_size: int) -> None:
+        super().__init__()
+        self.weight = torch.nn.Parameter(torch.zeros(1))
+        self.vocab_size = vocab_size
+        self.mask_counts: list[list[int]] = []
+
+    def forward(
+        self,
+        tokens: torch.Tensor,
+        t: torch.Tensor,
+        *,
+        corruption_mode: torch.Tensor | int | None = None,
+        mask_fraction: torch.Tensor | None = None,
+    ) -> torch.Tensor:
+        self.mask_counts.append((tokens == ByteTokenizer().mask_token_id).sum(dim=1).tolist())
+        logits = torch.zeros(tokens.shape[0], tokens.shape[1], self.vocab_size, device=tokens.device)
+        logits[..., ByteTokenizer().byte_offset + ord("a")] = 4.0
+        return logits
 
 
 class BenchTest(unittest.TestCase):
@@ -211,6 +236,41 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(len(exact), 1)
         self.assertLess(exact[0]["prior_rank"], 4)
         self.assertEqual([row["prior_rank"] for row in ranked[:4]], [0, 1, 2, 3])
+
+    def test_dual_lattice_verifier_runs_loo_and_full_hole_probes(self) -> None:
+        tokenizer = ByteTokenizer()
+        repaired = torch.tensor(tokenizer.encode("xxaaay", add_bos=True, add_eos=True), dtype=torch.long)
+        model = _ProbeModel(tokenizer.vocab_size)
+        score, scores = score_lattice_verifier(
+            model=model,
+            tokenizer=tokenizer,
+            repaired_ids=repaired,
+            hole_start=3,
+            hole_end=6,
+            guide=None,
+            guidance=0.0,
+            temperature=1.0,
+            top_k=16,
+            verifier_mode="dual",
+        )
+        self.assertTrue(torch.isfinite(torch.tensor(score)).item())
+        self.assertEqual(set(scores), {"suture_loo", "full_hole"})
+        self.assertEqual(model.mask_counts[-2:], [[1, 1, 1], [3]])
+
+    def test_selector_margin_requires_diffusion_to_clear_prior_anchor(self) -> None:
+        anchor = torch.tensor([1])
+        challenger = torch.tensor([2])
+        selected_score, selected_ids, selected_row, report = select_lattice_row_with_margin(
+            [
+                (1.0, anchor, {"predicted_hole": "anchor", "prior_rank": 0}),
+                (1.4, challenger, {"predicted_hole": "challenger", "prior_rank": 1}),
+            ],
+            selector_margin=0.5,
+        )
+        self.assertEqual(selected_score, 1.0)
+        self.assertTrue(torch.equal(selected_ids, anchor))
+        self.assertEqual(selected_row["predicted_hole"], "anchor")
+        self.assertTrue(report["selector_margin_applied"])
 
     def test_lattice_oracle_summary_splits_sources(self) -> None:
         rows = [

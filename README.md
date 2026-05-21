@@ -18,7 +18,7 @@ The included training recipe is deliberately small enough to run on a laptop. Th
 | Wider repair bench | 8 unseen validation holes: bridge-only `22.5%`, model-only `18.75%`, model+bridge `20.0%` |
 | Claim gate | failed; `mechanism_only_claim_required_do_not_call_model_sota` |
 
-Proof files are checked into the repo under `proof/`, including `scratch_verifier_clock_suture_30k.json`, `eval_clock_suture_30k.json`, `bench_clock_suture_30k_unseen_candidates_8case.json`, `bench_suture_tta_4case_lastblock10.json`, `lattice_oracle_4case.json`, `gate_clock_suture_30k_8case.json`, and `export_clock_suture_30k.json`. The visible proof note is `REPAIR_BENCH_30K.md`.
+Proof files are checked into the repo under `proof/`, including `scratch_verifier_clock_suture_30k.json`, `eval_clock_suture_30k.json`, `bench_clock_suture_30k_unseen_candidates_8case.json`, `bench_suture_tta_4case_lastblock10.json`, `lattice_oracle_4case.json`, `bench_prior_topk_dual_smoke.json`, `gate_clock_suture_30k_8case.json`, and `export_clock_suture_30k.json`. The visible proof note is `REPAIR_BENCH_30K.md`.
 
 The current checked-in checkpoint is intentionally not described as a strong language model. The repository is the 10/10 artifact here: a from-scratch diffusion LM stack with novel repair mechanisms, replayable Mac-local training, a slim checkpoint, and a harsh benchmark gate that refuses to launder scaffold memory into model quality.
 
@@ -282,7 +282,7 @@ helixdiff-bench \
   --json-out proof/lattice_oracle_4case.json
 ```
 
-For the next model-scored run, use `--lattice-prior-rerank-top-k 4` to score only the small structural-prior set that the oracle proved contains the answer on this slice. That turns the benchmark into the intended verifier test instead of making the model spend CPU on every low-prior lattice candidate.
+For the next model-scored run, use `--lattice-prior-rerank-top-k 4 --lattice-verifier-mode dual --lattice-verifier-top-k 0 --lattice-selector-margin 3.0` to score only the small structural-prior set that the oracle proved contains the answer on this slice. `dual` averages leave-one-out suture scoring with full-hole reconstruction scoring, verifier top-k `0` keeps scoring from masking out candidate bytes that the sampler would not normally pick, and the selector margin prevents a weak diffusion preference from overriding the structural-prior anchor. That turns the benchmark into the intended verifier test instead of making the model spend CPU on every low-prior lattice candidate.
 
 The checked-in seed-corpus benchmark result is deliberately unforgiving:
 
@@ -304,7 +304,7 @@ The latest Tiny Shakespeare suture-curriculum runs are harsher and more useful:
 | 8-case repeat with `guidance=0.5` | `22.5%` | not yet measured | not yet measured | `18.75%` | not yet measured | stronger guide does not rescue it |
 | 4 unseen validation gaps, leak-hardened Suture TTA, `guidance=0.5` | `6.25%` | `50.0%` | `50.0%` | `0.0%` | `0.0%` | lattice matches retrieval; non-visible holes remain unsolved |
 
-Candidate-oracle coverage on the same 4-case seed is now `100.0%`: `Gabr`, `p--d`, `lor:`, and `y-ca` all enter the lattice through morphology/factor candidates in `proof/lattice_oracle_4case.json`. The fixed structural prior puts the exact span in the top-4 for `4/4` cases, with average exact rank `1.5`, but only selects the exact top-1 candidate in `1/4` cases. The benchmark now has a top-k verifier lane via `--lattice-prior-rerank-top-k 4`, so the next heavy run can test whether diffusion scoring can pick the exact span from that compact set. That is a useful bottleneck flip, not a model win. The next real target is a learned diffusion verifier that reranks this small top-k set and beats both bridge-only and nearest-visible baselines on widened held-out spans before any sample is marketed as model capability.
+Candidate-oracle coverage on the same 4-case seed is now `100.0%`: `Gabr`, `p--d`, `lor:`, and `y-ca` all enter the lattice through morphology/factor candidates in `proof/lattice_oracle_4case.json`. The fixed structural prior puts the exact span in the top-4 for `4/4` cases, with average exact rank `1.5`, but only selects the exact top-1 candidate in `1/4` cases. The benchmark now has a top-k verifier lane via `--lattice-prior-rerank-top-k 4`, a dual-probe verifier via `--lattice-verifier-mode dual`, separate verifier top-k via `--lattice-verifier-top-k 0`, and a selector margin via `--lattice-selector-margin`. The one-case smoke in `proof/bench_prior_topk_dual_smoke.json` is intentionally narrow: it proves finite dual verifier scores and exact top-k selection on `Gabr`, while showing the raw diffusion verifier preferred wrong `Nath` before the margin gate. That is a useful bottleneck flip, not a model win. The next real target is a calibrated or learned diffusion verifier that reranks this small top-k set and beats both bridge-only and nearest-visible baselines on widened held-out spans before any sample is marketed as model capability.
 
 Benchmark JSON now includes checkpoint SHA-256 plus train/validation split SHA-256 hashes so proof artifacts can be tied to the exact evaluated bytes.
 

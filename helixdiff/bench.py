@@ -665,6 +665,75 @@ def rank_lattice_candidates_by_prior(
     return ranked
 
 
+def score_lattice_verifier(
+    *,
+    model: torch.nn.Module,
+    tokenizer: ByteTokenizer,
+    repaired_ids: torch.Tensor,
+    hole_start: int,
+    hole_end: int,
+    guide: BigramGuide | None,
+    guidance: float,
+    temperature: float,
+    top_k: int,
+    verifier_mode: str,
+) -> tuple[float, dict[str, float | None]]:
+    if verifier_mode == "dual":
+        modes = ("suture_loo", "full_hole")
+    elif verifier_mode in {"suture_loo", "full_hole"}:
+        modes = (verifier_mode,)
+    else:
+        raise ValueError(f"unknown lattice verifier mode: {verifier_mode}")
+
+    scores: dict[str, float | None] = {}
+    finite_scores: list[float] = []
+    for mode in modes:
+        score = score_repair(
+            model=model,
+            tokenizer=tokenizer,
+            repaired_ids=repaired_ids,
+            hole_start=hole_start,
+            hole_end=hole_end,
+            guide=guide,
+            guidance=guidance,
+            temperature=temperature,
+            top_k=top_k,
+            mode=mode,
+        )
+        scores[mode] = json_score(score)
+        if math.isfinite(score):
+            finite_scores.append(score)
+    if not finite_scores:
+        return float("-inf"), scores
+    return sum(finite_scores) / len(finite_scores), scores
+
+
+def select_lattice_row_with_margin(
+    scored_options: list[tuple[float, torch.Tensor, dict[str, Any]]],
+    *,
+    selector_margin: float,
+) -> tuple[float, torch.Tensor, dict[str, Any], dict[str, Any]]:
+    if not scored_options:
+        raise RuntimeError("retrieval lattice produced no candidates")
+    raw_best = max(scored_options, key=lambda item: (item[0], -int(item[2]["prior_rank"]), str(item[2]["predicted_hole"])))
+    anchor = scored_options[0]
+    margin_applied = selector_margin > 0 and raw_best is not anchor and raw_best[0] < anchor[0] + selector_margin
+    selected = anchor if margin_applied else raw_best
+    return (
+        selected[0],
+        selected[1],
+        selected[2],
+        {
+            "selector_margin": float(selector_margin),
+            "selector_margin_applied": bool(margin_applied),
+            "raw_best_hole": raw_best[2]["predicted_hole"],
+            "raw_best_score": json_score(raw_best[0]),
+            "anchor_hole": anchor[2]["predicted_hole"],
+            "anchor_score": json_score(anchor[0]),
+        },
+    )
+
+
 def lattice_oracle_case(
     *,
     tokenizer: ByteTokenizer,
@@ -788,6 +857,9 @@ def retrieval_lattice_case(
     surface_limit: int = 64,
     surface_weight: float = 1.0,
     prior_rerank_top_k: int = 0,
+    verifier_mode: str = "suture_loo",
+    verifier_top_k: int = 0,
+    selector_margin: float = 0.0,
 ) -> dict[str, Any]:
     example = parse_marked_infill(marked_text, tokenizer)
     target = example.target[example.hole_start : example.hole_end]
@@ -820,13 +892,11 @@ def retrieval_lattice_case(
     scored_candidate_ids = {tuple(int(token_id) for token_id in candidate["ids"]) for candidate in candidates_to_score}
 
     scored_rows: list[dict[str, Any]] = []
-    best_score = float("-inf")
-    best_repaired: torch.Tensor | None = None
-    best_row: dict[str, Any] | None = None
+    scored_options: list[tuple[float, torch.Tensor, dict[str, Any]]] = []
     for candidate in candidates_to_score:
         repaired = example.tokens.clone()
         repaired[example.hole_start : example.hole_end] = torch.tensor(candidate["ids"], dtype=torch.long)
-        score = score_repair(
+        score, verifier_scores = score_lattice_verifier(
             model=model,
             tokenizer=tokenizer,
             repaired_ids=repaired,
@@ -835,7 +905,8 @@ def retrieval_lattice_case(
             guide=guide,
             guidance=guidance,
             temperature=temperature,
-            top_k=top_k,
+            top_k=verifier_top_k,
+            verifier_mode=verifier_mode,
         )
         pred = repaired[example.hole_start : example.hole_end]
         prior_score = float(candidate["prior_score"]) if candidate["prior_score"] is not None else float("-inf")
@@ -848,18 +919,19 @@ def retrieval_lattice_case(
             "prior_score": candidate["prior_score"],
             "prior_source": candidate["prior_source"],
             "diffusion_score": json_score(score),
+            "verifier_mode": verifier_mode,
+            "verifier_scores": verifier_scores,
             "diffusion_score_is_finite": math.isfinite(score),
             "combined_score": json_score(combined_score),
             "byte_accuracy": float((pred == target).float().mean().item()) if target.numel() else 0.0,
             "exact": bool(torch.equal(pred, target)),
         }
         scored_rows.append(row)
-        if best_repaired is None or combined_score > best_score:
-            best_score = combined_score
-            best_repaired = repaired
-            best_row = row
-    if best_repaired is None or best_row is None:
-        raise RuntimeError("retrieval lattice produced no candidates")
+        scored_options.append((combined_score, repaired, row))
+    best_score, best_repaired, best_row, selector_report = select_lattice_row_with_margin(
+        scored_options,
+        selector_margin=selector_margin,
+    )
     pred = best_repaired[example.hole_start : example.hole_end]
     return {
         "marked_text": marked_text,
@@ -874,6 +946,9 @@ def retrieval_lattice_case(
         "selected_candidate_score": json_score(best_score),
         "selected_candidate_score_is_finite": math.isfinite(best_score),
         "selector": "diffusion_score_plus_structural_prior_topk",
+        **selector_report,
+        "lattice_verifier_mode": verifier_mode,
+        "lattice_verifier_top_k": int(verifier_top_k),
         "lattice_suture_weight": float(suture_weight),
         "lattice_morphology_weight": float(morphology_weight),
         "lattice_surface_weight": float(surface_weight),
@@ -900,6 +975,8 @@ def retrieval_lattice_case(
         "oracle_candidate_exact": prior_exact_rank is not None,
         "oracle_candidate_exact_in_scored_set": oracle_exact_in_scored_set,
     }
+
+
 @torch.no_grad()
 def infill_case(
     *,
@@ -1174,6 +1251,9 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             surface_limit=args.lattice_surface_candidates,
             surface_weight=args.lattice_surface_weight,
             prior_rerank_top_k=args.lattice_prior_rerank_top_k,
+            verifier_mode=args.lattice_verifier_mode,
+            verifier_top_k=args.lattice_verifier_top_k,
+            selector_margin=args.lattice_selector_margin,
         )
         lattice["target_hole_seen_in_train_split"] = lattice["target_hole"] in train_text
         retrieval_lattice_rows.append(lattice)
@@ -1303,6 +1383,9 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_morphology_weight": float(args.lattice_morphology_weight),
             "lattice_surface_weight": float(args.lattice_surface_weight),
             "lattice_prior_rerank_top_k": int(args.lattice_prior_rerank_top_k),
+            "lattice_verifier_mode": args.lattice_verifier_mode,
+            "lattice_verifier_top_k": int(args.lattice_verifier_top_k),
+            "lattice_selector_margin": float(args.lattice_selector_margin),
             "visible_context_adaptation_steps": int(args.adapt_visible_steps),
         },
         "masked_eval": masked,
@@ -1366,6 +1449,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--lattice-morphology-weight", type=float, default=1.0)
     parser.add_argument("--lattice-surface-weight", type=float, default=1.0)
     parser.add_argument("--lattice-prior-rerank-top-k", type=int, default=0)
+    parser.add_argument("--lattice-verifier-mode", choices=["suture_loo", "full_hole", "dual"], default="suture_loo")
+    parser.add_argument("--lattice-verifier-top-k", type=int, default=0)
+    parser.add_argument("--lattice-selector-margin", type=float, default=0.0)
     parser.add_argument("--adapt-visible-steps", type=int, default=0)
     parser.add_argument("--adapt-batch-size", type=int, default=8)
     parser.add_argument("--adapt-learning-rate", type=float, default=1e-4)

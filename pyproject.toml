@@ -28,6 +28,8 @@ helixdiff-gate = "helixdiff.gate:main"
 helixdiff-proof-recipe = "helixdiff.recipe:main"
 helixdiff-breakthrough-plan = "helixdiff.breakthrough:main"
 helixdiff-verify-scratch = "helixdiff.verify_scratch:main"
+helixdiff-selector-contract = "helixdiff.contract:main"
+helixdiff-visible-reranker-oracle-smoke = "helixdiff.proofs.visible_reranker_oracle_smoke:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

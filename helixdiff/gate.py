@@ -15,6 +15,8 @@ STRICT_REPAIR_RECIPE = {
     "lattice_selector_anchor": "surface",
     "lattice_selector_anchor_sweep": ["prior", "surface", "visible_reranker"],
     "lattice_selector_margin_sweep": [0.0, 1.0, 2.0, 3.0, 5.0],
+    "lattice_bi_anchor_candidates": 64,
+    "lattice_bi_anchor_sizes": [32, 24, 16, 12, 8, 6, 4],
     "lattice_local_surface_anchor_calibration": True,
     "lattice_apply_local_surface_anchor_calibration": False,
     "lattice_visible_reranker_calibration": True,
@@ -103,6 +105,10 @@ def evaluate_strict_repair_recipe(case_filter: dict[str, Any]) -> dict[str, Any]
             case_filter.get("lattice_selector_margin_sweep"),
             STRICT_REPAIR_RECIPE["lattice_selector_margin_sweep"],
         ),
+        "bi_anchor_candidates_is_64": case_filter.get("lattice_bi_anchor_candidates")
+        == STRICT_REPAIR_RECIPE["lattice_bi_anchor_candidates"],
+        "bi_anchor_sizes_are_32_24_16_12_8_6_4": case_filter.get("lattice_bi_anchor_sizes")
+        == STRICT_REPAIR_RECIPE["lattice_bi_anchor_sizes"],
         "local_surface_anchor_calibration_enabled": case_filter.get(
             "lattice_local_surface_anchor_calibration"
         )
@@ -153,6 +159,7 @@ def evaluate_repair_proof_contract(report: dict[str, Any]) -> dict[str, Any]:
         and len(lattice_rows) == lattice_cases
         and summary_case_count == lattice_cases,
         "oracle_scored_set_reported": "oracle_candidate_exact_in_scored_set_rate" in lattice_summary,
+        "bi_anchor_oracle_diagnostics_reported": "bi_anchor_oracle_exact_rate" in lattice_summary,
         "surface_verifier_diagnostics_reported": all(
             key in lattice_summary
             for key in (

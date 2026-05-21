@@ -55,17 +55,51 @@ DIFFUSION_LM_SOURCES: list[dict[str, str]] = [
 
 def build_breakthrough_plan() -> dict[str, Any]:
     strict_recipe = build_strict_repair_commands()
+    oracle_command = strict_recipe["shell_commands"]["oracle"]
+    visible_smoke_command = (
+        "uv run helixdiff-visible-reranker-oracle-smoke "
+        "--config configs/proof_visible_reranker_oracle_smoke.yaml "
+        "--out proof/visible_reranker_oracle_smoke.json --json"
+    )
     benchmark_command = strict_recipe["shell_commands"]["benchmark"]
     calibrate_command = strict_recipe["shell_commands"]["calibrate"]
+    selector_contract_command = strict_recipe["shell_commands"]["selector_contract"]
     gate_command = strict_recipe["shell_commands"]["gate"]
     lanes = [
         {
             "rank": 1,
+            "name": "visible_reranker_oracle_smoke",
+            "thesis": "Before claiming a reranker breakthrough, prove it is model-free, diagnostic-only, and leakage-audited.",
+            "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
+            "repo_move": "Emit the visible-reranker oracle smoke receipt before any heavy reranker claim.",
+            "proof_commands": [visible_smoke_command],
+            "pass_condition": "receipt has prior/surface/visible_reranker branches, calibration, apply=false, leakage audit, and shuffle falsification",
+            "claim_if_passes": "model-free visible-context reranker proof only",
+            "kill_condition": "reranker is applied, labels choose the branch, shuffle does not collapse, or leakage flags fire",
+            "heavy_slot_required": False,
+        },
+        {
+            "rank": 2,
+            "name": "gold_blind_bi_anchor_oracle",
+            "thesis": "If the exact span is not in the train-only visible-anchor lattice, no sampler can rescue the run.",
+            "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
+            "repo_move": "Run the no-checkpoint oracle from helixdiff-proof-recipe before any heavy model proof.",
+            "proof_commands": [oracle_command],
+            "pass_condition": (
+                "candidate_oracle reports fixed-K exact-span coverage, bi-anchor contribution, split hashes, "
+                "and zero train/eval same-hole leakage before model scoring"
+            ),
+            "claim_if_passes": "candidate-lattice coverage only; not model accuracy",
+            "kill_condition": "oracle coverage does not lift, K explodes, or coverage depends on leaked validation text",
+            "heavy_slot_required": False,
+        },
+        {
+            "rank": 3,
             "name": "strict_repair_lattice_proof",
             "thesis": "Make the next benchmark a predeclared trial, not a sampler search.",
             "source_ids": ["arxiv:2406.07524", "arxiv:2503.09573"],
-            "repo_move": "Run the exact helixdiff-proof-recipe benchmark, then calibrate and gate.",
-            "proof_commands": [benchmark_command, calibrate_command, gate_command],
+            "repo_move": "Run the exact helixdiff-proof-recipe benchmark, calibrate, freeze the selector, then gate.",
+            "proof_commands": [benchmark_command, calibrate_command, selector_contract_command, gate_command],
             "pass_condition": (
                 "retrieval_lattice beats bridge-only and nearest-visible byte/exact baselines "
                 "while --require-repair-proof-contract passes"
@@ -75,7 +109,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": True,
         },
         {
-            "rank": 2,
+            "rank": 4,
             "name": "visible_hole_reranker",
             "thesis": "The answer is often in a tiny top-k set; the breakthrough is selecting it without hidden leakage.",
             "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
@@ -87,8 +121,9 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "proof_commands": [
                 "uv run helixdiff-calibrate-selector proof/bench_prior_topk_dual_smoke.json --min-cases 1",
                 "uv run helixdiff-bench --help | rg 'visible-reranker|visible_reranker'",
-                "uv run helixdiff-bench --candidate-oracle-only --cases 8 --require-unseen-hole --json-out proof/lattice_oracle_next_8case.json",
+                oracle_command,
                 "uv run helixdiff-calibrate-selector proof/bench_strict_repair_lattice_8case.json --json-out proof/selector_margin_calibration_strict_repair_8case.json",
+                "uv run helixdiff-selector-contract proof/selector_margin_calibration_strict_repair_8case.json --json-out proof/selector_contract_strict_repair_8case.json --require-ready",
             ],
             "pass_condition": "raw verifier misses are rescued without lowering oracle-in-scored-set coverage",
             "claim_if_passes": "verifier-guided lattice selection improved a held-out repair benchmark",
@@ -96,7 +131,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": False,
         },
         {
-            "rank": 3,
+            "rank": 5,
             "name": "frequency_block_suture_curriculum",
             "thesis": "Mac-local training must spend scarce gradient signal on rare boundary bytes and local blocks.",
             "source_ids": ["arxiv:2503.09573", "aclanthology:2025.babylm-main.38"],
@@ -114,7 +149,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": True,
         },
         {
-            "rank": 4,
+            "rank": 6,
             "name": "latent_surface_signature",
             "thesis": "A tiny model needs cheap joint structure; surface-unit signatures can mimic some latent-channel benefits.",
             "source_ids": ["arxiv:2510.18114", "arxiv:2502.09992"],
@@ -137,11 +172,11 @@ def build_breakthrough_plan() -> dict[str, Any]:
         "chatgpt_teammate_status": {
             "requested": True,
             "usable_this_run": False,
-            "blocker": "Chrome/ChatGPT browser bridge returns Transport closed",
-            "claim": "No GPT-5.5 Pro contribution is claimed unless a live ChatGPT transcript exists.",
+            "blocker": "Chrome/ChatGPT browser bridge returns Transport closed in this Codex runtime",
+            "claim": "No GPT-5.5 Pro contribution is claimed unless a live ChatGPT transcript is verified.",
         },
         "claim_boundary": CLAIM_BOUNDARY,
-        "current_best_move": "strict_repair_lattice_proof",
+        "current_best_move": "visible_reranker_oracle_smoke",
         "sources": DIFFUSION_LM_SOURCES,
         "lanes": lanes,
         "release_standard": [
@@ -168,13 +203,31 @@ def _format_markdown(plan: dict[str, Any]) -> str:
         "",
         f"- GPT-5.5 requested: `{plan['chatgpt_teammate_status']['requested']}`",
         f"- Usable this run: `{plan['chatgpt_teammate_status']['usable_this_run']}`",
-        f"- Blocker: {plan['chatgpt_teammate_status']['blocker']}",
-        "",
-        "## Decision Table",
-        "",
-        "| Rank | Lane | Why It Matters | First Move | Gate | Cost |",
-        "| --- | --- | --- | --- | --- | --- |",
     ]
+    if plan["chatgpt_teammate_status"]["usable_this_run"]:
+        lines.extend(
+            [
+                f"- Model/mode: {plan['chatgpt_teammate_status'].get('model_mode', 'unverified')}",
+                f"- Conversation: {plan['chatgpt_teammate_status'].get('conversation_url', 'none')}",
+                f"- Contribution: {plan['chatgpt_teammate_status']['claim']}",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                f"- Blocker: {plan['chatgpt_teammate_status'].get('blocker', 'unverified')}",
+                f"- Claim: {plan['chatgpt_teammate_status']['claim']}",
+            ]
+        )
+    lines.extend(
+        [
+            "",
+            "## Decision Table",
+            "",
+            "| Rank | Lane | Why It Matters | First Move | Gate | Cost |",
+            "| --- | --- | --- | --- | --- | --- |",
+        ]
+    )
     for lane in plan["lanes"]:
         cost = "heavy" if lane["heavy_slot_required"] else "cheap"
         lines.append(

@@ -3,6 +3,7 @@ import unittest
 import torch
 
 from helixdiff.bench import (
+    bi_anchor_gap_candidates,
     build_lattice_candidate_rows,
     calibrate_lattice_visible_reranker_on_visible_context,
     calibrate_lattice_prior_weights_on_visible_context,
@@ -15,6 +16,7 @@ from helixdiff.bench import (
     model_quality_label,
     morphology_candidates,
     parse_selector_anchor_sweep,
+    parse_positive_int_grid,
     parse_prior_weight_grid,
     nearest_visible_case,
     parse_selector_margin_sweep,
@@ -199,6 +201,38 @@ class BenchTest(unittest.TestCase):
             limit=8,
         )
         self.assertIn("p--d", {row["predicted_hole"] for row in rows})
+
+    def test_bi_anchor_gap_candidates_use_train_only_left_right_anchors(self) -> None:
+        tokenizer = ByteTokenizer()
+        rows = bi_anchor_gap_candidates(
+            tokenizer=tokenizer,
+            marked_text="The prince said Alpha[[GAP]]Omega before dawn.",
+            train_text="xx AlphaGAPOmega yy",
+            anchor_sizes=[5, 4],
+            limit=8,
+        )
+        self.assertEqual(rows[0]["predicted_hole"], "GAP")
+        self.assertEqual(rows[0]["source"], "bi_anchor_gap")
+        self.assertGreaterEqual(rows[0]["bi_anchor_score"], 20.0)
+        self.assertGreaterEqual(rows[0]["support"], 1)
+
+    def test_lattice_oracle_reports_bi_anchor_exact_source(self) -> None:
+        tokenizer = ByteTokenizer()
+        row = lattice_oracle_case(
+            tokenizer=tokenizer,
+            marked_text="The prince said Alpha[[GAP]]Omega before dawn.",
+            guide=BigramGuide.from_text("xx AlphaGAPOmega yy", tokenizer),
+            train_text="xx AlphaGAPOmega yy",
+            visible_limit=0,
+            morphology_limit=0,
+            surface_limit=0,
+            bi_anchor_limit=8,
+            bi_anchor_sizes=[5, 4],
+        )
+        self.assertTrue(row["oracle_candidate_exact"])
+        self.assertTrue(row["bi_anchor_oracle_exact"])
+        self.assertIn("bi_anchor_gap", row["exact_candidate_sources"])
+        self.assertTrue(row["prior_selected_exact"])
 
     def test_repair_surface_verifier_scores_dash_bridge_words_from_train_split(self) -> None:
         exact = repair_surface_verifier_features(
@@ -663,6 +697,11 @@ class BenchTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_prior_weight_grid("1,-1")
 
+    def test_parse_positive_int_grid_sorts_descending_and_rejects_zero(self) -> None:
+        self.assertEqual(parse_positive_int_grid("6,32, 6,4"), [32, 6, 4])
+        with self.assertRaises(ValueError):
+            parse_positive_int_grid("8,0")
+
     def test_visible_self_calibration_cases_uses_only_visible_text(self) -> None:
         cases = visible_self_calibration_cases(
             "abcdefghij[[KLMN]]opqrstuvwx",
@@ -962,6 +1001,7 @@ class BenchTest(unittest.TestCase):
                 "visible_oracle_exact": False,
                 "morphology_oracle_exact": True,
                 "surface_oracle_exact": False,
+                "bi_anchor_oracle_exact": True,
                 "bridge_oracle_exact": False,
                 "unigram_oracle_exact": False,
                 "candidate_count": 7,
@@ -989,6 +1029,7 @@ class BenchTest(unittest.TestCase):
                 "visible_oracle_exact": False,
                 "morphology_oracle_exact": False,
                 "surface_oracle_exact": False,
+                "bi_anchor_oracle_exact": False,
                 "bridge_oracle_exact": False,
                 "unigram_oracle_exact": False,
                 "candidate_count": 3,
@@ -1025,6 +1066,7 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(summary["surface_verifier_top4_exact_rate"], 0.5)
         self.assertEqual(summary["surface_verifier_avg_exact_rank"], 3.5)
         self.assertEqual(summary["surface_verifier_top4_delta_vs_prior"], 0.0)
+        self.assertEqual(summary["bi_anchor_oracle_exact_rate"], 0.5)
         self.assertEqual(summary["surface_verifier_harm_count"], 1)
         self.assertEqual(summary["surface_verifier_help_count"], 1)
         self.assertEqual(summary["local_surface_anchor_calibration_cases"], 2)

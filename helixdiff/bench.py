@@ -489,6 +489,76 @@ def surface_splice_candidates(
     return list(deduped.values())[: max(0, limit)]
 
 
+def bi_anchor_gap_candidates(
+    *,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    train_text: str,
+    anchor_sizes: list[int] | None = None,
+    limit: int = 64,
+) -> list[dict[str, Any]]:
+    """Mine exact train-only gaps between visible left/right byte anchors."""
+
+    if not train_text or limit <= 0:
+        return []
+    example = parse_marked_infill(marked_text, tokenizer)
+    hole_len = example.hole_length
+    if hole_len <= 0:
+        return []
+    sizes = anchor_sizes or [32, 24, 16, 12, 8, 6, 4]
+    train_bytes = train_text.encode("utf-8", errors="replace")
+    before_bytes = example.before.encode("utf-8", errors="replace")
+    after_bytes = example.after.encode("utf-8", errors="replace")
+    if not before_bytes or not after_bytes:
+        return []
+
+    buckets: dict[bytes, dict[str, Any]] = {}
+    for size in sizes:
+        if size <= 0:
+            continue
+        left_anchor = before_bytes[-min(size, len(before_bytes)) :]
+        right_anchor = after_bytes[: min(size, len(after_bytes))]
+        if not left_anchor or not right_anchor:
+            continue
+        search_at = 0
+        while True:
+            left_at = train_bytes.find(left_anchor, search_at)
+            if left_at < 0:
+                break
+            gap_start = left_at + len(left_anchor)
+            gap_end = gap_start + hole_len
+            if gap_end + len(right_anchor) <= len(train_bytes) and train_bytes[gap_end : gap_end + len(right_anchor)] == right_anchor:
+                gap = train_bytes[gap_start:gap_end]
+                row = buckets.setdefault(
+                    gap,
+                    {
+                        "ids": [tokenizer.byte_offset + int(byte) for byte in gap],
+                        "predicted_hole": tokenizer.decode(tokenizer.byte_offset + int(byte) for byte in gap),
+                        "source": "bi_anchor_gap",
+                        "support": 0,
+                        "best_anchor_size": 0,
+                        "train_byte_offsets": [],
+                    },
+                )
+                row["support"] = int(row["support"]) + 1
+                row["best_anchor_size"] = max(int(row["best_anchor_size"]), min(len(left_anchor), len(right_anchor)))
+                if len(row["train_byte_offsets"]) < 8:
+                    row["train_byte_offsets"].append(int(gap_start))
+            search_at = left_at + 1
+
+    rows = list(buckets.values())
+    for row in rows:
+        row["bi_anchor_score"] = float(20.0 + float(row["best_anchor_size"]) + math.log1p(int(row["support"])))
+    rows.sort(
+        key=lambda row: (
+            -float(row["bi_anchor_score"]),
+            -int(row["support"]),
+            str(row["predicted_hole"]),
+        )
+    )
+    return rows[: max(0, limit)]
+
+
 def lattice_source_prior_score(
     source: dict[str, Any],
     *,
@@ -503,6 +573,8 @@ def lattice_source_prior_score(
         score += float(source["morphology_score"]) * morphology_weight
     if source.get("surface_score") is not None:
         score += float(source["surface_score"]) * surface_weight
+    if source.get("bi_anchor_score") is not None:
+        score += float(source["bi_anchor_score"])
     if source.get("source") == "bridge":
         score += 0.25
     rank = source.get("rank")
@@ -544,6 +616,8 @@ def build_lattice_candidate_rows(
     visible_limit: int = 8,
     morphology_limit: int = 64,
     surface_limit: int = 64,
+    bi_anchor_limit: int = 0,
+    bi_anchor_sizes: list[int] | None = None,
 ) -> list[dict[str, Any]]:
     example = parse_marked_infill(marked_text, tokenizer)
     candidate_rows: list[dict[str, Any]] = []
@@ -560,6 +634,29 @@ def build_lattice_candidate_rows(
             }
         )
     if train_text:
+        for rank, row in enumerate(
+            bi_anchor_gap_candidates(
+                tokenizer=tokenizer,
+                marked_text=marked_text,
+                train_text=train_text,
+                anchor_sizes=bi_anchor_sizes,
+                limit=bi_anchor_limit,
+            )
+        ):
+            candidate_rows.append(
+                {
+                    "ids": [int(token_id) for token_id in row["ids"]],
+                    "source": row["source"],
+                    "rank": rank,
+                    "suture_score": None,
+                    "morphology_score": None,
+                    "surface_score": None,
+                    "bi_anchor_score": float(row["bi_anchor_score"]),
+                    "bi_anchor_support": int(row["support"]),
+                    "bi_anchor_best_anchor_size": int(row["best_anchor_size"]),
+                    "bi_anchor_train_byte_offsets": list(row["train_byte_offsets"]),
+                }
+            )
         for rank, row in enumerate(
             morphology_candidates(
                 tokenizer=tokenizer,
@@ -621,6 +718,10 @@ def build_lattice_candidate_rows(
             "suture_score": candidate["suture_score"],
             "morphology_score": candidate["morphology_score"],
             "surface_score": candidate.get("surface_score"),
+            "bi_anchor_score": candidate.get("bi_anchor_score"),
+            "bi_anchor_support": candidate.get("bi_anchor_support"),
+            "bi_anchor_best_anchor_size": candidate.get("bi_anchor_best_anchor_size"),
+            "bi_anchor_train_byte_offsets": candidate.get("bi_anchor_train_byte_offsets"),
         }
         if key not in deduped:
             deduped[key] = {
@@ -763,6 +864,19 @@ def parse_prior_weight_grid(value: str) -> list[float]:
             raise ValueError("prior weights must be non-negative")
         weights.append(weight)
     return sorted(set(weights))
+
+
+def parse_positive_int_grid(value: str) -> list[int]:
+    values: list[int] = []
+    for chunk in value.split(","):
+        stripped = chunk.strip()
+        if not stripped:
+            continue
+        number = int(stripped)
+        if number <= 0:
+            raise ValueError("grid values must be positive integers")
+        values.append(number)
+    return sorted(set(values), reverse=True)
 
 
 def visible_self_calibration_cases(
@@ -1661,6 +1775,8 @@ def lattice_oracle_case(
     visible_limit: int = 8,
     morphology_limit: int = 64,
     surface_limit: int = 64,
+    bi_anchor_limit: int = 0,
+    bi_anchor_sizes: list[int] | None = None,
     suture_weight: float = 2.0,
     morphology_weight: float = 1.0,
     surface_weight: float = 1.0,
@@ -1747,6 +1863,8 @@ def lattice_oracle_case(
             visible_limit=visible_limit,
             morphology_limit=morphology_limit,
             surface_limit=surface_limit,
+            bi_anchor_limit=bi_anchor_limit,
+            bi_anchor_sizes=bi_anchor_sizes,
         ),
         suture_weight=effective_suture_weight,
         morphology_weight=effective_morphology_weight,
@@ -1799,6 +1917,7 @@ def lattice_oracle_case(
         "visible_oracle_exact": any(source.startswith("visible_") for source in exact_sources),
         "morphology_oracle_exact": any(source.startswith("morphology_") for source in exact_sources),
         "surface_oracle_exact": any(source.startswith("surface_") for source in exact_sources),
+        "bi_anchor_oracle_exact": any(source.startswith("bi_anchor") for source in exact_sources),
         "bridge_oracle_exact": "bridge" in exact_sources,
         "unigram_oracle_exact": "unigram" in exact_sources,
         "prior_selected_hole": prior_selected["predicted_hole"] if prior_selected is not None else None,
@@ -1883,6 +2002,8 @@ def retrieval_lattice_case(
     morphology_weight: float = 1.0,
     surface_limit: int = 64,
     surface_weight: float = 1.0,
+    bi_anchor_limit: int = 0,
+    bi_anchor_sizes: list[int] | None = None,
     prior_rerank_top_k: int = 0,
     verifier_mode: str = "suture_loo",
     verifier_top_k: int = 0,
@@ -2001,6 +2122,8 @@ def retrieval_lattice_case(
             visible_limit=visible_limit,
             morphology_limit=morphology_limit,
             surface_limit=surface_limit,
+            bi_anchor_limit=bi_anchor_limit,
+            bi_anchor_sizes=bi_anchor_sizes,
         ),
         suture_weight=effective_suture_weight,
         morphology_weight=effective_morphology_weight,
@@ -2012,6 +2135,16 @@ def retrieval_lattice_case(
         if torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)
     ]
     prior_exact_rank = min(exact_prior_ranks) if exact_prior_ranks else None
+    exact_candidates = [
+        candidate
+        for candidate in ranked_candidates
+        if torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)
+    ]
+    bi_anchor_oracle_exact = any(
+        str(source.get("source", "")).startswith("bi_anchor")
+        for candidate in exact_candidates
+        for source in candidate.get("sources", [])
+    )
     surface_report = surface_verifier_candidate_report(
         ranked_candidates,
         marked_text=marked_text,
@@ -2202,6 +2335,7 @@ def retrieval_lattice_case(
         ],
         "oracle_candidate_exact": prior_exact_rank is not None,
         "oracle_candidate_exact_in_scored_set": oracle_exact_in_scored_set,
+        "bi_anchor_oracle_exact": bool(bi_anchor_oracle_exact),
         "selector_margin_sweep": sweep_report,
         "selector_anchor_margin_sweep": anchor_sweep_report,
     }
@@ -2388,6 +2522,7 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
             {
                 "oracle_candidate_exact_rate": 0.0,
                 "oracle_candidate_exact_in_scored_set_rate": 0.0,
+                "bi_anchor_oracle_exact_rate": 0.0,
                 "prior_selected_exact_rate": 0.0,
                 "raw_best_exact_rate": 0.0,
                 "anchor_exact_rate": 0.0,
@@ -2464,6 +2599,8 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "oracle_candidate_exact_in_scored_set_rate": sum(
                 1.0 for row in rows if row.get("oracle_candidate_exact_in_scored_set")
             )
+            / len(rows),
+            "bi_anchor_oracle_exact_rate": sum(1.0 for row in rows if row.get("bi_anchor_oracle_exact"))
             / len(rows),
             "prior_selected_exact_rate": sum(1.0 for row in rows if row.get("prior_selected_exact")) / len(rows),
             "raw_best_exact_rate": sum(1.0 for row in rows if row.get("raw_best_exact")) / len(rows),
@@ -2621,6 +2758,7 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "bridge_oracle_exact_rate": 0.0,
             "unigram_oracle_exact_rate": 0.0,
             "surface_oracle_exact_rate": 0.0,
+            "bi_anchor_oracle_exact_rate": 0.0,
             "avg_candidate_count": 0.0,
             "prior_selected_exact_rate": 0.0,
             "prior_top4_exact_rate": 0.0,
@@ -2675,6 +2813,7 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "visible_oracle_exact_rate": sum(1.0 for row in rows if row["visible_oracle_exact"]) / len(rows),
         "morphology_oracle_exact_rate": sum(1.0 for row in rows if row["morphology_oracle_exact"]) / len(rows),
         "surface_oracle_exact_rate": sum(1.0 for row in rows if row["surface_oracle_exact"]) / len(rows),
+        "bi_anchor_oracle_exact_rate": sum(1.0 for row in rows if row.get("bi_anchor_oracle_exact")) / len(rows),
         "bridge_oracle_exact_rate": sum(1.0 for row in rows if row["bridge_oracle_exact"]) / len(rows),
         "unigram_oracle_exact_rate": sum(1.0 for row in rows if row["unigram_oracle_exact"]) / len(rows),
         "avg_candidate_count": sum(float(row["candidate_count"]) for row in rows) / len(rows),
@@ -2781,6 +2920,7 @@ def candidate_oracle_benchmark(args: argparse.Namespace) -> dict[str, Any]:
     text = load_text(args.data)
     train_text, val_text = split_text(text, args.val_fraction)
     prior_weight_grid = parse_prior_weight_grid(args.lattice_prior_weight_grid)
+    bi_anchor_sizes = parse_positive_int_grid(args.lattice_bi_anchor_sizes)
     cases = make_marked_cases(
         val_text,
         cases=args.cases,
@@ -2800,6 +2940,8 @@ def candidate_oracle_benchmark(args: argparse.Namespace) -> dict[str, Any]:
             visible_limit=args.lattice_visible_candidates,
             morphology_limit=args.lattice_morphology_candidates,
             surface_limit=args.lattice_surface_candidates,
+            bi_anchor_limit=args.lattice_bi_anchor_candidates,
+            bi_anchor_sizes=bi_anchor_sizes,
             suture_weight=args.lattice_suture_weight,
             morphology_weight=args.lattice_morphology_weight,
             surface_weight=args.lattice_surface_weight,
@@ -2831,6 +2973,8 @@ def candidate_oracle_benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_visible_candidates": int(args.lattice_visible_candidates),
             "lattice_morphology_candidates": int(args.lattice_morphology_candidates),
             "lattice_surface_candidates": int(args.lattice_surface_candidates),
+            "lattice_bi_anchor_candidates": int(args.lattice_bi_anchor_candidates),
+            "lattice_bi_anchor_sizes": bi_anchor_sizes,
             "lattice_suture_weight": float(args.lattice_suture_weight),
             "lattice_morphology_weight": float(args.lattice_morphology_weight),
             "lattice_surface_weight": float(args.lattice_surface_weight),
@@ -2901,6 +3045,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     selector_anchor_sweep = parse_selector_anchor_sweep(args.lattice_selector_anchor_sweep)
     prior_weight_grid = parse_prior_weight_grid(args.lattice_prior_weight_grid)
     visible_reranker_weight_grid = parse_prior_weight_grid(args.lattice_visible_reranker_weight_grid)
+    bi_anchor_sizes = parse_positive_int_grid(args.lattice_bi_anchor_sizes)
     for index, marked in enumerate(cases):
         unigram_rows.append(guide_only_case(tokenizer=tokenizer, marked_text=marked, guide=guide, strategy="unigram"))
         bridge = guide_only_case(tokenizer=tokenizer, marked_text=marked, guide=guide, strategy="bridge")
@@ -2922,6 +3067,8 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             morphology_weight=args.lattice_morphology_weight,
             surface_limit=args.lattice_surface_candidates,
             surface_weight=args.lattice_surface_weight,
+            bi_anchor_limit=args.lattice_bi_anchor_candidates,
+            bi_anchor_sizes=bi_anchor_sizes,
             prior_rerank_top_k=args.lattice_prior_rerank_top_k,
             verifier_mode=args.lattice_verifier_mode,
             verifier_top_k=args.lattice_verifier_top_k,
@@ -3068,6 +3215,8 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_visible_candidates": int(args.lattice_visible_candidates),
             "lattice_morphology_candidates": int(args.lattice_morphology_candidates),
             "lattice_surface_candidates": int(args.lattice_surface_candidates),
+            "lattice_bi_anchor_candidates": int(args.lattice_bi_anchor_candidates),
+            "lattice_bi_anchor_sizes": bi_anchor_sizes,
             "lattice_suture_weight": float(args.lattice_suture_weight),
             "lattice_morphology_weight": float(args.lattice_morphology_weight),
             "lattice_surface_weight": float(args.lattice_surface_weight),
@@ -3154,6 +3303,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--lattice-visible-candidates", type=int, default=8)
     parser.add_argument("--lattice-morphology-candidates", type=int, default=64)
     parser.add_argument("--lattice-surface-candidates", type=int, default=64)
+    parser.add_argument("--lattice-bi-anchor-candidates", type=int, default=0)
+    parser.add_argument("--lattice-bi-anchor-sizes", default="32,24,16,12,8,6,4")
     parser.add_argument("--candidate-oracle-only", action="store_true")
     parser.add_argument("--lattice-suture-weight", type=float, default=2.0)
     parser.add_argument("--lattice-morphology-weight", type=float, default=1.0)

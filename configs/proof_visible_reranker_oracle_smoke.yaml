@@ -1,0 +1,14 @@
+data: data/tinyshakespeare.txt
+cases: 2
+span_chars: 4
+context_chars: 36
+val_fraction: 0.08
+seed: 101
+max_candidates_per_example: 32
+calibration_cases: 2
+lattice_visible_candidates: 8
+lattice_morphology_candidates: 64
+lattice_surface_candidates: 64
+lattice_bi_anchor_candidates: 8
+lattice_bi_anchor_sizes: 32,24,16,12,8,6,4
+shuffle_trials: 3

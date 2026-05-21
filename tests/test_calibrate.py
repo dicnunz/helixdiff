@@ -105,6 +105,60 @@ def _anchor_case() -> dict:
     }
 
 
+def _local_anchor_case(selected_anchor: str) -> dict:
+    return {
+        "anchor_exact": selected_anchor == "prior",
+        "anchor_margin_gap": 0.4,
+        "local_surface_anchor_calibration": {
+            "selected_selector_anchor": selected_anchor,
+            "applied": False,
+        },
+        "selector_margin_sweep": [
+            _sweep_row(
+                0.0,
+                exact=False,
+                byte_accuracy=0.25,
+                effect="raw_verifier_selected_nonexact",
+                outcome="scored_exact_not_selected",
+            )
+        ],
+        "selector_anchor_margin_sweep": [
+            _sweep_row(
+                0.0,
+                exact=False,
+                byte_accuracy=0.25,
+                effect="raw_verifier_selected_nonexact",
+                outcome="scored_exact_not_selected",
+                anchor="prior",
+            ),
+            _sweep_row(
+                0.5,
+                exact=selected_anchor == "prior",
+                byte_accuracy=1.0 if selected_anchor == "prior" else 0.5,
+                effect="margin_rescued_exact_anchor" if selected_anchor == "prior" else "raw_verifier_selected_nonexact",
+                outcome="selected_exact" if selected_anchor == "prior" else "scored_exact_not_selected",
+                anchor="prior",
+            ),
+            _sweep_row(
+                0.0,
+                exact=False,
+                byte_accuracy=0.25,
+                effect="raw_verifier_selected_nonexact",
+                outcome="scored_exact_not_selected",
+                anchor="surface",
+            ),
+            _sweep_row(
+                0.5,
+                exact=selected_anchor == "surface",
+                byte_accuracy=1.0 if selected_anchor == "surface" else 0.5,
+                effect="margin_rescued_exact_anchor" if selected_anchor == "surface" else "raw_verifier_selected_nonexact",
+                outcome="selected_exact" if selected_anchor == "surface" else "scored_exact_not_selected",
+                anchor="surface",
+            ),
+        ],
+    }
+
+
 def _report(cases: list[dict]) -> dict:
     return {
         "checkpoint": "checkpoint.pt",
@@ -155,6 +209,21 @@ class CalibrateTest(unittest.TestCase):
         self.assertEqual(report["anchor_recommendation"]["recommended_selector_anchor"], "surface")
         self.assertEqual(report["anchor_recommendation"]["recommended_margin"], 0.5)
         self.assertEqual(report["anchor_recommendation"]["exact_lift_vs_prior_margin_0"], 1.0)
+
+    def test_local_surface_anchor_calibration_is_recommended_as_per_case_strategy(self) -> None:
+        report = calibrate_selector_margins(
+            [_report([_local_anchor_case("prior"), _local_anchor_case("surface")])],
+            min_cases=2,
+        )
+        self.assertEqual(report["local_surface_anchor_margins"]["0.5"]["exact_match_rate"], 1.0)
+        self.assertEqual(report["local_surface_anchor_margins"]["0.5"]["byte_accuracy"], 1.0)
+        self.assertEqual(
+            report["local_surface_anchor_margins"]["0.5"]["local_surface_selected_anchor_counts"],
+            {"prior": 1, "surface": 1},
+        )
+        self.assertEqual(report["local_surface_anchor_recommendation"]["status"], "candidate_margin")
+        self.assertEqual(report["local_surface_anchor_recommendation"]["recommended_margin"], 0.5)
+        self.assertEqual(report["local_surface_anchor_recommendation"]["exact_lift_vs_margin_0"], 1.0)
 
     def test_report_summary_includes_configured_selector_anchor_sweep(self) -> None:
         report = calibrate_selector_margins([_report([_case(), _case(anchor_gap=0.3)])], min_cases=2)

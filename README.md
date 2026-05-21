@@ -304,7 +304,7 @@ helixdiff-calibrate-selector proof/bench_prior_topk_dual_smoke.json \
   --json-out proof/selector_margin_calibration_smoke.json
 ```
 
-The calibrator reports exact rate, byte accuracy, rescue/block rates, anchor-gap pressure, the lowest safe margin on the observed frontier, and, when the benchmark includes `selector_anchor_margin_sweep`, the best anchor-plus-margin pair. Its own claim boundary is strict: a margin or anchor chosen from this output is diagnostic until it is predeclared and evaluated on separate held-out cases.
+The calibrator reports exact rate, byte accuracy, rescue/block rates, anchor-gap pressure, the lowest safe margin on the observed frontier, and, when the benchmark includes `selector_anchor_margin_sweep`, the best anchor-plus-margin pair. When local surface-anchor calibration is present, it also reports `local_surface_anchor_margins`: the no-extra-compute per-case strategy that follows the anchor chosen from visible synthetic holes and then evaluates each swept margin. Its own claim boundary is strict: a margin or anchor chosen from this output is diagnostic until it is predeclared and evaluated on separate held-out cases.
 
 The checked-in seed-corpus benchmark result is deliberately unforgiving:
 

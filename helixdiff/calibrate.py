@@ -122,6 +122,27 @@ def collect_selector_anchor_margin_sweeps(cases: list[dict[str, Any]]) -> dict[s
     return buckets
 
 
+def collect_local_surface_anchor_margin_sweeps(cases: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    buckets: dict[str, list[dict[str, Any]]] = {}
+    for case in cases:
+        local_report = case.get("local_surface_anchor_calibration")
+        if not isinstance(local_report, dict):
+            continue
+        selected_anchor = str(local_report.get("selected_selector_anchor", ""))
+        if selected_anchor not in {"prior", "surface"}:
+            continue
+        for row in case.get("selector_anchor_margin_sweep", []):
+            if not isinstance(row, dict) or "selector_margin" not in row:
+                continue
+            if str(row.get("selector_anchor", "")) != selected_anchor:
+                continue
+            keyed_row = dict(row)
+            keyed_row["local_surface_selected_anchor"] = selected_anchor
+            key = format_margin(float(row["selector_margin"]))
+            buckets.setdefault(key, []).append(keyed_row)
+    return buckets
+
+
 def summarize_selector_margins(cases: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     buckets = collect_selector_margin_sweeps(cases)
     summaries: dict[str, dict[str, Any]] = {}
@@ -165,6 +186,30 @@ def summarize_selector_anchor_margins(cases: list[dict[str, Any]]) -> dict[str, 
             "margin_blocked_exact_raw_rate": _effect_rate(rows, "margin_blocked_exact_raw"),
             "raw_verifier_overrode_exact_anchor_rate": _outcome_rate(rows, "raw_verifier_overrode_exact_anchor"),
             "scored_exact_not_selected_rate": _outcome_rate(rows, "scored_exact_not_selected"),
+            "outcome_categories": dict(sorted(outcome_categories.items())),
+            "selector_effects": dict(sorted(selector_effects.items())),
+        }
+    return summaries
+
+
+def summarize_local_surface_anchor_margins(cases: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    buckets = collect_local_surface_anchor_margin_sweeps(cases)
+    summaries: dict[str, dict[str, Any]] = {}
+    for key, rows in sorted(buckets.items(), key=lambda item: float(item[0])):
+        outcome_categories = Counter(str(row.get("outcome_category", "unknown")) for row in rows)
+        selector_effects = Counter(str(row.get("selector_effect", "unknown")) for row in rows)
+        selected_anchors = Counter(str(row.get("local_surface_selected_anchor", "unknown")) for row in rows)
+        summaries[key] = {
+            "margin": float(key),
+            "cases": len(rows),
+            "exact_match_rate": _rate(rows, "exact"),
+            "byte_accuracy": _mean(float(row.get("byte_accuracy", 0.0)) for row in rows) or 0.0,
+            "selector_margin_applied_rate": _rate(rows, "selector_margin_applied"),
+            "margin_rescued_exact_anchor_rate": _effect_rate(rows, "margin_rescued_exact_anchor"),
+            "margin_blocked_exact_raw_rate": _effect_rate(rows, "margin_blocked_exact_raw"),
+            "raw_verifier_overrode_exact_anchor_rate": _outcome_rate(rows, "raw_verifier_overrode_exact_anchor"),
+            "scored_exact_not_selected_rate": _outcome_rate(rows, "scored_exact_not_selected"),
+            "local_surface_selected_anchor_counts": dict(sorted(selected_anchors.items())),
             "outcome_categories": dict(sorted(outcome_categories.items())),
             "selector_effects": dict(sorted(selector_effects.items())),
         }
@@ -352,6 +397,7 @@ def calibrate_selector_margins(
         cases.extend(retrieval_lattice_cases(report))
     margin_summaries = summarize_selector_margins(cases)
     anchor_margin_summaries = summarize_selector_anchor_margins(cases)
+    local_anchor_margin_summaries = summarize_local_surface_anchor_margins(cases)
     exact_anchor_gaps = [
         float(case["anchor_margin_gap"])
         for case in cases
@@ -366,6 +412,7 @@ def calibrate_selector_margins(
         "cases": len(cases),
         "margins": margin_summaries,
         "anchor_margins": anchor_margin_summaries,
+        "local_surface_anchor_margins": local_anchor_margin_summaries,
         "anchor_gap_diagnostics": {
             "avg_anchor_margin_gap": _mean(all_anchor_gaps),
             "avg_exact_anchor_margin_gap": _mean(exact_anchor_gaps),
@@ -379,6 +426,11 @@ def calibrate_selector_margins(
         ),
         "anchor_recommendation": recommend_selector_anchor_margin(
             anchor_margin_summaries,
+            min_cases=min_cases,
+            allow_blocked_exact_raw=allow_blocked_exact_raw,
+        ),
+        "local_surface_anchor_recommendation": recommend_selector_margin(
+            local_anchor_margin_summaries,
             min_cases=min_cases,
             allow_blocked_exact_raw=allow_blocked_exact_raw,
         ),

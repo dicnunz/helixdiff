@@ -1,6 +1,13 @@
 import unittest
 
-from helixdiff.bench import make_marked_cases, model_quality_label, nearest_visible_case, sha256_text, split_text
+from helixdiff.bench import (
+    make_marked_cases,
+    model_quality_label,
+    nearest_visible_case,
+    sha256_text,
+    split_text,
+    visible_suture_candidates,
+)
 from helixdiff.tokenizer import ByteTokenizer
 
 
@@ -51,6 +58,15 @@ class BenchTest(unittest.TestCase):
         self.assertTrue(row["exact"])
         self.assertTrue(row["frozen_context_unchanged"])
         self.assertEqual(row["nearest_visible_source"], "before")
+
+    def test_visible_suture_candidates_do_not_join_across_hidden_gap(self) -> None:
+        rows = visible_suture_candidates(
+            tokenizer=ByteTokenizer(),
+            marked_text="aa b[[bc]]c dd",
+            limit=4,
+        )
+        self.assertTrue(rows)
+        self.assertNotEqual(rows[0]["predicted_hole"], "bc")
 
 
 if __name__ == "__main__":

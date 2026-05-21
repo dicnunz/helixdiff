@@ -175,22 +175,20 @@ def _common_prefix(left: list[int], right: list[int], limit: int) -> int:
     return score
 
 
-@torch.no_grad()
-def nearest_visible_case(
+def visible_suture_candidates(
     *,
     tokenizer: ByteTokenizer,
     marked_text: str,
     context_window: int = 16,
-) -> dict[str, Any]:
+    limit: int = 8,
+) -> list[dict[str, Any]]:
     example = parse_marked_infill(marked_text, tokenizer)
     before_ids = tokenizer.encode(example.before, add_bos=False, add_eos=False)
     after_ids = tokenizer.encode(example.after, add_bos=False, add_eos=False)
     hole_len = example.hole_length
     actual_left = before_ids[-context_window:]
     actual_right = after_ids[:context_window]
-    best_span: list[int] | None = None
-    best_source = "fallback_space"
-    best_score = -1
+    rows: list[dict[str, Any]] = []
 
     for source, ids in (("before", before_ids), ("after", after_ids)):
         if len(ids) < hole_len:
@@ -205,14 +203,51 @@ def nearest_visible_case(
                 actual_right,
                 context_window,
             )
-            if score > best_score:
-                best_span = span
-                best_source = source
-                best_score = score
+            rows.append(
+                {
+                    "ids": span,
+                    "predicted_hole": tokenizer.decode(span),
+                    "source": source,
+                    "start": int(start),
+                    "score": int(score),
+                }
+            )
 
-    if best_span is None:
-        best_span = [tokenizer.byte_offset + ord(" ")] * hole_len
-        best_score = 0
+    if not rows:
+        fallback = [tokenizer.byte_offset + ord(" ")] * hole_len
+        rows.append(
+            {
+                "ids": fallback,
+                "predicted_hole": tokenizer.decode(fallback),
+                "source": "fallback_space",
+                "start": 0,
+                "score": 0,
+            }
+        )
+
+    deduped: dict[tuple[int, ...], dict[str, Any]] = {}
+    for row in sorted(rows, key=lambda item: (-int(item["score"]), str(item["source"]), int(item["start"]))):
+        key = tuple(int(token_id) for token_id in row["ids"])
+        if key not in deduped:
+            deduped[key] = row
+    return list(deduped.values())[: max(1, limit)]
+
+
+@torch.no_grad()
+def nearest_visible_case(
+    *,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    context_window: int = 16,
+) -> dict[str, Any]:
+    example = parse_marked_infill(marked_text, tokenizer)
+    candidate = visible_suture_candidates(
+        tokenizer=tokenizer,
+        marked_text=marked_text,
+        context_window=context_window,
+        limit=1,
+    )[0]
+    best_span = [int(token_id) for token_id in candidate["ids"]]
 
     repaired = example.tokens.clone()
     repaired[example.hole_start : example.hole_end] = torch.tensor(best_span, dtype=torch.long)
@@ -228,9 +263,112 @@ def nearest_visible_case(
         "exact": bool(torch.equal(pred, target)),
         "frozen_context_unchanged": bool((repaired[example.frozen] == example.target[example.frozen]).all().item()),
         "strategy": "nearest_visible",
-        "nearest_visible_source": best_source,
-        "nearest_visible_score": int(best_score),
+        "nearest_visible_source": candidate["source"],
+        "nearest_visible_score": int(candidate["score"]),
         "nearest_visible_context_window": int(context_window),
+    }
+
+
+@torch.no_grad()
+def retrieval_lattice_case(
+    *,
+    model: torch.nn.Module,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    guide: BigramGuide,
+    guidance: float,
+    temperature: float,
+    top_k: int,
+    visible_limit: int = 8,
+    suture_weight: float = 2.0,
+) -> dict[str, Any]:
+    example = parse_marked_infill(marked_text, tokenizer)
+    candidates: list[dict[str, Any]] = []
+    for row in visible_suture_candidates(tokenizer=tokenizer, marked_text=marked_text, limit=visible_limit):
+        candidates.append(
+            {
+                "ids": [int(token_id) for token_id in row["ids"]],
+                "source": f"visible_{row['source']}",
+                "predicted_hole": row["predicted_hole"],
+                "suture_score": int(row["score"]),
+            }
+        )
+    for strategy in ("unigram", "bridge"):
+        row = guide_only_case(tokenizer=tokenizer, marked_text=marked_text, guide=guide, strategy=strategy)
+        ids = tokenizer.encode(row["predicted_hole"], add_bos=False, add_eos=False)
+        if len(ids) != example.hole_length:
+            ids = (ids + [tokenizer.byte_offset + ord(" ")] * example.hole_length)[: example.hole_length]
+        candidates.append(
+            {
+                "ids": [int(token_id) for token_id in ids],
+                "source": strategy,
+                "predicted_hole": tokenizer.decode(ids),
+                "suture_score": None,
+            }
+        )
+
+    deduped: dict[tuple[int, ...], dict[str, Any]] = {}
+    for candidate in candidates:
+        key = tuple(int(token_id) for token_id in candidate["ids"])
+        if key not in deduped:
+            deduped[key] = candidate
+    scored_rows: list[dict[str, Any]] = []
+    best_score = float("-inf")
+    best_repaired: torch.Tensor | None = None
+    best_row: dict[str, Any] | None = None
+    for candidate in deduped.values():
+        repaired = example.tokens.clone()
+        repaired[example.hole_start : example.hole_end] = torch.tensor(candidate["ids"], dtype=torch.long)
+        score = score_repair(
+            model=model,
+            tokenizer=tokenizer,
+            repaired_ids=repaired,
+            hole_start=example.hole_start,
+            hole_end=example.hole_end,
+            guide=guide,
+            guidance=guidance,
+            temperature=temperature,
+            top_k=top_k,
+        )
+        pred = repaired[example.hole_start : example.hole_end]
+        target = example.target[example.hole_start : example.hole_end]
+        suture_score = candidate["suture_score"]
+        combined_score = score + (float(suture_score) * suture_weight if suture_score is not None else 0.0)
+        row = {
+            "source": candidate["source"],
+            "predicted_hole": tokenizer.decode(pred),
+            "suture_score": suture_score,
+            "diffusion_score": json_score(score),
+            "diffusion_score_is_finite": math.isfinite(score),
+            "combined_score": json_score(combined_score),
+            "byte_accuracy": float((pred == target).float().mean().item()) if target.numel() else 0.0,
+            "exact": bool(torch.equal(pred, target)),
+        }
+        scored_rows.append(row)
+        if best_repaired is None or combined_score > best_score:
+            best_score = combined_score
+            best_repaired = repaired
+            best_row = row
+    if best_repaired is None or best_row is None:
+        raise RuntimeError("retrieval lattice produced no candidates")
+    pred = best_repaired[example.hole_start : example.hole_end]
+    target = example.target[example.hole_start : example.hole_end]
+    return {
+        "marked_text": marked_text,
+        "target_hole": example.hole,
+        "predicted_hole": tokenizer.decode(pred),
+        "hole_length_bytes": example.hole_length,
+        "byte_accuracy": float((pred == target).float().mean().item()) if target.numel() else 0.0,
+        "exact": bool(torch.equal(pred, target)),
+        "frozen_context_unchanged": bool((best_repaired[example.frozen] == example.target[example.frozen]).all().item()),
+        "strategy": "retrieval_lattice_diffusion_scored",
+        "selected_source": best_row["source"],
+        "selected_candidate_score": json_score(best_score),
+        "selected_candidate_score_is_finite": math.isfinite(best_score),
+        "selector": "diffusion_score_plus_suture_score",
+        "lattice_suture_weight": float(suture_weight),
+        "candidate_summaries": scored_rows,
+        "oracle_candidate_exact": any(bool(row["exact"]) for row in scored_rows),
     }
 
 
@@ -386,6 +524,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     unigram_rows: list[dict[str, Any]] = []
     bridge_rows: list[dict[str, Any]] = []
     nearest_visible_rows: list[dict[str, Any]] = []
+    retrieval_lattice_rows: list[dict[str, Any]] = []
     unguided_rows: list[dict[str, Any]] = []
     guided_rows: list[dict[str, Any]] = []
     adapted_rows: list[dict[str, Any]] = []
@@ -396,6 +535,19 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
         bridge["target_hole_seen_in_train_split"] = bridge["target_hole"] in train_text
         bridge_rows.append(bridge)
         nearest_visible_rows.append(nearest_visible_case(tokenizer=tokenizer, marked_text=marked))
+        lattice = retrieval_lattice_case(
+            model=model,
+            tokenizer=tokenizer,
+            marked_text=marked,
+            guide=guide,
+            guidance=args.guidance,
+            temperature=args.temperature,
+            top_k=args.top_k,
+            visible_limit=args.lattice_visible_candidates,
+            suture_weight=args.lattice_suture_weight,
+        )
+        lattice["target_hole_seen_in_train_split"] = lattice["target_hole"] in train_text
+        retrieval_lattice_rows.append(lattice)
         unguided_rows.append(
             infill_case(
                 model=model,
@@ -477,6 +629,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     unigram_summary = summarize_infill(unigram_rows)
     bridge_summary = summarize_infill(bridge_rows)
     nearest_visible_summary = summarize_infill(nearest_visible_rows)
+    retrieval_lattice_summary = summarize_infill(retrieval_lattice_rows)
     guided_summary = summarize_infill(guided_rows)
     adapted_summary = summarize_infill(adapted_rows)
     adapted_guided_summary = summarize_infill(adapted_guided_rows)
@@ -488,6 +641,9 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
         nearest_visible_summary["byte_accuracy"]
     )
     adapted_guided_vs_nearest_visible = float(adapted_guided_summary["byte_accuracy"]) - float(
+        nearest_visible_summary["byte_accuracy"]
+    )
+    retrieval_lattice_vs_nearest_visible = float(retrieval_lattice_summary["byte_accuracy"]) - float(
         nearest_visible_summary["byte_accuracy"]
     )
     label = model_quality_label(
@@ -511,6 +667,8 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
         "case_filter": {
             "require_unseen_hole": bool(args.require_unseen_hole),
             "candidate_count": int(args.candidates),
+            "lattice_visible_candidates": int(args.lattice_visible_candidates),
+            "lattice_suture_weight": float(args.lattice_suture_weight),
             "visible_context_adaptation_steps": int(args.adapt_visible_steps),
         },
         "masked_eval": masked,
@@ -521,6 +679,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "unigram_baseline": {"summary": unigram_summary, "cases": unigram_rows},
             "bridge_only_baseline": {"summary": bridge_summary, "cases": bridge_rows},
             "nearest_visible_baseline": {"summary": nearest_visible_summary, "cases": nearest_visible_rows},
+            "retrieval_lattice": {"summary": retrieval_lattice_summary, "cases": retrieval_lattice_rows},
             "unguided": {"summary": unguided_summary, "cases": unguided_rows},
             "bridge_guided": {"summary": guided_summary, "cases": guided_rows},
             "visible_context_adapted": {"summary": adapted_summary, "cases": adapted_rows},
@@ -534,6 +693,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "adapted_bridge_guided_minus_bridge_only_byte_accuracy": adapted_guided_vs_bridge,
             "adapted_minus_nearest_visible_byte_accuracy": adapted_vs_nearest_visible,
             "adapted_bridge_guided_minus_nearest_visible_byte_accuracy": adapted_guided_vs_nearest_visible,
+            "retrieval_lattice_minus_nearest_visible_byte_accuracy": retrieval_lattice_vs_nearest_visible,
         },
         "quality_label": label,
         "ten_out_of_ten_gate": {
@@ -564,6 +724,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--top-k", type=int, default=48)
     parser.add_argument("--guidance", type=float, default=1.5)
     parser.add_argument("--schedule", choices=["entropy", "ribbon"], default="ribbon")
+    parser.add_argument("--lattice-visible-candidates", type=int, default=8)
+    parser.add_argument("--lattice-suture-weight", type=float, default=2.0)
     parser.add_argument("--adapt-visible-steps", type=int, default=0)
     parser.add_argument("--adapt-batch-size", type=int, default=8)
     parser.add_argument("--adapt-learning-rate", type=float, default=1e-4)

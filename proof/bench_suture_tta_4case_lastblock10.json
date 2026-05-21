@@ -17,11 +17,13 @@
   "case_filter": {
     "require_unseen_hole": true,
     "candidate_count": 2,
+    "lattice_visible_candidates": 8,
+    "lattice_suture_weight": 2.0,
     "visible_context_adaptation_steps": 10
   },
   "masked_eval": {
-    "loss": 3.2678399085998535,
-    "masked_accuracy": 0.1583222821354866,
+    "loss": 3.1798912286758423,
+    "masked_accuracy": 0.16303157806396484,
     "mask_rate": 0.5,
     "batches": 2,
     "batch_size": 4
@@ -187,15 +189,502 @@
         {
           "marked_text": "\n\nSEBASTIAN:\nWe would so, and then go a [[bat-]]fowling.\n\nANTONIO:\nNay, good my lord, be",
           "target_hole": "bat-",
-          "predicted_hole": "woul",
+          "predicted_hole": "good",
           "hole_length_bytes": 4,
           "byte_accuracy": 0.0,
           "exact": false,
           "frozen_context_unchanged": true,
           "strategy": "nearest_visible",
-          "nearest_visible_source": "before",
+          "nearest_visible_source": "after",
           "nearest_visible_score": 1,
           "nearest_visible_context_window": 16
+        }
+      ]
+    },
+    "retrieval_lattice": {
+      "summary": {
+        "cases": 4,
+        "byte_accuracy": 0.5,
+        "exact_match_rate": 0.5,
+        "pass_at_k_exact": 0.5,
+        "frozen_context_ok": true
+      },
+      "cases": [
+        {
+          "marked_text": "\n\nTailor:\n\nGRUMIO:\nI confess the cape.\n\n[[Tail]]or:\n\nGRUMIO:\nI confess two sleeves.\n\nTai",
+          "target_hole": "Tail",
+          "predicted_hole": "Tail",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 1.0,
+          "exact": true,
+          "frozen_context_unchanged": true,
+          "strategy": "retrieval_lattice_diffusion_scored",
+          "selected_source": "visible_before",
+          "selected_candidate_score": 27.386892318725586,
+          "selected_candidate_score_is_finite": true,
+          "selector": "diffusion_score_plus_suture_score",
+          "lattice_suture_weight": 2.0,
+          "candidate_summaries": [
+            {
+              "source": "visible_before",
+              "predicted_hole": "Tail",
+              "suture_score": 18,
+              "diffusion_score": -8.613107681274414,
+              "diffusion_score_is_finite": true,
+              "combined_score": 27.386892318725586,
+              "byte_accuracy": 1.0,
+              "exact": true
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "GRUM",
+              "suture_score": 2,
+              "diffusion_score": -2.647705316543579,
+              "diffusion_score_is_finite": true,
+              "combined_score": 1.352294683456421,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "\nGRU",
+              "suture_score": 1,
+              "diffusion_score": -6.0788397789001465,
+              "diffusion_score_is_finite": true,
+              "combined_score": -4.0788397789001465,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "\nI c",
+              "suture_score": 1,
+              "diffusion_score": -4.474367141723633,
+              "diffusion_score_is_finite": true,
+              "combined_score": -2.474367141723633,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "I co",
+              "suture_score": 1,
+              "diffusion_score": -1.7252938747406006,
+              "diffusion_score_is_finite": true,
+              "combined_score": 0.2747061252593994,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "s tw",
+              "suture_score": 1,
+              "diffusion_score": -6.956724166870117,
+              "diffusion_score_is_finite": true,
+              "combined_score": -4.956724166870117,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "\nTai",
+              "suture_score": 1,
+              "diffusion_score": -11.124878883361816,
+              "diffusion_score_is_finite": true,
+              "combined_score": -9.124878883361816,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "or:\n",
+              "suture_score": 0,
+              "diffusion_score": -6.74230432510376,
+              "diffusion_score_is_finite": true,
+              "combined_score": -6.74230432510376,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "unigram",
+              "predicted_hole": "    ",
+              "suture_score": null,
+              "diffusion_score": -12.129274368286133,
+              "diffusion_score_is_finite": true,
+              "combined_score": -12.129274368286133,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "bridge",
+              "predicted_hole": "A Pl",
+              "suture_score": null,
+              "diffusion_score": -1.892907977104187,
+              "diffusion_score_is_finite": true,
+              "combined_score": -1.892907977104187,
+              "byte_accuracy": 0.25,
+              "exact": false
+            }
+          ],
+          "oracle_candidate_exact": true,
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "ood Grumio.\n\nGRUMIO:\nLend thine ear.\n\nCU[[RTIS]]:\nHere.\n\nGRUMIO:\nThere.\n\nCURTIS:\nThis is",
+          "target_hole": "RTIS",
+          "predicted_hole": "RTIS",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 1.0,
+          "exact": true,
+          "frozen_context_unchanged": true,
+          "strategy": "retrieval_lattice_diffusion_scored",
+          "selected_source": "visible_after",
+          "selected_candidate_score": 5.29969596862793,
+          "selected_candidate_score_is_finite": true,
+          "selector": "diffusion_score_plus_suture_score",
+          "lattice_suture_weight": 2.0,
+          "candidate_summaries": [
+            {
+              "source": "visible_after",
+              "predicted_hole": "RTIS",
+              "suture_score": 7,
+              "diffusion_score": -8.70030403137207,
+              "diffusion_score_is_finite": true,
+              "combined_score": 5.29969596862793,
+              "byte_accuracy": 1.0,
+              "exact": true
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "UMIO",
+              "suture_score": 2,
+              "diffusion_score": -5.725088596343994,
+              "diffusion_score_is_finite": true,
+              "combined_score": -1.7250885963439941,
+              "byte_accuracy": 0.25,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "MIO:",
+              "suture_score": 1,
+              "diffusion_score": -4.1059112548828125,
+              "diffusion_score_is_finite": true,
+              "combined_score": -2.1059112548828125,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": ":\nHe",
+              "suture_score": 0,
+              "diffusion_score": -3.821676254272461,
+              "diffusion_score_is_finite": true,
+              "combined_score": -3.821676254272461,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "\nHer",
+              "suture_score": 0,
+              "diffusion_score": -5.384468078613281,
+              "diffusion_score_is_finite": true,
+              "combined_score": -5.384468078613281,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "Here",
+              "suture_score": 0,
+              "diffusion_score": -6.026711463928223,
+              "diffusion_score_is_finite": true,
+              "combined_score": -6.026711463928223,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "ere.",
+              "suture_score": 0,
+              "diffusion_score": -6.808053493499756,
+              "diffusion_score_is_finite": true,
+              "combined_score": -6.808053493499756,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "re.\n",
+              "suture_score": 0,
+              "diffusion_score": -5.609016418457031,
+              "diffusion_score_is_finite": true,
+              "combined_score": -5.609016418457031,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "unigram",
+              "predicted_hole": "    ",
+              "suture_score": null,
+              "diffusion_score": -12.421526908874512,
+              "diffusion_score_is_finite": true,
+              "combined_score": -12.421526908874512,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "bridge",
+              "predicted_hole": "S:\nI",
+              "suture_score": null,
+              "diffusion_score": -0.2045494019985199,
+              "diffusion_score_is_finite": true,
+              "combined_score": -0.2045494019985199,
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "oracle_candidate_exact": true,
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": " coat, sir, was not fully made,\nAnd Gabr[[iel']]s pumps were all unpink'd i' the heel;\nT",
+          "target_hole": "iel'",
+          "predicted_hole": "e al",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "retrieval_lattice_diffusion_scored",
+          "selected_source": "visible_after",
+          "selected_candidate_score": -0.2643616199493408,
+          "selected_candidate_score_is_finite": true,
+          "selector": "diffusion_score_plus_suture_score",
+          "lattice_suture_weight": 2.0,
+          "candidate_summaries": [
+            {
+              "source": "visible_before",
+              "predicted_hole": ", wa",
+              "suture_score": 3,
+              "diffusion_score": -6.855922222137451,
+              "diffusion_score_is_finite": true,
+              "combined_score": -0.8559222221374512,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "pump",
+              "suture_score": 2,
+              "diffusion_score": -12.965875625610352,
+              "diffusion_score_is_finite": true,
+              "combined_score": -8.965875625610352,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "e al",
+              "suture_score": 1,
+              "diffusion_score": -2.264361619949341,
+              "diffusion_score_is_finite": true,
+              "combined_score": -0.2643616199493408,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_before",
+              "predicted_hole": "at, ",
+              "suture_score": 1,
+              "diffusion_score": -5.199830532073975,
+              "diffusion_score_is_finite": true,
+              "combined_score": -3.1998305320739746,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "s pu",
+              "suture_score": 0,
+              "diffusion_score": -7.78057861328125,
+              "diffusion_score_is_finite": true,
+              "combined_score": -7.78057861328125,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": " pum",
+              "suture_score": 0,
+              "diffusion_score": -11.080711364746094,
+              "diffusion_score_is_finite": true,
+              "combined_score": -11.080711364746094,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "umps",
+              "suture_score": 0,
+              "diffusion_score": -15.849406242370605,
+              "diffusion_score_is_finite": true,
+              "combined_score": -15.849406242370605,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "mps ",
+              "suture_score": 0,
+              "diffusion_score": -12.522682189941406,
+              "diffusion_score_is_finite": true,
+              "combined_score": -12.522682189941406,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "unigram",
+              "predicted_hole": "    ",
+              "suture_score": null,
+              "diffusion_score": -13.178619384765625,
+              "diffusion_score_is_finite": true,
+              "combined_score": -13.178619384765625,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "bridge",
+              "predicted_hole": "oad ",
+              "suture_score": null,
+              "diffusion_score": -0.489911824464798,
+              "diffusion_score_is_finite": true,
+              "combined_score": -0.489911824464798,
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "oracle_candidate_exact": false,
+          "target_hole_seen_in_train_split": false
+        },
+        {
+          "marked_text": "\n\nSEBASTIAN:\nWe would so, and then go a [[bat-]]fowling.\n\nANTONIO:\nNay, good my lord, be",
+          "target_hole": "bat-",
+          "predicted_hole": "lord",
+          "hole_length_bytes": 4,
+          "byte_accuracy": 0.0,
+          "exact": false,
+          "frozen_context_unchanged": true,
+          "strategy": "retrieval_lattice_diffusion_scored",
+          "selected_source": "visible_after",
+          "selected_candidate_score": 0.22595560550689697,
+          "selected_candidate_score_is_finite": true,
+          "selector": "diffusion_score_plus_suture_score",
+          "lattice_suture_weight": 2.0,
+          "candidate_summaries": [
+            {
+              "source": "visible_after",
+              "predicted_hole": "good",
+              "suture_score": 1,
+              "diffusion_score": -2.2768797874450684,
+              "diffusion_score_is_finite": true,
+              "combined_score": -0.27687978744506836,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "my l",
+              "suture_score": 1,
+              "diffusion_score": -4.234801292419434,
+              "diffusion_score_is_finite": true,
+              "combined_score": -2.2348012924194336,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_after",
+              "predicted_hole": "lord",
+              "suture_score": 1,
+              "diffusion_score": -1.774044394493103,
+              "diffusion_score_is_finite": true,
+              "combined_score": 0.22595560550689697,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_before",
+              "predicted_hole": "woul",
+              "suture_score": 1,
+              "diffusion_score": -2.3203842639923096,
+              "diffusion_score_is_finite": true,
+              "combined_score": -0.32038426399230957,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_before",
+              "predicted_hole": "so, ",
+              "suture_score": 1,
+              "diffusion_score": -5.577448844909668,
+              "diffusion_score_is_finite": true,
+              "combined_score": -3.577448844909668,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_before",
+              "predicted_hole": "and ",
+              "suture_score": 1,
+              "diffusion_score": -2.533412456512451,
+              "diffusion_score_is_finite": true,
+              "combined_score": -0.5334124565124512,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_before",
+              "predicted_hole": "then",
+              "suture_score": 1,
+              "diffusion_score": -2.6208059787750244,
+              "diffusion_score_is_finite": true,
+              "combined_score": -0.6208059787750244,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "visible_before",
+              "predicted_hole": "go a",
+              "suture_score": 1,
+              "diffusion_score": -4.658130645751953,
+              "diffusion_score_is_finite": true,
+              "combined_score": -2.658130645751953,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "unigram",
+              "predicted_hole": "    ",
+              "suture_score": null,
+              "diffusion_score": -11.578361511230469,
+              "diffusion_score_is_finite": true,
+              "combined_score": -11.578361511230469,
+              "byte_accuracy": 0.0,
+              "exact": false
+            },
+            {
+              "source": "bridge",
+              "predicted_hole": "thou",
+              "suture_score": null,
+              "diffusion_score": -0.11036379635334015,
+              "diffusion_score_is_finite": true,
+              "combined_score": -0.11036379635334015,
+              "byte_accuracy": 0.0,
+              "exact": false
+            }
+          ],
+          "oracle_candidate_exact": false,
+          "target_hole_seen_in_train_split": false
         }
       ]
     },
@@ -238,7 +727,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 0.2382115829968825
+          "elapsed_seconds": 0.30388545800815336
         },
         {
           "marked_text": "ood Grumio.\n\nGRUMIO:\nLend thine ear.\n\nCU[[RTIS]]:\nHere.\n\nGRUMIO:\nThere.\n\nCURTIS:\nThis is",
@@ -270,7 +759,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 0.12407870800234377
+          "elapsed_seconds": 0.14773083297768608
         },
         {
           "marked_text": " coat, sir, was not fully made,\nAnd Gabr[[iel']]s pumps were all unpink'd i' the heel;\nT",
@@ -302,7 +791,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 0.12954183301189914
+          "elapsed_seconds": 0.2830203339981381
         },
         {
           "marked_text": "\n\nSEBASTIAN:\nWe would so, and then go a [[bat-]]fowling.\n\nANTONIO:\nNay, good my lord, be",
@@ -334,7 +823,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 0.14615691601647995
+          "elapsed_seconds": 0.11222358400118537
         }
       ]
     },
@@ -377,7 +866,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 3.6037335419969168,
+          "elapsed_seconds": 6.23303429200314,
           "target_hole_seen_in_train_split": false
         },
         {
@@ -410,7 +899,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 4.822425624995958,
+          "elapsed_seconds": 4.829779874999076,
           "target_hole_seen_in_train_split": false
         },
         {
@@ -443,7 +932,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 5.190149541012943,
+          "elapsed_seconds": 6.99202154201339,
           "target_hole_seen_in_train_split": false
         },
         {
@@ -476,7 +965,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 5.370015874999808,
+          "elapsed_seconds": 8.536463457974605,
           "target_hole_seen_in_train_split": false
         }
       ]
@@ -500,12 +989,12 @@
           "frozen_context_unchanged": true,
           "steps_used": 4,
           "candidates": 2,
-          "selected_candidate_score": -1.6690068244934082,
+          "selected_candidate_score": -1.668916940689087,
           "selected_candidate_score_is_finite": true,
           "candidate_summaries": [
             {
               "seed": 101,
-              "score": -1.6690068244934082,
+              "score": -1.668916940689087,
               "score_is_finite": true,
               "predicted_hole": "  \n ",
               "byte_accuracy": 0.0,
@@ -513,14 +1002,14 @@
             },
             {
               "seed": 102,
-              "score": -3.9974732398986816,
+              "score": -3.997593879699707,
               "score_is_finite": true,
               "predicted_hole": "ehoU",
               "byte_accuracy": 0.0,
               "exact": false
             }
           ],
-          "elapsed_seconds": 0.08634291600901634,
+          "elapsed_seconds": 0.13052954198792577,
           "adaptation": {
             "enabled": true,
             "mechanism": "visible_context_suture_tta",
@@ -549,10 +1038,10 @@
               "norm.weight"
             ],
             "trainable_parameters": 145728,
-            "first_loss": 4.039994716644287,
-            "final_loss": 3.569700002670288,
+            "first_loss": 4.039236068725586,
+            "final_loss": 3.5699405670166016,
             "mean_masked_accuracy": 0.09051833748817444,
-            "elapsed_seconds": 0.7085120829869993
+            "elapsed_seconds": 1.1084469159832224
           },
           "target_hole_seen_in_train_split": false
         },
@@ -566,12 +1055,12 @@
           "frozen_context_unchanged": true,
           "steps_used": 4,
           "candidates": 2,
-          "selected_candidate_score": -2.41005539894104,
+          "selected_candidate_score": -2.41007661819458,
           "selected_candidate_score_is_finite": true,
           "candidate_summaries": [
             {
               "seed": 102,
-              "score": -3.9884824752807617,
+              "score": -3.988471746444702,
               "score_is_finite": true,
               "predicted_hole": "ehoU",
               "byte_accuracy": 0.0,
@@ -579,14 +1068,14 @@
             },
             {
               "seed": 103,
-              "score": -2.41005539894104,
+              "score": -2.41007661819458,
               "score_is_finite": true,
               "predicted_hole": "  ru",
               "byte_accuracy": 0.0,
               "exact": false
             }
           ],
-          "elapsed_seconds": 0.12707004198455252,
+          "elapsed_seconds": 0.15048333301092498,
           "adaptation": {
             "enabled": true,
             "mechanism": "visible_context_suture_tta",
@@ -615,10 +1104,10 @@
               "norm.weight"
             ],
             "trainable_parameters": 145728,
-            "first_loss": 3.9656200408935547,
-            "final_loss": 3.7229323387145996,
+            "first_loss": 3.9654531478881836,
+            "final_loss": 3.7225277423858643,
             "mean_masked_accuracy": 0.041908448375761506,
-            "elapsed_seconds": 0.6187842919898685
+            "elapsed_seconds": 0.6473970000224654
           },
           "target_hole_seen_in_train_split": false
         },
@@ -632,12 +1121,12 @@
           "frozen_context_unchanged": true,
           "steps_used": 4,
           "candidates": 2,
-          "selected_candidate_score": -2.397462844848633,
+          "selected_candidate_score": -2.397441864013672,
           "selected_candidate_score_is_finite": true,
           "candidate_summaries": [
             {
               "seed": 103,
-              "score": -2.397462844848633,
+              "score": -2.397441864013672,
               "score_is_finite": true,
               "predicted_hole": "  ru",
               "byte_accuracy": 0.0,
@@ -645,14 +1134,14 @@
             },
             {
               "seed": 104,
-              "score": -2.7313098907470703,
+              "score": -2.731393575668335,
               "score_is_finite": true,
               "predicted_hole": "\n an",
               "byte_accuracy": 0.0,
               "exact": false
             }
           ],
-          "elapsed_seconds": 0.10023958300007507,
+          "elapsed_seconds": 0.20357312500709668,
           "adaptation": {
             "enabled": true,
             "mechanism": "visible_context_suture_tta",
@@ -681,10 +1170,10 @@
               "norm.weight"
             ],
             "trainable_parameters": 145728,
-            "first_loss": 3.302158832550049,
-            "final_loss": 3.238182306289673,
+            "first_loss": 3.3019979000091553,
+            "final_loss": 3.238600969314575,
             "mean_masked_accuracy": 0.16149868071079254,
-            "elapsed_seconds": 0.55376779101789
+            "elapsed_seconds": 0.7308165829745121
           },
           "target_hole_seen_in_train_split": false
         },
@@ -698,12 +1187,12 @@
           "frozen_context_unchanged": true,
           "steps_used": 4,
           "candidates": 2,
-          "selected_candidate_score": -2.7230100631713867,
+          "selected_candidate_score": -2.723060369491577,
           "selected_candidate_score_is_finite": true,
           "candidate_summaries": [
             {
               "seed": 104,
-              "score": -2.7230100631713867,
+              "score": -2.723060369491577,
               "score_is_finite": true,
               "predicted_hole": "\n an",
               "byte_accuracy": 0.0,
@@ -711,14 +1200,14 @@
             },
             {
               "seed": 105,
-              "score": -3.267200469970703,
+              "score": -3.267249584197998,
               "score_is_finite": true,
               "predicted_hole": "lwa ",
               "byte_accuracy": 0.0,
               "exact": false
             }
           ],
-          "elapsed_seconds": 0.13951716700103134,
+          "elapsed_seconds": 0.14296445800573565,
           "adaptation": {
             "enabled": true,
             "mechanism": "visible_context_suture_tta",
@@ -747,10 +1236,10 @@
               "norm.weight"
             ],
             "trainable_parameters": 145728,
-            "first_loss": 3.813944101333618,
-            "final_loss": 3.362030267715454,
+            "first_loss": 3.814649820327759,
+            "final_loss": 3.361516237258911,
             "mean_masked_accuracy": 0.1383667193353176,
-            "elapsed_seconds": 0.7209431669907644
+            "elapsed_seconds": 0.8440122499887366
           },
           "target_hole_seen_in_train_split": false
         }
@@ -775,12 +1264,12 @@
           "frozen_context_unchanged": true,
           "steps_used": 4,
           "candidates": 2,
-          "selected_candidate_score": -1.1917595863342285,
+          "selected_candidate_score": -1.1918690204620361,
           "selected_candidate_score_is_finite": true,
           "candidate_summaries": [
             {
               "seed": 101,
-              "score": -1.625698447227478,
+              "score": -1.625854730606079,
               "score_is_finite": true,
               "predicted_hole": "A ot",
               "byte_accuracy": 0.0,
@@ -788,14 +1277,14 @@
             },
             {
               "seed": 102,
-              "score": -1.1917595863342285,
+              "score": -1.1918690204620361,
               "score_is_finite": true,
               "predicted_hole": "A on",
               "byte_accuracy": 0.0,
               "exact": false
             }
           ],
-          "elapsed_seconds": 3.76958554200246,
+          "elapsed_seconds": 4.5719504579901695,
           "adaptation": {
             "enabled": true,
             "mechanism": "visible_context_suture_tta",
@@ -824,10 +1313,10 @@
               "norm.weight"
             ],
             "trainable_parameters": 145728,
-            "first_loss": 4.039994716644287,
-            "final_loss": 3.569700002670288,
+            "first_loss": 4.039236068725586,
+            "final_loss": 3.5699405670166016,
             "mean_masked_accuracy": 0.09051833748817444,
-            "elapsed_seconds": 0.7085120829869993
+            "elapsed_seconds": 1.1084469159832224
           },
           "target_hole_seen_in_train_split": false
         },
@@ -841,12 +1330,12 @@
           "frozen_context_unchanged": true,
           "steps_used": 4,
           "candidates": 2,
-          "selected_candidate_score": -0.10837902873754501,
+          "selected_candidate_score": -0.10838475823402405,
           "selected_candidate_score_is_finite": true,
           "candidate_summaries": [
             {
               "seed": 102,
-              "score": -0.10837902873754501,
+              "score": -0.10838475823402405,
               "score_is_finite": true,
               "predicted_hole": "TIO:",
               "byte_accuracy": 0.0,
@@ -854,14 +1343,14 @@
             },
             {
               "seed": 103,
-              "score": -0.20068274438381195,
+              "score": -0.20067131519317627,
               "score_is_finite": true,
               "predicted_hole": "S:\nI",
               "byte_accuracy": 0.0,
               "exact": false
             }
           ],
-          "elapsed_seconds": 4.366121625003871,
+          "elapsed_seconds": 6.468277416977799,
           "adaptation": {
             "enabled": true,
             "mechanism": "visible_context_suture_tta",
@@ -890,10 +1379,10 @@
               "norm.weight"
             ],
             "trainable_parameters": 145728,
-            "first_loss": 3.9656200408935547,
-            "final_loss": 3.7229323387145996,
+            "first_loss": 3.9654531478881836,
+            "final_loss": 3.7225277423858643,
             "mean_masked_accuracy": 0.041908448375761506,
-            "elapsed_seconds": 0.6187842919898685
+            "elapsed_seconds": 0.6473970000224654
           },
           "target_hole_seen_in_train_split": false
         },
@@ -907,12 +1396,12 @@
           "frozen_context_unchanged": true,
           "steps_used": 4,
           "candidates": 2,
-          "selected_candidate_score": -0.4995684325695038,
+          "selected_candidate_score": -0.4995698630809784,
           "selected_candidate_score_is_finite": true,
           "candidate_summaries": [
             {
               "seed": 103,
-              "score": -0.4995684325695038,
+              "score": -0.4995698630809784,
               "score_is_finite": true,
               "predicted_hole": "oad ",
               "byte_accuracy": 0.0,
@@ -920,14 +1409,14 @@
             },
             {
               "seed": 104,
-              "score": -0.4995684325695038,
+              "score": -0.4995698630809784,
               "score_is_finite": true,
               "predicted_hole": "oad ",
               "byte_accuracy": 0.0,
               "exact": false
             }
           ],
-          "elapsed_seconds": 6.235197791975224,
+          "elapsed_seconds": 5.957206040999154,
           "adaptation": {
             "enabled": true,
             "mechanism": "visible_context_suture_tta",
@@ -956,10 +1445,10 @@
               "norm.weight"
             ],
             "trainable_parameters": 145728,
-            "first_loss": 3.302158832550049,
-            "final_loss": 3.238182306289673,
+            "first_loss": 3.3019979000091553,
+            "final_loss": 3.238600969314575,
             "mean_masked_accuracy": 0.16149868071079254,
-            "elapsed_seconds": 0.55376779101789
+            "elapsed_seconds": 0.7308165829745121
           },
           "target_hole_seen_in_train_split": false
         },
@@ -973,12 +1462,12 @@
           "frozen_context_unchanged": true,
           "steps_used": 4,
           "candidates": 2,
-          "selected_candidate_score": -0.11256174743175507,
+          "selected_candidate_score": -0.11256303638219833,
           "selected_candidate_score_is_finite": true,
           "candidate_summaries": [
             {
               "seed": 104,
-              "score": -0.11256174743175507,
+              "score": -0.11256303638219833,
               "score_is_finite": true,
               "predicted_hole": "thou",
               "byte_accuracy": 0.0,
@@ -986,14 +1475,14 @@
             },
             {
               "seed": 105,
-              "score": -0.1953592300415039,
+              "score": -0.19535253942012787,
               "score_is_finite": true,
               "predicted_hole": "hear",
               "byte_accuracy": 0.0,
               "exact": false
             }
           ],
-          "elapsed_seconds": 4.673801958007971,
+          "elapsed_seconds": 7.560226083995076,
           "adaptation": {
             "enabled": true,
             "mechanism": "visible_context_suture_tta",
@@ -1022,10 +1511,10 @@
               "norm.weight"
             ],
             "trainable_parameters": 145728,
-            "first_loss": 3.813944101333618,
-            "final_loss": 3.362030267715454,
+            "first_loss": 3.814649820327759,
+            "final_loss": 3.361516237258911,
             "mean_masked_accuracy": 0.1383667193353176,
-            "elapsed_seconds": 0.7209431669907644
+            "elapsed_seconds": 0.8440122499887366
           },
           "target_hole_seen_in_train_split": false
         }
@@ -1036,7 +1525,8 @@
     "adapted_minus_bridge_only_byte_accuracy": -0.0625,
     "adapted_bridge_guided_minus_bridge_only_byte_accuracy": -0.0625,
     "adapted_minus_nearest_visible_byte_accuracy": -0.5,
-    "adapted_bridge_guided_minus_nearest_visible_byte_accuracy": -0.5
+    "adapted_bridge_guided_minus_nearest_visible_byte_accuracy": -0.5,
+    "retrieval_lattice_minus_nearest_visible_byte_accuracy": 0.0
   },
   "quality_label": "mechanism_checkpoint",
   "ten_out_of_ten_gate": {

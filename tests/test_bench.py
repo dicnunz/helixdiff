@@ -11,12 +11,15 @@ from helixdiff.bench import (
     model_quality_label,
     morphology_candidates,
     nearest_visible_case,
+    parse_selector_margin_sweep,
     rank_lattice_candidates_by_prior,
     score_lattice_verifier,
     select_lattice_row_with_margin,
+    selector_margin_sweep_report,
     surface_splice_candidates,
     summarize_lattice_oracle,
     summarize_retrieval_lattice,
+    summarize_selector_margin_sweep,
     sha256_text,
     split_text,
     visible_suture_candidates,
@@ -284,6 +287,32 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(report["anchor_byte_accuracy"], 1.0)
         self.assertEqual(report["selector_effect"], "margin_rescued_exact_anchor")
 
+    def test_selector_margin_sweep_reuses_scored_options(self) -> None:
+        anchor = torch.tensor([1])
+        challenger = torch.tensor([2])
+        sweep = selector_margin_sweep_report(
+            [
+                (1.0, anchor, {"predicted_hole": "anchor", "prior_rank": 0, "exact": True, "byte_accuracy": 1.0}),
+                (
+                    1.4,
+                    challenger,
+                    {"predicted_hole": "challenger", "prior_rank": 1, "exact": False, "byte_accuracy": 0.0},
+                ),
+            ],
+            selector_margins=[0.0, 0.5],
+            oracle_candidate_exact=True,
+            oracle_candidate_exact_in_scored_set=True,
+        )
+        self.assertEqual([row["selector_margin"] for row in sweep], [0.0, 0.5])
+        self.assertEqual(sweep[0]["selected_hole"], "challenger")
+        self.assertEqual(sweep[0]["outcome_category"], "raw_verifier_overrode_exact_anchor")
+        self.assertEqual(sweep[1]["selected_hole"], "anchor")
+        self.assertEqual(sweep[1]["outcome_category"], "selected_exact")
+        self.assertEqual(sweep[1]["selector_effect"], "margin_rescued_exact_anchor")
+
+    def test_parse_selector_margin_sweep_dedupes_and_sorts(self) -> None:
+        self.assertEqual(parse_selector_margin_sweep("3, 0,1,3,,2"), [0.0, 1.0, 2.0, 3.0])
+
     def test_retrieval_lattice_outcome_taxonomy_names_actionable_misses(self) -> None:
         self.assertEqual(
             classify_selector_effect(raw_best_exact=False, anchor_exact=True, margin_applied=False),
@@ -327,6 +356,24 @@ class BenchTest(unittest.TestCase):
                 "selector_effect": "margin_rescued_exact_anchor",
                 "outcome_category": "selected_exact",
                 "selector_margin_applied": True,
+                "selector_margin_sweep": [
+                    {
+                        "selector_margin": 0.0,
+                        "exact": False,
+                        "byte_accuracy": 0.0,
+                        "selector_margin_applied": False,
+                        "selector_effect": "raw_verifier_overrode_exact_anchor",
+                        "outcome_category": "raw_verifier_overrode_exact_anchor",
+                    },
+                    {
+                        "selector_margin": 0.5,
+                        "exact": True,
+                        "byte_accuracy": 1.0,
+                        "selector_margin_applied": True,
+                        "selector_effect": "margin_rescued_exact_anchor",
+                        "outcome_category": "selected_exact",
+                    },
+                ],
                 "scored_candidate_count": 4,
                 "prior_exact_rank": 0,
             },
@@ -343,6 +390,24 @@ class BenchTest(unittest.TestCase):
                 "selector_effect": "raw_verifier_selected_nonexact",
                 "outcome_category": "oracle_outside_scored_set",
                 "selector_margin_applied": False,
+                "selector_margin_sweep": [
+                    {
+                        "selector_margin": 0.0,
+                        "exact": False,
+                        "byte_accuracy": 0.5,
+                        "selector_margin_applied": False,
+                        "selector_effect": "raw_verifier_selected_nonexact",
+                        "outcome_category": "oracle_outside_scored_set",
+                    },
+                    {
+                        "selector_margin": 0.5,
+                        "exact": False,
+                        "byte_accuracy": 0.5,
+                        "selector_margin_applied": False,
+                        "selector_effect": "raw_verifier_selected_nonexact",
+                        "outcome_category": "oracle_outside_scored_set",
+                    },
+                ],
                 "scored_candidate_count": 4,
                 "prior_exact_rank": 7,
             },
@@ -365,6 +430,12 @@ class BenchTest(unittest.TestCase):
         )
         self.assertEqual(summary["margin_rescued_exact_rate"], 0.5)
         self.assertEqual(summary["raw_verifier_overrode_exact_anchor_rate"], 0.0)
+        self.assertEqual(summary["selector_margin_sweep"]["0"]["exact_match_rate"], 0.0)
+        self.assertEqual(summary["selector_margin_sweep"]["0.5"]["exact_match_rate"], 0.5)
+        self.assertEqual(summary["selector_margin_sweep"]["0.5"]["selector_margin_applied_rate"], 0.5)
+
+    def test_selector_margin_sweep_summary_handles_empty_rows(self) -> None:
+        self.assertEqual(summarize_selector_margin_sweep([]), {})
 
     def test_lattice_oracle_summary_splits_sources(self) -> None:
         rows = [

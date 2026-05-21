@@ -725,6 +725,20 @@ def classify_selector_effect(*, raw_best_exact: bool, anchor_exact: bool, margin
     return "raw_verifier_selected_nonexact"
 
 
+def format_selector_margin(margin: float) -> str:
+    return f"{float(margin):g}"
+
+
+def parse_selector_margin_sweep(value: str) -> list[float]:
+    margins: list[float] = []
+    for chunk in value.split(","):
+        stripped = chunk.strip()
+        if not stripped:
+            continue
+        margins.append(float(stripped))
+    return sorted(set(margins))
+
+
 def select_lattice_row_with_margin(
     scored_options: list[tuple[float, torch.Tensor, dict[str, Any]]],
     *,
@@ -775,6 +789,47 @@ def classify_retrieval_lattice_outcome(row: dict[str, Any]) -> str:
     if selector_effect == "margin_blocked_exact_raw":
         return "margin_blocked_exact_raw"
     return "scored_exact_not_selected"
+
+
+def selector_margin_sweep_report(
+    scored_options: list[tuple[float, torch.Tensor, dict[str, Any]]],
+    *,
+    selector_margins: list[float],
+    oracle_candidate_exact: bool,
+    oracle_candidate_exact_in_scored_set: bool,
+) -> list[dict[str, Any]]:
+    report: list[dict[str, Any]] = []
+    for margin in selector_margins:
+        selected_score, _, selected_row, selector_report = select_lattice_row_with_margin(
+            scored_options,
+            selector_margin=margin,
+        )
+        exact = bool(selected_row.get("exact", False))
+        outcome_category = classify_retrieval_lattice_outcome(
+            {
+                "exact": exact,
+                "oracle_candidate_exact": oracle_candidate_exact,
+                "oracle_candidate_exact_in_scored_set": oracle_candidate_exact_in_scored_set,
+                "selector_effect": selector_report["selector_effect"],
+            }
+        )
+        report.append(
+            {
+                "selector_margin": float(margin),
+                "selected_hole": selected_row["predicted_hole"],
+                "selected_score": json_score(selected_score),
+                "exact": exact,
+                "byte_accuracy": float(selected_row.get("byte_accuracy", 0.0)),
+                "selector_margin_applied": bool(selector_report["selector_margin_applied"]),
+                "selector_effect": selector_report["selector_effect"],
+                "outcome_category": outcome_category,
+                "raw_best_hole": selector_report["raw_best_hole"],
+                "raw_best_exact": bool(selector_report["raw_best_exact"]),
+                "anchor_hole": selector_report["anchor_hole"],
+                "anchor_exact": bool(selector_report["anchor_exact"]),
+            }
+        )
+    return report
 
 
 def lattice_oracle_case(
@@ -904,6 +959,7 @@ def retrieval_lattice_case(
     verifier_mode: str = "suture_loo",
     verifier_top_k: int = 0,
     selector_margin: float = 0.0,
+    selector_margin_sweep: list[float] | None = None,
 ) -> dict[str, Any]:
     example = parse_marked_infill(marked_text, tokenizer)
     target = example.target[example.hole_start : example.hole_end]
@@ -976,6 +1032,12 @@ def retrieval_lattice_case(
         scored_options,
         selector_margin=selector_margin,
     )
+    sweep_report = selector_margin_sweep_report(
+        scored_options,
+        selector_margins=selector_margin_sweep or [],
+        oracle_candidate_exact=prior_exact_rank is not None,
+        oracle_candidate_exact_in_scored_set=oracle_exact_in_scored_set,
+    )
     pred = best_repaired[example.hole_start : example.hole_end]
     result = {
         "marked_text": marked_text,
@@ -1018,6 +1080,7 @@ def retrieval_lattice_case(
         ],
         "oracle_candidate_exact": prior_exact_rank is not None,
         "oracle_candidate_exact_in_scored_set": oracle_exact_in_scored_set,
+        "selector_margin_sweep": sweep_report,
     }
     result["outcome_category"] = classify_retrieval_lattice_outcome(result)
     return result
@@ -1136,6 +1199,28 @@ def summarize_infill(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def summarize_selector_margin_sweep(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    buckets: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        for sweep_row in row.get("selector_margin_sweep", []):
+            key = format_selector_margin(float(sweep_row["selector_margin"]))
+            buckets.setdefault(key, []).append(sweep_row)
+    summary: dict[str, Any] = {}
+    for key, sweep_rows in sorted(buckets.items(), key=lambda item: float(item[0])):
+        outcome_categories = Counter(str(row.get("outcome_category", "unknown")) for row in sweep_rows)
+        selector_effects = Counter(str(row.get("selector_effect", "unknown")) for row in sweep_rows)
+        summary[key] = {
+            "cases": len(sweep_rows),
+            "exact_match_rate": sum(1.0 for row in sweep_rows if row.get("exact")) / len(sweep_rows),
+            "byte_accuracy": sum(float(row.get("byte_accuracy", 0.0)) for row in sweep_rows) / len(sweep_rows),
+            "selector_margin_applied_rate": sum(1.0 for row in sweep_rows if row.get("selector_margin_applied"))
+            / len(sweep_rows),
+            "outcome_categories": dict(sorted(outcome_categories.items())),
+            "selector_effects": dict(sorted(selector_effects.items())),
+        }
+    return summary
+
+
 def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
     summary = summarize_infill(rows)
     if not rows:
@@ -1153,6 +1238,7 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "selector_effects": {},
                 "margin_rescued_exact_rate": 0.0,
                 "raw_verifier_overrode_exact_anchor_rate": 0.0,
+                "selector_margin_sweep": {},
             }
         )
         return summary
@@ -1189,6 +1275,7 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 1.0 for row in rows if row.get("selector_effect") == "raw_verifier_overrode_exact_anchor"
             )
             / len(rows),
+            "selector_margin_sweep": summarize_selector_margin_sweep(rows),
         }
     )
     return summary
@@ -1333,6 +1420,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     guided_rows: list[dict[str, Any]] = []
     adapted_rows: list[dict[str, Any]] = []
     adapted_guided_rows: list[dict[str, Any]] = []
+    selector_margin_sweep = parse_selector_margin_sweep(args.lattice_selector_margin_sweep)
     for index, marked in enumerate(cases):
         unigram_rows.append(guide_only_case(tokenizer=tokenizer, marked_text=marked, guide=guide, strategy="unigram"))
         bridge = guide_only_case(tokenizer=tokenizer, marked_text=marked, guide=guide, strategy="bridge")
@@ -1358,6 +1446,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             verifier_mode=args.lattice_verifier_mode,
             verifier_top_k=args.lattice_verifier_top_k,
             selector_margin=args.lattice_selector_margin,
+            selector_margin_sweep=selector_margin_sweep,
         )
         lattice["target_hole_seen_in_train_split"] = lattice["target_hole"] in train_text
         retrieval_lattice_rows.append(lattice)
@@ -1490,6 +1579,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_verifier_mode": args.lattice_verifier_mode,
             "lattice_verifier_top_k": int(args.lattice_verifier_top_k),
             "lattice_selector_margin": float(args.lattice_selector_margin),
+            "lattice_selector_margin_sweep": parse_selector_margin_sweep(args.lattice_selector_margin_sweep),
             "visible_context_adaptation_steps": int(args.adapt_visible_steps),
         },
         "masked_eval": masked,
@@ -1556,6 +1646,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--lattice-verifier-mode", choices=["suture_loo", "full_hole", "dual"], default="suture_loo")
     parser.add_argument("--lattice-verifier-top-k", type=int, default=0)
     parser.add_argument("--lattice-selector-margin", type=float, default=0.0)
+    parser.add_argument("--lattice-selector-margin-sweep", default="0,1,2,3,5")
     parser.add_argument("--adapt-visible-steps", type=int, default=0)
     parser.add_argument("--adapt-batch-size", type=int, default=8)
     parser.add_argument("--adapt-learning-rate", type=float, default=1e-4)

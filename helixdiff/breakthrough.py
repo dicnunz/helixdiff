@@ -217,25 +217,25 @@ def build_breakthrough_plan() -> dict[str, Any]:
         "source_refresh_date": SOURCE_REFRESH_DATE,
         "chatgpt_teammate_status": {
             "requested": True,
-            "usable_this_run": False,
-            "model_mode": "unverified_current_runtime",
-            "conversation_url": None,
-            "latest_request": "fresh GPT-5.5 Pro teammate re-probe for target-shadow proxy calibration",
-            "latest_response_status": "blocked",
-            "latest_recommendation": None,
-            "blocker": "node_repl/js Transport closed before the Chrome browser-client could list ChatGPT tabs",
+            "usable_this_run": True,
+            "model_mode": "Extended Pro",
+            "conversation_url": "https://chatgpt.com/c/6a0f1cf7-b734-83ea-afa1-1a92152682f1",
+            "latest_request": "fresh Extended Pro critique for target-shadow proxy calibration",
+            "latest_response_status": "answered",
+            "latest_recommendation": "target-shadow proxy calibration",
+            "blocker": None,
             "claim": (
-                "No fresh GPT-5.5 Pro contribution is claimed in this run; current work proceeds from "
-                "local proofs, source-backed constraints, and recorded prior notes only."
+                "Extended Pro recommended target-shadow proxy calibration: match visible pseudo masks "
+                "to the redacted target lattice fingerprint before freezing a selector."
             ),
             "recorded_prior_note": {
                 "model_mode": "Extended Pro",
                 "conversation_url": "https://chatgpt.com/c/6a0f1cf7-b734-83ea-afa1-1a92152682f1",
                 "contribution": (
-                    "Recorded prior note: test the model-free visible-reranker oracle smoke "
-                    "before spending Mac heat on model scoring."
+                    "Recorded prior note: test target-shadow proxy calibration after the proxy-mask "
+                    "selector failed to transfer from generic visible pseudo holes."
                 ),
-                "verification_status": "prior_recorded_note_not_reverified_current_runtime",
+                "verification_status": "current_chrome_readback_reverified_url",
             },
         },
         "claim_boundary": CLAIM_BOUNDARY,

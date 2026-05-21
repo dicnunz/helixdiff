@@ -5,7 +5,9 @@ import hashlib
 import json
 import math
 import random
+import re
 import time
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -233,6 +235,85 @@ def visible_suture_candidates(
     return list(deduped.values())[: max(1, limit)]
 
 
+def morphology_candidates(
+    *,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    train_text: str,
+    limit: int = 64,
+) -> list[dict[str, Any]]:
+    example = parse_marked_infill(marked_text, tokenizer)
+    hole_len = example.hole_length
+    rows: list[dict[str, Any]] = []
+    left_match = re.search(r"[A-Za-z][A-Za-z']*$", example.before)
+    right_match = re.match(r"[A-Za-z']+", example.after)
+    left_tail = left_match.group(0) if left_match else ""
+    right_head = right_match.group(0) if right_match else ""
+    words = Counter(re.findall(r"[A-Za-z]+(?:'[A-Za-z]+)?", train_text))
+
+    for word, count in words.items():
+        if len(left_tail) >= 2 and word.lower().startswith(left_tail.lower()) and len(word) >= len(left_tail) + hole_len:
+            candidate = word[len(left_tail) : len(left_tail) + hole_len]
+            remainder = word[len(left_tail) + hole_len :]
+            right_match_len = _common_prefix(
+                [ord(char) for char in remainder.lower()],
+                [ord(char) for char in right_head.lower()],
+                min(len(remainder), len(right_head)),
+            )
+            if not right_head or right_match_len > 0:
+                rows.append(
+                    {
+                        "ids": tokenizer.encode(candidate, add_bos=False, add_eos=False),
+                        "predicted_hole": candidate,
+                        "source": "morphology_word_completion",
+                        "morphology_score": float(3.0 + right_match_len + math.log1p(count)),
+                    }
+                )
+        if len(right_head) >= 3 and word.lower().endswith(right_head.lower()) and len(word) >= hole_len + len(right_head):
+            candidate = word[len(word) - len(right_head) - hole_len : len(word) - len(right_head)]
+            if candidate:
+                rows.append(
+                    {
+                        "ids": tokenizer.encode(candidate, add_bos=False, add_eos=False),
+                        "predicted_hole": candidate,
+                        "source": "morphology_word_prefix",
+                        "morphology_score": float(2.0 + math.log1p(count)),
+                    }
+                )
+
+    if not left_tail and len(right_head) >= 4 and right_head[0].islower() and hole_len >= 2:
+        stem_len = hole_len - 1
+        prefix_counts: Counter[str] = Counter()
+        lower_words = Counter(word.lower() for word in words)
+        for word, count in words.items():
+            clean = re.sub(r"[^A-Za-z]", "", word).lower()
+            if len(clean) >= stem_len:
+                prefix_counts[clean[:stem_len]] += count
+        for stem, count in prefix_counts.items():
+            if not stem.isalpha() or count < 2:
+                continue
+            if count > 64:
+                continue
+            candidate = f"{stem}-"
+            plural_signal = lower_words[stem] + (2 * lower_words[f"{stem}s"]) + lower_words[f"{stem}es"]
+            rows.append(
+                {
+                    "ids": tokenizer.encode(candidate, add_bos=False, add_eos=False),
+                    "predicted_hole": candidate,
+                    "source": "morphology_hyphen_prefix",
+                    "morphology_score": float(2.5 + min(count, 64) / 32.0 + plural_signal),
+                }
+            )
+
+    filtered = [row for row in rows if len(row["ids"]) == hole_len]
+    deduped: dict[tuple[int, ...], dict[str, Any]] = {}
+    for row in sorted(filtered, key=lambda item: (-float(item["morphology_score"]), str(item["predicted_hole"]))):
+        key = tuple(int(token_id) for token_id in row["ids"])
+        if key not in deduped:
+            deduped[key] = row
+    return list(deduped.values())[: max(0, limit)]
+
+
 @torch.no_grad()
 def nearest_visible_case(
     *,
@@ -279,8 +360,11 @@ def retrieval_lattice_case(
     guidance: float,
     temperature: float,
     top_k: int,
+    train_text: str = "",
     visible_limit: int = 8,
     suture_weight: float = 2.0,
+    morphology_limit: int = 64,
+    morphology_weight: float = 1.0,
 ) -> dict[str, Any]:
     example = parse_marked_infill(marked_text, tokenizer)
     candidates: list[dict[str, Any]] = []
@@ -291,8 +375,25 @@ def retrieval_lattice_case(
                 "source": f"visible_{row['source']}",
                 "predicted_hole": row["predicted_hole"],
                 "suture_score": int(row["score"]),
+                "morphology_score": None,
             }
         )
+    if train_text:
+        for row in morphology_candidates(
+            tokenizer=tokenizer,
+            marked_text=marked_text,
+            train_text=train_text,
+            limit=morphology_limit,
+        ):
+            candidates.append(
+                {
+                    "ids": [int(token_id) for token_id in row["ids"]],
+                    "source": row["source"],
+                    "predicted_hole": row["predicted_hole"],
+                    "suture_score": None,
+                    "morphology_score": float(row["morphology_score"]),
+                }
+            )
     for strategy in ("unigram", "bridge"):
         row = guide_only_case(tokenizer=tokenizer, marked_text=marked_text, guide=guide, strategy=strategy)
         ids = tokenizer.encode(row["predicted_hole"], add_bos=False, add_eos=False)
@@ -304,6 +405,7 @@ def retrieval_lattice_case(
                 "source": strategy,
                 "predicted_hole": tokenizer.decode(ids),
                 "suture_score": None,
+                "morphology_score": None,
             }
         )
 
@@ -333,11 +435,17 @@ def retrieval_lattice_case(
         pred = repaired[example.hole_start : example.hole_end]
         target = example.target[example.hole_start : example.hole_end]
         suture_score = candidate["suture_score"]
-        combined_score = score + (float(suture_score) * suture_weight if suture_score is not None else 0.0)
+        morphology_score = candidate["morphology_score"]
+        combined_score = (
+            score
+            + (float(suture_score) * suture_weight if suture_score is not None else 0.0)
+            + (float(morphology_score) * morphology_weight if morphology_score is not None else 0.0)
+        )
         row = {
             "source": candidate["source"],
             "predicted_hole": tokenizer.decode(pred),
             "suture_score": suture_score,
+            "morphology_score": morphology_score,
             "diffusion_score": json_score(score),
             "diffusion_score_is_finite": math.isfinite(score),
             "combined_score": json_score(combined_score),
@@ -365,8 +473,9 @@ def retrieval_lattice_case(
         "selected_source": best_row["source"],
         "selected_candidate_score": json_score(best_score),
         "selected_candidate_score_is_finite": math.isfinite(best_score),
-        "selector": "diffusion_score_plus_suture_score",
+        "selector": "diffusion_score_plus_suture_and_morphology_score",
         "lattice_suture_weight": float(suture_weight),
+        "lattice_morphology_weight": float(morphology_weight),
         "candidate_summaries": scored_rows,
         "oracle_candidate_exact": any(bool(row["exact"]) for row in scored_rows),
     }
@@ -543,8 +652,11 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             guidance=args.guidance,
             temperature=args.temperature,
             top_k=args.top_k,
+            train_text=train_text,
             visible_limit=args.lattice_visible_candidates,
             suture_weight=args.lattice_suture_weight,
+            morphology_limit=args.lattice_morphology_candidates,
+            morphology_weight=args.lattice_morphology_weight,
         )
         lattice["target_hole_seen_in_train_split"] = lattice["target_hole"] in train_text
         retrieval_lattice_rows.append(lattice)
@@ -668,7 +780,9 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "require_unseen_hole": bool(args.require_unseen_hole),
             "candidate_count": int(args.candidates),
             "lattice_visible_candidates": int(args.lattice_visible_candidates),
+            "lattice_morphology_candidates": int(args.lattice_morphology_candidates),
             "lattice_suture_weight": float(args.lattice_suture_weight),
+            "lattice_morphology_weight": float(args.lattice_morphology_weight),
             "visible_context_adaptation_steps": int(args.adapt_visible_steps),
         },
         "masked_eval": masked,
@@ -725,7 +839,9 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--guidance", type=float, default=1.5)
     parser.add_argument("--schedule", choices=["entropy", "ribbon"], default="ribbon")
     parser.add_argument("--lattice-visible-candidates", type=int, default=8)
+    parser.add_argument("--lattice-morphology-candidates", type=int, default=64)
     parser.add_argument("--lattice-suture-weight", type=float, default=2.0)
+    parser.add_argument("--lattice-morphology-weight", type=float, default=1.0)
     parser.add_argument("--adapt-visible-steps", type=int, default=0)
     parser.add_argument("--adapt-batch-size", type=int, default=8)
     parser.add_argument("--adapt-learning-rate", type=float, default=1e-4)

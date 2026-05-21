@@ -37,6 +37,7 @@ The current checked-in checkpoint is intentionally not described as a strong lan
 - **Visible-context Suture TTA.** Optional test-time adaptation copies the checkpoint for one inference session, trains selected weights on synthetic holes made only from visible context, excludes hidden-target byte spans from synthetic targets, reports the visible-context hash and exclusion flag, then deletes the temporary weights.
 - **Nearest-visible repair baseline.** The benchmark now includes a suffix-array-style local retrieval adversary that searches only visible bytes on either side of the hole and scores exact left/right boundary sutures without joining across the hidden gap.
 - **Retrieval-lattice diffusion scoring.** The benchmark can expose top visible suture candidates plus bridge/unigram proposals, score them with leave-one-out denoiser probes, and select by diffusion score plus a boundary-suture prior. It reports both selected accuracy and whether the correct answer existed anywhere in the candidate lattice.
+- **Morphology lattice candidates.** The lattice now adds train-corpus word completions and hyphen-compound stems, so failures can be separated into "answer not generated" versus "answer generated but verifier rejected it."
 - **Corpus scaffold guidance.** An optional scratch n-gram guide can initialize a rough local scaffold, then the diffusion model edits masked holes. No external model or pretrained tokenizer is involved.
 - **Non-leaky held-out benchmark.** `helixdiff-bench` builds infill cases only from the validation split, trains the bridge guide only on the training split, and compares unigram, bridge-only, nearest-visible, retrieval-lattice, unguided model, bridge-guided model, visible-context-adapted model, and adapted bridge-guided variants.
 - **Scratch-only verifier.** `helixdiff.verify_scratch` scans code and checkpoints for common pretrained-model shortcuts.
@@ -287,7 +288,7 @@ The latest Tiny Shakespeare suture-curriculum runs are harsher and more useful:
 | 8-case repeat with `guidance=0.5` | `22.5%` | not yet measured | not yet measured | `18.75%` | not yet measured | stronger guide does not rescue it |
 | 4 unseen validation gaps, leak-hardened Suture TTA, `guidance=0.5` | `6.25%` | `50.0%` | `50.0%` | `0.0%` | `0.0%` | lattice matches retrieval; non-visible holes remain unsolved |
 
-A real public-quality checkpoint should beat both bridge-only and nearest-visible baselines on widened held-out spans and reach the stronger quality label before its samples are marketed as model capability. Right now, the correct next mechanism is candidate-lattice expansion for holes not recoverable from visible copying, plus a trained verifier rather than a fixed suture weight.
+A real public-quality checkpoint should beat both bridge-only and nearest-visible baselines on widened held-out spans and reach the stronger quality label before its samples are marketed as model capability. The newest unbenchmarked patch adds morphology candidates; the next proof run should check whether it increases oracle-in-lattice before claiming any accuracy lift.
 
 Benchmark JSON now includes checkpoint SHA-256 plus train/validation split SHA-256 hashes so proof artifacts can be tied to the exact evaluated bytes.
 

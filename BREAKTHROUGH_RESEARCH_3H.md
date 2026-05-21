@@ -134,6 +134,8 @@ The new nearest-visible baseline changed the research state. On the 4-case unsee
 
 The first retrieval-lattice probe exposed a sharper split. Pure diffusion scoring found the exact answer in the lattice for two cases but rejected those exact candidates. Adding a fixed boundary-suture prior selected the visible exact candidates and matched nearest-visible at `50.0%`. It still did not beat nearest-visible, because the other two holes did not have the answer in the visible candidate lattice.
 
+Next patch landed but is not yet full-benchmarked: train-corpus morphology candidates now add word completions and hyphen-compound stems to the lattice. A short candidate smoke confirms the `bat-` repair candidate enters the default lattice for `[[bat-]]fowling`; the expensive proof benchmark is intentionally deferred while the Mac is under heavy load.
+
 That kills the naive version of the breakthrough. Raw visible-context adaptation is not enough. The promising mutation is:
 
 **Retrieval-Lattice Diffusion**: generate a lattice of allowed local repair candidates from visible context, training split bridge guesses, byte-class/morphology completions, and sampled diffusion proposals; then use the diffusion model as a verifier/remask controller instead of asking it to invent every byte from scratch.
@@ -217,10 +219,10 @@ Under 700 words. Ranked moves only. No encouragement. Include the public claim b
 
 ## Current Call
 
-Suture TTA shipped and did not clear the stronger gate. Retrieval-lattice selection now matches nearest-visible but does not beat it. Do not spend the next loop pretending more raw micro-steps are the breakthrough. Build the missing candidate generators next:
+Suture TTA shipped and did not clear the stronger gate. Retrieval-lattice selection now matches nearest-visible but does not beat it. Do not spend the next loop pretending more raw micro-steps are the breakthrough. Finish proving the missing candidate generators next:
 
-1. add morphology/byte-class candidates for partial words like `Gabr[[iel']]s`;
-2. add hyphen/compound candidates for constructions like `[[bat-]]fowling`;
+1. rerun the 4-case proof benchmark when the machine is cool enough;
+2. add byte-class/name-suffix candidates for partial words like `Gabr[[iel']]s`;
 3. report oracle-in-lattice, selected accuracy, and failure category per case.
 
 Only call DocForge impressive after verifier-guided lattice selection beats nearest-visible and bridge-only on widened held-out spans. The public line stays severe: **Mac-local SOTA for visible-context document repair, not a general language model.**

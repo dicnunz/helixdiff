@@ -3,6 +3,7 @@ import unittest
 from helixdiff.bench import (
     make_marked_cases,
     model_quality_label,
+    morphology_candidates,
     nearest_visible_case,
     sha256_text,
     split_text,
@@ -67,6 +68,24 @@ class BenchTest(unittest.TestCase):
         )
         self.assertTrue(rows)
         self.assertNotEqual(rows[0]["predicted_hole"], "bc")
+
+    def test_morphology_candidates_include_word_completion_from_train_text(self) -> None:
+        rows = morphology_candidates(
+            tokenizer=ByteTokenizer(),
+            marked_text="And Gabr[[iel']]s pumps were bright",
+            train_text="Gabriel's horn sounded. Gabriel's name appears here.",
+            limit=8,
+        )
+        self.assertIn("iel'", {row["predicted_hole"] for row in rows})
+
+    def test_morphology_candidates_include_hyphen_prefix_from_train_prefixes(self) -> None:
+        rows = morphology_candidates(
+            tokenizer=ByteTokenizer(),
+            marked_text="then go a [[bat-]]fowling at night",
+            train_text="bats batter battle. bats batter battle. cats cater cattle.",
+            limit=16,
+        )
+        self.assertIn("bat-", {row["predicted_hole"] for row in rows})
 
 
 if __name__ == "__main__":

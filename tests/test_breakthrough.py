@@ -20,10 +20,12 @@ class BreakthroughPlanTests(unittest.TestCase):
         self.assertIn("strict_repair_lattice_proof", lane_names)
         self.assertIn("visible_reranker_oracle_smoke", lane_names)
         self.assertIn("gold_blind_bi_anchor_oracle", lane_names)
+        self.assertIn("frozen_selector_heldout_trial", lane_names)
         self.assertIn("visible_hole_reranker", lane_names)
-        self.assertFalse(plan["chatgpt_teammate_status"]["usable_this_run"])
-        self.assertIn("Transport closed", plan["chatgpt_teammate_status"]["blocker"])
-        self.assertIn("No GPT-5.5 Pro contribution", plan["chatgpt_teammate_status"]["claim"])
+        self.assertTrue(plan["chatgpt_teammate_status"]["usable_this_run"])
+        self.assertEqual(plan["chatgpt_teammate_status"]["model_mode"], "Extended Pro")
+        self.assertIn("chatgpt.com/c/", plan["chatgpt_teammate_status"]["conversation_url"])
+        self.assertIn("visible-reranker oracle smoke", plan["chatgpt_teammate_status"]["claim"])
 
     def test_top_lane_reuses_predeclared_recipe_and_gate(self) -> None:
         plan = build_breakthrough_plan()
@@ -59,6 +61,16 @@ class BreakthroughPlanTests(unittest.TestCase):
         self.assertIn("--lattice-bi-anchor-candidates 64", proof_commands)
         self.assertIn("--lattice-selector-margin-sweep 0,1,2,3,5", proof_commands)
         self.assertIn("--require-repair-proof-contract", proof_commands)
+
+    def test_heldout_selector_contract_lane_requires_ready_contract(self) -> None:
+        plan = build_breakthrough_plan()
+        lane = [lane for lane in plan["lanes"] if lane["name"] == "frozen_selector_heldout_trial"][0]
+        proof_commands = "\n".join(lane["proof_commands"])
+
+        self.assertTrue(lane["heavy_slot_required"])
+        self.assertIn("--lattice-selector-contract proof/selector_contract_strict_repair_8case.json", proof_commands)
+        self.assertIn("--lattice-require-selector-contract-ready", proof_commands)
+        self.assertIn("--json-out proof/bench_selector_contract_heldout_8case.json", proof_commands)
 
 
 if __name__ == "__main__":

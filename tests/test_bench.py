@@ -1,8 +1,10 @@
 import unittest
+from argparse import Namespace
 
 import torch
 
 from helixdiff.bench import (
+    apply_selector_contract_args,
     bi_anchor_gap_candidates,
     build_lattice_candidate_rows,
     calibrate_lattice_visible_reranker_on_visible_context,
@@ -701,6 +703,32 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(parse_positive_int_grid("6,32, 6,4"), [32, 6, 4])
         with self.assertRaises(ValueError):
             parse_positive_int_grid("8,0")
+
+    def test_apply_selector_contract_overrides_anchor_and_margin(self) -> None:
+        args = Namespace(
+            lattice_selector_contract="proof/selector_contract_smoke.json",
+            lattice_require_selector_contract_ready=False,
+            lattice_selector_anchor="surface",
+            lattice_selector_margin=0.0,
+        )
+        receipt = apply_selector_contract_args(args)
+
+        self.assertEqual(args.lattice_selector_anchor, "prior")
+        self.assertEqual(args.lattice_selector_margin, 3.0)
+        self.assertEqual(receipt["status"], "diagnostic_only")
+        self.assertEqual(receipt["selected"]["selector_anchor"], "prior")
+        self.assertEqual(len(receipt["sha256"]), 64)
+
+    def test_apply_selector_contract_can_require_ready(self) -> None:
+        args = Namespace(
+            lattice_selector_contract="proof/selector_contract_smoke.json",
+            lattice_require_selector_contract_ready=True,
+            lattice_selector_anchor="surface",
+            lattice_selector_margin=0.0,
+        )
+
+        with self.assertRaises(ValueError):
+            apply_selector_contract_args(args)
 
     def test_visible_self_calibration_cases_uses_only_visible_text(self) -> None:
         cases = visible_self_calibration_cases(

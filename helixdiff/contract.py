@@ -46,6 +46,42 @@ def load_calibration_objects(paths: Iterable[str | Path]) -> list[dict[str, Any]
     return calibrations
 
 
+def load_selector_contract(path: str | Path) -> dict[str, Any]:
+    contract = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(contract, dict):
+        raise ValueError("selector contract must be a JSON object")
+    if contract.get("kind") != "helixdiff_selector_contract":
+        raise ValueError("selector contract kind must be helixdiff_selector_contract")
+    return contract
+
+
+def selector_settings_from_contract(
+    contract: dict[str, Any],
+    *,
+    require_ready: bool = False,
+) -> dict[str, Any]:
+    if require_ready and not contract.get("ready_for_heldout"):
+        raise ValueError("selector contract is not ready_for_heldout")
+    selected = contract.get("selected")
+    if not isinstance(selected, dict):
+        raise ValueError("selector contract has no selected selector settings")
+    anchor = selected.get("selector_anchor")
+    if anchor not in {"prior", "surface", "visible_reranker"}:
+        raise ValueError("selector contract selected.selector_anchor is invalid")
+    try:
+        margin = float(selected["selector_margin"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError("selector contract selected.selector_margin is invalid") from exc
+    return {
+        "selector_anchor": str(anchor),
+        "selector_margin": margin,
+        "source": selected.get("source"),
+        "contract_id": contract.get("contract_id"),
+        "status": contract.get("status"),
+        "ready_for_heldout": bool(contract.get("ready_for_heldout")),
+    }
+
+
 def _format_float(value: float) -> str:
     return f"{float(value):g}"
 

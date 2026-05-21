@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from helixdiff.contract import build_selector_contract, load_calibration_objects
+from helixdiff.contract import build_selector_contract, load_calibration_objects, selector_settings_from_contract
 
 
 def _calibration(*, cases: int = 4, status: str = "candidate_anchor_margin") -> dict:
@@ -82,6 +82,16 @@ class SelectorContractTests(unittest.TestCase):
         self.assertTrue(contract["ready_for_heldout"])
         self.assertEqual(contract["calibrations"][0]["source_path"], str(path))
         self.assertEqual(len(contract["calibrations"][0]["source_sha256"]), 64)
+
+    def test_selector_settings_can_require_ready_contract(self) -> None:
+        ready = build_selector_contract([_calibration()], min_cases=4)
+        diagnostic = build_selector_contract([_calibration(cases=1)], min_cases=4)
+
+        settings = selector_settings_from_contract(ready, require_ready=True)
+        self.assertEqual(settings["selector_anchor"], "surface")
+        self.assertEqual(settings["selector_margin"], 3.0)
+        with self.assertRaises(ValueError):
+            selector_settings_from_contract(diagnostic, require_ready=True)
 
 
 if __name__ == "__main__":

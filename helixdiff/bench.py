@@ -14,6 +14,7 @@ from typing import Any
 import torch
 
 from .adapt import VisibleAdaptConfig, adapt_model_to_visible_context
+from .contract import load_selector_contract, selector_settings_from_contract
 from .data import ByteStream, load_text
 from .diffusion import corrupt_batch, masked_accuracy, masked_cross_entropy, restrict_logits_to_ids
 from .infill import parse_marked_infill, score_repair
@@ -877,6 +878,31 @@ def parse_positive_int_grid(value: str) -> list[int]:
             raise ValueError("grid values must be positive integers")
         values.append(number)
     return sorted(set(values), reverse=True)
+
+
+def apply_selector_contract_args(args: argparse.Namespace) -> dict[str, Any] | None:
+    contract_path = getattr(args, "lattice_selector_contract", None)
+    if not contract_path:
+        return None
+    contract = load_selector_contract(contract_path)
+    settings = selector_settings_from_contract(
+        contract,
+        require_ready=bool(getattr(args, "lattice_require_selector_contract_ready", False)),
+    )
+    args.lattice_selector_anchor = settings["selector_anchor"]
+    args.lattice_selector_margin = float(settings["selector_margin"])
+    return {
+        "path": str(contract_path),
+        "sha256": sha256_file(contract_path),
+        "contract_id": settings.get("contract_id"),
+        "status": settings.get("status"),
+        "ready_for_heldout": bool(settings.get("ready_for_heldout")),
+        "selected": {
+            "selector_anchor": settings["selector_anchor"],
+            "selector_margin": float(settings["selector_margin"]),
+            "source": settings.get("source"),
+        },
+    }
 
 
 def visible_self_calibration_cases(
@@ -2979,6 +3005,10 @@ def candidate_oracle_benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_morphology_weight": float(args.lattice_morphology_weight),
             "lattice_surface_weight": float(args.lattice_surface_weight),
             "lattice_selector_anchor": args.lattice_selector_anchor,
+            "lattice_selector_contract": getattr(args, "lattice_selector_contract_receipt", None),
+            "lattice_require_selector_contract_ready": bool(
+                getattr(args, "lattice_require_selector_contract_ready", False)
+            ),
             "lattice_local_surface_anchor_calibration": bool(args.lattice_local_surface_anchor_calibration),
             "lattice_apply_local_surface_anchor_calibration": bool(args.lattice_apply_local_surface_anchor_calibration),
             "lattice_local_surface_anchor_calibration_cases": int(args.lattice_local_surface_anchor_calibration_cases),
@@ -3225,6 +3255,10 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_verifier_top_k": int(args.lattice_verifier_top_k),
             "lattice_selector_margin": float(args.lattice_selector_margin),
             "lattice_selector_anchor": args.lattice_selector_anchor,
+            "lattice_selector_contract": getattr(args, "lattice_selector_contract_receipt", None),
+            "lattice_require_selector_contract_ready": bool(
+                getattr(args, "lattice_require_selector_contract_ready", False)
+            ),
             "lattice_local_surface_anchor_calibration": bool(args.lattice_local_surface_anchor_calibration),
             "lattice_apply_local_surface_anchor_calibration": bool(args.lattice_apply_local_surface_anchor_calibration),
             "lattice_local_surface_anchor_calibration_cases": int(args.lattice_local_surface_anchor_calibration_cases),
@@ -3314,6 +3348,15 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--lattice-verifier-top-k", type=int, default=0)
     parser.add_argument("--lattice-selector-margin", type=float, default=0.0)
     parser.add_argument("--lattice-selector-anchor", choices=["prior", "surface", "visible_reranker"], default="prior")
+    parser.add_argument(
+        "--lattice-selector-contract",
+        help="Apply a frozen helixdiff-selector-contract JSON before held-out benchmark scoring.",
+    )
+    parser.add_argument(
+        "--lattice-require-selector-contract-ready",
+        action="store_true",
+        help="Fail if --lattice-selector-contract is diagnostic-only instead of ready_for_heldout.",
+    )
     parser.add_argument("--lattice-selector-anchor-sweep", default="prior,surface")
     parser.add_argument("--lattice-selector-margin-sweep", default="0,1,2,3,5")
     parser.add_argument("--lattice-local-surface-anchor-calibration", action="store_true")
@@ -3338,6 +3381,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--adapt-train-scope", choices=["head", "last_block", "all"], default="last_block")
     parser.add_argument("--json-out")
     args = parser.parse_args(argv)
+    args.lattice_selector_contract_receipt = apply_selector_contract_args(args)
     report = candidate_oracle_benchmark(args) if args.candidate_oracle_only else benchmark(args)
     print(json.dumps(report, indent=2))
     if args.json_out:

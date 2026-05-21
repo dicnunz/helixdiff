@@ -147,6 +147,16 @@ def evaluate_repair_proof_contract(report: dict[str, Any]) -> dict[str, Any]:
     summary_case_count = int(lattice_summary.get("cases", 0)) if lattice_summary.get("cases") is not None else 0
     local_surface_cases = int(lattice_summary.get("local_surface_anchor_calibration_cases", 0) or 0)
     visible_reranker_cases = int(lattice_summary.get("visible_reranker_calibration_cases", 0) or 0)
+    selector_contract = case_filter.get("lattice_selector_contract")
+    selector_contract_ready = (
+        selector_contract is None
+        or (
+            isinstance(selector_contract, dict)
+            and selector_contract.get("ready_for_heldout") is True
+            and bool(selector_contract.get("contract_id"))
+            and bool(selector_contract.get("sha256"))
+        )
+    )
 
     checks = {
         "checkpoint_sha256_recorded": bool(report.get("checkpoint_sha256")),
@@ -190,6 +200,7 @@ def evaluate_repair_proof_contract(report: dict[str, Any]) -> dict[str, Any]:
             )
         ),
         "visible_reranker_calibration_reported": lattice_cases > 0 and visible_reranker_cases >= lattice_cases,
+        "selector_contract_ready_if_present": selector_contract_ready,
         "predeclared_strict_recipe_matched": bool(strict_recipe["passed"]),
     }
     missing = [name for name, passed in checks.items() if not passed]
@@ -214,6 +225,7 @@ def evaluate_repair_proof_contract(report: dict[str, Any]) -> dict[str, Any]:
                 "lattice_local_surface_anchor_calibration"
             ),
             "configured_visible_reranker_calibration": case_filter.get("lattice_visible_reranker_calibration"),
+            "configured_selector_contract": selector_contract,
         },
     }
 

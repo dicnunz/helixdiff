@@ -331,6 +331,17 @@ helixdiff-selector-contract proof/selector_margin_calibration_strict_repair_8cas
 
 `helixdiff-selector-contract` records the calibration file hash, source benchmark receipts, chosen anchor, chosen margin, frozen benchmark flags, missing readiness checks, and held-out requirements. `--require-ready` exits non-zero when the case count or recommendation status is still diagnostic, which is the intended behavior for tiny smokes. This makes the selector a predeclared artifact for the next held-out run instead of an in-sample tuning story.
 
+When a contract becomes ready, apply it by loading the JSON instead of retyping the tuned selector settings:
+
+```
+helixdiff-bench ... \
+  --lattice-selector-contract proof/selector_contract_strict_repair_8case.json \
+  --lattice-require-selector-contract-ready \
+  --json-out proof/bench_selector_contract_heldout_8case.json
+```
+
+The benchmark records the contract path, hash, id, readiness, and frozen anchor/margin in `case_filter.lattice_selector_contract`. The repair proof gate allows reports without a selector contract, but if a contract is present it must be `ready_for_heldout` and hash/id recorded before `--require-repair-proof-contract` can pass.
+
 The checked-in seed-corpus benchmark result is deliberately unforgiving:
 
 | Variant | Held-out span byte accuracy | Exact span match |

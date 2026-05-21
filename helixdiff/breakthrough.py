@@ -65,6 +65,15 @@ def build_breakthrough_plan() -> dict[str, Any]:
     calibrate_command = strict_recipe["shell_commands"]["calibrate"]
     selector_contract_command = strict_recipe["shell_commands"]["selector_contract"]
     gate_command = strict_recipe["shell_commands"]["gate"]
+    heldout_contract_command = benchmark_command.replace(
+        "--json-out proof/bench_strict_repair_lattice_8case.json",
+        (
+            "--seed 202 "
+            "--lattice-selector-contract proof/selector_contract_strict_repair_8case.json "
+            "--lattice-require-selector-contract-ready "
+            "--json-out proof/bench_selector_contract_heldout_8case.json"
+        ),
+    )
     lanes = [
         {
             "rank": 1,
@@ -110,6 +119,18 @@ def build_breakthrough_plan() -> dict[str, Any]:
         },
         {
             "rank": 4,
+            "name": "frozen_selector_heldout_trial",
+            "thesis": "A selector choice is not evidence until a separate benchmark loads it from a ready contract.",
+            "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
+            "repo_move": "Apply --lattice-selector-contract only after helixdiff-selector-contract is ready_for_heldout.",
+            "proof_commands": [heldout_contract_command],
+            "pass_condition": "held-out report records selector-contract id/hash and the repair gate accepts it",
+            "claim_if_passes": "predeclared selector contract improved held-out repair selection",
+            "kill_condition": "contract is diagnostic-only, missing hash/id, or held-out lift disappears",
+            "heavy_slot_required": True,
+        },
+        {
+            "rank": 5,
             "name": "visible_hole_reranker",
             "thesis": "The answer is often in a tiny top-k set; the breakthrough is selecting it without hidden leakage.",
             "source_ids": ["arxiv:2310.16834", "arxiv:2510.18114"],
@@ -131,7 +152,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": False,
         },
         {
-            "rank": 5,
+            "rank": 6,
             "name": "frequency_block_suture_curriculum",
             "thesis": "Mac-local training must spend scarce gradient signal on rare boundary bytes and local blocks.",
             "source_ids": ["arxiv:2503.09573", "aclanthology:2025.babylm-main.38"],
@@ -149,7 +170,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": True,
         },
         {
-            "rank": 6,
+            "rank": 7,
             "name": "latent_surface_signature",
             "thesis": "A tiny model needs cheap joint structure; surface-unit signatures can mimic some latent-channel benefits.",
             "source_ids": ["arxiv:2510.18114", "arxiv:2502.09992"],
@@ -171,9 +192,10 @@ def build_breakthrough_plan() -> dict[str, Any]:
         "source_refresh_date": SOURCE_REFRESH_DATE,
         "chatgpt_teammate_status": {
             "requested": True,
-            "usable_this_run": False,
-            "blocker": "Chrome/ChatGPT browser bridge returns Transport closed in this Codex runtime",
-            "claim": "No GPT-5.5 Pro contribution is claimed unless a live ChatGPT transcript is verified.",
+            "usable_this_run": True,
+            "model_mode": "Extended Pro",
+            "conversation_url": "https://chatgpt.com/c/6a0f1cf7-b734-83ea-afa1-1a92152682f1",
+            "claim": "Live ChatGPT teammate recommended the model-free visible-reranker oracle smoke before heavy scoring.",
         },
         "claim_boundary": CLAIM_BOUNDARY,
         "current_best_move": "visible_reranker_oracle_smoke",

@@ -60,6 +60,9 @@ HelixDiff is not a clone of one paper. It is a compact implementation inspired b
 - Trainability of MDMs via Blockwise Locality, arXiv `2604.24832`: the warning that random-masking MDMs can be unstable and that locality-aware blockwise models are a plausible path out.
 - Latent-Augmented Discrete Diffusion, arXiv `2510.18114`: the few-step generation lesson that factored reverse transitions lose cross-token structure and need auxiliary joint signals.
 - CoDD, arXiv `2603.00045`: coupled discrete-diffusion decoding as a warning that independent token repair can be too weak.
+- Unlocking Prompt Infilling Capability for dLMs, arXiv `2604.03677`: masking practice itself can unlock infilling, so HelixDiff treats full-context suture masking as a core mechanism rather than a data-loader detail.
+- DreamOn, arXiv `2602.01326`: fixed-length masked canvases are a practical infilling blocker. HelixDiff's current public claim stays fixed-span visible-context repair until a variable-length gate exists.
+- Scaling Beyond Masked Diffusion Language Models, arXiv `2602.15014`: perplexity alone can mislead across diffusion families, so HelixDiff reports repair accuracy, baselines, and speed-quality tradeoffs.
 
 The honest scale boundary matters: current public diffusion-LM work is measured in billions of parameters and trillions of tokens. HelixDiff is not trying to fake that on a laptop. It is trying to make the strongest small, inspectable, from-scratch diffusion-LM system that a Mac can train and a GitHub reader can reproduce.
 
@@ -327,7 +330,9 @@ The checked-in receipt currently has `useful_ratchet=false`, so that claim gate 
 
 There is also an experimental `proxy_geometry_mode: target_retrieval` path. It redacts the target bytes, builds the target lattice anyway, and chooses visible-only proxy masks whose candidate-source geometry looks closest to that redacted target lattice before any target metric is computed. That is a sharper selector idea than boundary matching, but the current smoke correctly fails it because pseudo-heldout top-4 does not beat shuffle. It stays a falsified diagnostic lane until that check turns green.
 
-The newer `proxy_geometry_mode: target_shadow` path is stricter: it computes a label-free target lattice fingerprint, including source diversity, selector disagreement, prior entropy, prior top-gap, pairwise candidate edit distance, and duplicate-source pressure, then picks visible-only pseudo masks whose own fingerprints are closest while avoiding the target anchor window. This is the current best proxy-calibration idea from the Extended Pro teammate, but it is not promoted either: the smoke sets `contract_ready=false` until shadow heldout beats shuffle and avoids prior harm.
+The newer `proxy_geometry_mode: target_shadow` path is stricter: it computes a label-free target lattice fingerprint, including source diversity, selector disagreement, prior entropy, prior top-gap, pairwise candidate edit distance, and duplicate-source pressure, then picks visible-only pseudo masks whose own fingerprints are closest while avoiding the target anchor window. This is the current best proxy-calibration mutation from local proof work plus a prior recorded teammate note, but it is not promoted either: the smoke sets `contract_ready=false` until shadow heldout beats shuffle and avoids prior harm. Current ChatGPT/GPT-5.5 Pro browser access is blocked by the Chrome bridge in this runtime, so no fresh teammate contribution is claimed here.
+
+Current canvas boundary: HelixDiff's claim target is fixed-span visible-context repair. DreamOn-style variable-length infilling is a separate future gate, not something the current benchmark proves.
 
 ```
 helixdiff-proxy-mask-selector-contract-smoke \

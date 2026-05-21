@@ -50,6 +50,30 @@ DIFFUSION_LM_SOURCES: list[dict[str, str]] = [
         "url": "https://aclanthology.org/2025.babylm-main.38.pdf",
         "usable_signal": "data-constrained diffusion training can prioritize rare or hard tokens without leaving the diffusion frame",
     },
+    {
+        "id": "arxiv:2604.03677",
+        "title": "Unlocking Prompt Infilling Capability for Diffusion Language Models",
+        "url": "https://arxiv.org/abs/2604.03677",
+        "usable_signal": "full-sequence masking practice can unlock infilling; HelixDiff's suture curriculum should treat masking policy as a first-class lever",
+    },
+    {
+        "id": "arxiv:2602.01326",
+        "title": "DreamOn: Diffusion Language Models For Code Infilling Beyond Fixed-size Canvas",
+        "url": "https://arxiv.org/abs/2602.01326",
+        "usable_signal": "fixed-length canvases are a known practical infilling blocker; HelixDiff must disclose fixed-span limits until variable-length repair is implemented",
+    },
+    {
+        "id": "arxiv:2602.15014",
+        "title": "Scaling Beyond Masked Diffusion Language Models",
+        "url": "https://arxiv.org/abs/2602.15014",
+        "usable_signal": "perplexity is not enough across diffusion families; narrow claims should report repair accuracy, baselines, and speed-quality tradeoffs",
+    },
+    {
+        "id": "arxiv:2506.23529",
+        "title": "When Test-Time Adaptation Meets Self-Supervised Models",
+        "url": "https://arxiv.org/abs/2506.23529",
+        "usable_signal": "test-time adaptation on self-supervised signals needs an explicit protocol and collaboration/consistency checks, not blind local updates",
+    },
 ]
 
 
@@ -178,9 +202,27 @@ def build_breakthrough_plan() -> dict[str, Any]:
         },
         {
             "rank": 7,
+            "name": "prompt_canvas_curriculum",
+            "thesis": "The next training breakthrough is not just more masking; it is matching the masking canvas to visible-context repair.",
+            "source_ids": ["arxiv:2604.03677", "arxiv:2602.01326", "arxiv:2602.15014"],
+            "repo_move": (
+                "Keep the public benchmark fixed-span for now, then add a separate variable-length canvas gate before claiming "
+                "code infilling or general flexible infill. Inside fixed-span repair, continue optimizing full-context suture masking."
+            ),
+            "proof_commands": [
+                "uv run helixdiff-breakthrough-plan --json",
+                "uv run helixdiff-proof-recipe --json",
+            ],
+            "pass_condition": "release plan discloses fixed-length canvas limits and the proof recipe reports repair accuracy against baselines, not perplexity alone",
+            "claim_if_passes": "fixed-span visible-context repair plan is source-backed and canvas-boundary-aware",
+            "kill_condition": "any README/release language claims flexible-length infilling, code-infilling SOTA, or broad diffusion-LM quality without a variable-length gate",
+            "heavy_slot_required": False,
+        },
+        {
+            "rank": 8,
             "name": "frequency_block_suture_curriculum",
             "thesis": "Mac-local training must spend scarce gradient signal on rare boundary bytes and local blocks.",
-            "source_ids": ["arxiv:2503.09573", "aclanthology:2025.babylm-main.38"],
+            "source_ids": ["arxiv:2503.09573", "aclanthology:2025.babylm-main.38", "arxiv:2604.03677"],
             "repo_move": (
                 "Add a next config that combines block-local corruption, boundary-pinned suture spans, "
                 "and frequency-aware sampling for rare span-edge bytes."
@@ -195,7 +237,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "heavy_slot_required": True,
         },
         {
-            "rank": 8,
+            "rank": 9,
             "name": "latent_surface_signature",
             "thesis": "A tiny model needs cheap joint structure; surface-unit signatures can mimic some latent-channel benefits.",
             "source_ids": ["arxiv:2510.18114", "arxiv:2502.09992"],
@@ -217,16 +259,16 @@ def build_breakthrough_plan() -> dict[str, Any]:
         "source_refresh_date": SOURCE_REFRESH_DATE,
         "chatgpt_teammate_status": {
             "requested": True,
-            "usable_this_run": True,
-            "model_mode": "Extended Pro",
-            "conversation_url": "https://chatgpt.com/c/6a0f1cf7-b734-83ea-afa1-1a92152682f1",
-            "latest_request": "fresh Extended Pro critique for target-shadow proxy calibration",
-            "latest_response_status": "answered",
-            "latest_recommendation": "target-shadow proxy calibration",
-            "blocker": None,
+            "usable_this_run": False,
+            "model_mode": "unverified_current_runtime",
+            "conversation_url": None,
+            "latest_request": "fresh GPT-5.5 Pro teammate re-probe for target-shadow proxy calibration",
+            "latest_response_status": "blocked",
+            "latest_recommendation": None,
+            "blocker": "node_repl/js Transport closed before the Chrome browser-client could list ChatGPT tabs",
             "claim": (
-                "Extended Pro recommended target-shadow proxy calibration: match visible pseudo masks "
-                "to the redacted target lattice fingerprint before freezing a selector."
+                "No fresh GPT-5.5 Pro contribution is claimed in this run; current work proceeds from "
+                "local proofs, source-backed constraints, and recorded prior notes only."
             ),
             "recorded_prior_note": {
                 "model_mode": "Extended Pro",
@@ -235,7 +277,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
                     "Recorded prior note: test target-shadow proxy calibration after the proxy-mask "
                     "selector failed to transfer from generic visible pseudo holes."
                 ),
-                "verification_status": "current_chrome_readback_reverified_url",
+                "verification_status": "prior_recorded_note_not_reverified_current_runtime",
             },
         },
         "claim_boundary": CLAIM_BOUNDARY,
@@ -249,6 +291,7 @@ def build_breakthrough_plan() -> dict[str, Any]:
             "frozen visible context preserved exactly",
             "bridge-only and nearest-visible baselines reported",
             "proxy-mask receipts cannot be cited as target-lift evidence unless --require-useful-ratchet passes",
+            "fixed-length canvas limits disclosed until a variable-length repair gate exists",
             "global model-quality language forbidden unless helixdiff-gate model_quality_passed is true",
         ],
     }

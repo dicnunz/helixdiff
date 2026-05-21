@@ -147,7 +147,7 @@ def guide_only_case(
     pred = repaired[example.hole_start : example.hole_end]
     target = example.target[example.hole_start : example.hole_end]
     byte_accuracy = float((pred == target).float().mean().item()) if target.numel() else 0.0
-    return {
+    result = {
         "marked_text": marked_text,
         "target_hole": example.hole,
         "predicted_hole": tokenizer.decode(pred),
@@ -157,6 +157,7 @@ def guide_only_case(
         "frozen_context_unchanged": bool((repaired[example.frozen] == example.target[example.frozen]).all().item()),
         "strategy": strategy,
     }
+    return result
 
 
 def _common_suffix(left: list[int], right: list[int], limit: int) -> int:
@@ -708,6 +709,22 @@ def score_lattice_verifier(
     return sum(finite_scores) / len(finite_scores), scores
 
 
+def classify_selector_effect(*, raw_best_exact: bool, anchor_exact: bool, margin_applied: bool) -> str:
+    if margin_applied:
+        if anchor_exact and not raw_best_exact:
+            return "margin_rescued_exact_anchor"
+        if raw_best_exact and not anchor_exact:
+            return "margin_blocked_exact_raw"
+        if anchor_exact:
+            return "margin_kept_exact_anchor"
+        return "margin_kept_prior_anchor"
+    if raw_best_exact:
+        return "raw_verifier_selected_exact"
+    if anchor_exact:
+        return "raw_verifier_overrode_exact_anchor"
+    return "raw_verifier_selected_nonexact"
+
+
 def select_lattice_row_with_margin(
     scored_options: list[tuple[float, torch.Tensor, dict[str, Any]]],
     *,
@@ -719,6 +736,8 @@ def select_lattice_row_with_margin(
     anchor = scored_options[0]
     margin_applied = selector_margin > 0 and raw_best is not anchor and raw_best[0] < anchor[0] + selector_margin
     selected = anchor if margin_applied else raw_best
+    raw_best_exact = bool(raw_best[2].get("exact", False))
+    anchor_exact = bool(anchor[2].get("exact", False))
     return (
         selected[0],
         selected[1],
@@ -726,16 +745,36 @@ def select_lattice_row_with_margin(
         {
             "selector_margin": float(selector_margin),
             "selector_margin_applied": bool(margin_applied),
+            "selector_effect": classify_selector_effect(
+                raw_best_exact=raw_best_exact,
+                anchor_exact=anchor_exact,
+                margin_applied=bool(margin_applied),
+            ),
             "raw_best_hole": raw_best[2]["predicted_hole"],
             "raw_best_score": json_score(raw_best[0]),
-            "raw_best_exact": bool(raw_best[2].get("exact", False)),
+            "raw_best_exact": raw_best_exact,
             "raw_best_byte_accuracy": float(raw_best[2].get("byte_accuracy", 0.0)),
             "anchor_hole": anchor[2]["predicted_hole"],
             "anchor_score": json_score(anchor[0]),
-            "anchor_exact": bool(anchor[2].get("exact", False)),
+            "anchor_exact": anchor_exact,
             "anchor_byte_accuracy": float(anchor[2].get("byte_accuracy", 0.0)),
         },
     )
+
+
+def classify_retrieval_lattice_outcome(row: dict[str, Any]) -> str:
+    if row.get("exact"):
+        return "selected_exact"
+    if not row.get("oracle_candidate_exact"):
+        return "oracle_missing_from_lattice"
+    if not row.get("oracle_candidate_exact_in_scored_set"):
+        return "oracle_outside_scored_set"
+    selector_effect = row.get("selector_effect")
+    if selector_effect == "raw_verifier_overrode_exact_anchor":
+        return "raw_verifier_overrode_exact_anchor"
+    if selector_effect == "margin_blocked_exact_raw":
+        return "margin_blocked_exact_raw"
+    return "scored_exact_not_selected"
 
 
 def lattice_oracle_case(
@@ -828,7 +867,7 @@ def nearest_visible_case(
     pred = repaired[example.hole_start : example.hole_end]
     target = example.target[example.hole_start : example.hole_end]
     byte_accuracy = float((pred == target).float().mean().item()) if target.numel() else 0.0
-    return {
+    result = {
         "marked_text": marked_text,
         "target_hole": example.hole,
         "predicted_hole": tokenizer.decode(pred),
@@ -841,6 +880,7 @@ def nearest_visible_case(
         "nearest_visible_score": int(candidate["score"]),
         "nearest_visible_context_window": int(context_window),
     }
+    return result
 
 
 @torch.no_grad()
@@ -937,7 +977,7 @@ def retrieval_lattice_case(
         selector_margin=selector_margin,
     )
     pred = best_repaired[example.hole_start : example.hole_end]
-    return {
+    result = {
         "marked_text": marked_text,
         "target_hole": example.hole,
         "predicted_hole": tokenizer.decode(pred),
@@ -979,6 +1019,8 @@ def retrieval_lattice_case(
         "oracle_candidate_exact": prior_exact_rank is not None,
         "oracle_candidate_exact_in_scored_set": oracle_exact_in_scored_set,
     }
+    result["outcome_category"] = classify_retrieval_lattice_outcome(result)
+    return result
 
 
 @torch.no_grad()
@@ -1107,11 +1149,17 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "selector_margin_applied_rate": 0.0,
                 "avg_scored_candidate_count": 0.0,
                 "avg_prior_exact_rank": None,
+                "outcome_categories": {},
+                "selector_effects": {},
+                "margin_rescued_exact_rate": 0.0,
+                "raw_verifier_overrode_exact_anchor_rate": 0.0,
             }
         )
         return summary
 
     prior_rank_rows = [row for row in rows if row.get("prior_exact_rank") is not None]
+    outcome_categories = Counter(str(row.get("outcome_category", "unknown")) for row in rows)
+    selector_effects = Counter(str(row.get("selector_effect", "unknown")) for row in rows)
     summary.update(
         {
             "oracle_candidate_exact_rate": sum(1.0 for row in rows if row.get("oracle_candidate_exact")) / len(rows),
@@ -1131,6 +1179,16 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 if prior_rank_rows
                 else None
             ),
+            "outcome_categories": dict(sorted(outcome_categories.items())),
+            "selector_effects": dict(sorted(selector_effects.items())),
+            "margin_rescued_exact_rate": sum(
+                1.0 for row in rows if row.get("selector_effect") == "margin_rescued_exact_anchor"
+            )
+            / len(rows),
+            "raw_verifier_overrode_exact_anchor_rate": sum(
+                1.0 for row in rows if row.get("selector_effect") == "raw_verifier_overrode_exact_anchor"
+            )
+            / len(rows),
         }
     )
     return summary

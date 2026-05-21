@@ -30,8 +30,8 @@
     "visible_context_adaptation_steps": 0
   },
   "masked_eval": {
-    "loss": 3.0925819873809814,
-    "masked_accuracy": 0.12727272510528564,
+    "loss": 3.2859458923339844,
+    "masked_accuracy": 0.1875,
     "mask_rate": 0.5,
     "batches": 1,
     "batch_size": 2
@@ -121,7 +121,15 @@
         "anchor_exact_rate": 1.0,
         "selector_margin_applied_rate": 1.0,
         "avg_scored_candidate_count": 4.0,
-        "avg_prior_exact_rank": 0.0
+        "avg_prior_exact_rank": 0.0,
+        "outcome_categories": {
+          "selected_exact": 1
+        },
+        "selector_effects": {
+          "margin_rescued_exact_anchor": 1
+        },
+        "margin_rescued_exact_rate": 1.0,
+        "raw_verifier_overrode_exact_anchor_rate": 0.0
       },
       "cases": [
         {
@@ -139,6 +147,7 @@
           "selector": "diffusion_score_plus_structural_prior_topk",
           "selector_margin": 3.0,
           "selector_margin_applied": true,
+          "selector_effect": "margin_rescued_exact_anchor",
           "raw_best_hole": "Nath",
           "raw_best_score": 3.3911870861053472,
           "raw_best_exact": false,
@@ -1389,6 +1398,7 @@
           ],
           "oracle_candidate_exact": true,
           "oracle_candidate_exact_in_scored_set": true,
+          "outcome_category": "selected_exact",
           "target_hole_seen_in_train_split": false
         }
       ]
@@ -1424,7 +1434,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 0.1378160839958582
+          "elapsed_seconds": 0.10894479200942442
         }
       ]
     },
@@ -1459,7 +1469,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 2.1267633749812376,
+          "elapsed_seconds": 1.7965224159997888,
           "target_hole_seen_in_train_split": false
         }
       ]

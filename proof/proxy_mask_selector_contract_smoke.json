@@ -1,6 +1,6 @@
 {
   "proof_name": "proxy_mask_selector_contract_smoke",
-  "commit": "86b4661",
+  "commit": "6968b23",
   "git_dirty": false,
   "model_load": false,
   "device": "cpu",
@@ -415,5 +415,12 @@
     ]
   },
   "claim_boundary": "model-free proxy-mask selector contract smoke only; target metrics are after-freeze diagnostics, not a model SOTA claim",
-  "verdict": "pass"
+  "verdict": "pass",
+  "claim_gate": {
+    "require_useful_ratchet": false,
+    "passed": true,
+    "public_target_lift_claim_allowed": false,
+    "blocker": null,
+    "claim_boundary": "Contract readiness only: a proxy-mask selector contract can be ready for held-out use without allowing any public target-lift or SOTA-style claim."
+  }
 }

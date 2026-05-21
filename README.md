@@ -284,6 +284,8 @@ helixdiff-bench \
 
 For the next model-scored run, use `--lattice-prior-rerank-top-k 4 --lattice-verifier-mode dual --lattice-verifier-top-k 0 --lattice-selector-margin 3.0` to score only the small structural-prior set that the oracle proved contains the answer on this slice. `dual` averages leave-one-out suture scoring with full-hole reconstruction scoring, verifier top-k `0` keeps scoring from masking out candidate bytes that the sampler would not normally pick, and the selector margin prevents a weak diffusion preference from overriding the structural-prior anchor. The summary now separates raw-verifier exact rate, prior-anchor exact rate, scored-top-k oracle coverage, margin activation rate, selector effects, outcome categories, anchor-margin gaps, and a counterfactual selector-margin sweep from the same scored candidates, so the run tells you whether to train the verifier, tune the margin, or widen the lattice instead of hiding all failures inside one accuracy number.
 
+`--lattice-local-prior-calibration` adds a self-supervised diagnostic pass: for each case, HelixDiff hides same-length spans inside the already visible context, sweeps structural prior weights, and records which weights would best recover those known local holes. This does **not** change ranking unless `--lattice-apply-local-prior-calibration` is explicitly set. The checked-in 4-case oracle proof keeps it diagnostic-only because one local proposal would have pushed `y-ca` out of the top-4 rerank set if applied; top-k oracle coverage is more valuable than a clever but unproven local tweak.
+
 After a scored run, turn the sweep into a calibration receipt:
 
 ```

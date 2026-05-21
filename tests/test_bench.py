@@ -4,12 +4,15 @@ import torch
 
 from helixdiff.bench import (
     build_lattice_candidate_rows,
+    calibrate_lattice_prior_weights_on_visible_context,
     classify_retrieval_lattice_outcome,
     classify_selector_effect,
+    evaluate_prior_weight_combo,
     lattice_oracle_case,
     make_marked_cases,
     model_quality_label,
     morphology_candidates,
+    parse_prior_weight_grid,
     nearest_visible_case,
     parse_selector_margin_sweep,
     rank_lattice_candidates_by_prior,
@@ -22,6 +25,7 @@ from helixdiff.bench import (
     summarize_selector_margin_sweep,
     sha256_text,
     split_text,
+    visible_self_calibration_cases,
     visible_suture_candidates,
 )
 from helixdiff.ngram import BigramGuide
@@ -318,6 +322,87 @@ class BenchTest(unittest.TestCase):
 
     def test_parse_selector_margin_sweep_dedupes_and_sorts(self) -> None:
         self.assertEqual(parse_selector_margin_sweep("3, 0,1,3,,2"), [0.0, 1.0, 2.0, 3.0])
+
+    def test_parse_prior_weight_grid_dedupes_and_rejects_negative(self) -> None:
+        self.assertEqual(parse_prior_weight_grid("4, 1, 0.5,1"), [0.5, 1.0, 4.0])
+        with self.assertRaises(ValueError):
+            parse_prior_weight_grid("1,-1")
+
+    def test_visible_self_calibration_cases_uses_only_visible_text(self) -> None:
+        cases = visible_self_calibration_cases(
+            "abcdefghij[[KLMN]]opqrstuvwx",
+            span_chars=2,
+            context_chars=3,
+            limit=4,
+        )
+        self.assertEqual(len(cases), 4)
+        self.assertTrue(all("[[K" not in case and "MN]]" not in case for case in cases))
+        self.assertTrue(all(case.count("[[") == 1 and case.count("]]") == 1 for case in cases))
+
+    def test_evaluate_prior_weight_combo_reports_exact_rank_rates(self) -> None:
+        tokenizer = ByteTokenizer()
+        train_text = "Gabriel's trumpet and Michael's cloak are nearby."
+        guide = BigramGuide.from_text(train_text, tokenizer)
+        summary = evaluate_prior_weight_combo(
+            tokenizer=tokenizer,
+            calibration_cases=["And [[Gabr]]iel's pumps were bright"],
+            guide=guide,
+            train_text=train_text,
+            visible_limit=4,
+            morphology_limit=16,
+            surface_limit=8,
+            suture_weight=2.0,
+            morphology_weight=1.0,
+            surface_weight=1.0,
+        )
+        self.assertEqual(summary["cases"], 1)
+        self.assertEqual(summary["oracle_exact_rate"], 1.0)
+        self.assertEqual(summary["prior_top1_exact_rate"], 1.0)
+
+    def test_local_prior_calibration_selects_visible_context_weights(self) -> None:
+        tokenizer = ByteTokenizer()
+        train_text = "Gabriel's trumpet and Michael's cloak are nearby."
+        guide = BigramGuide.from_text(train_text, tokenizer)
+        report = calibrate_lattice_prior_weights_on_visible_context(
+            tokenizer=tokenizer,
+            marked_text="abc Gabriel's pump [[Gabr]]iel's cloak xyz",
+            guide=guide,
+            train_text=train_text,
+            visible_limit=4,
+            morphology_limit=16,
+            surface_limit=8,
+            default_suture_weight=2.0,
+            default_morphology_weight=1.0,
+            default_surface_weight=1.0,
+            weight_grid=[0.5, 1.0, 2.0],
+            calibration_cases=4,
+            calibration_context_chars=4,
+        )
+        self.assertEqual(report["status"], "selected_visible_context_weights")
+        self.assertEqual(report["calibration_cases"], 4)
+        self.assertIn("selected_summary", report)
+
+    def test_lattice_oracle_records_local_calibration_without_applying_by_default(self) -> None:
+        tokenizer = ByteTokenizer()
+        train_text = "Gabriel's trumpet and Michael's cloak are nearby."
+        row = lattice_oracle_case(
+            tokenizer=tokenizer,
+            marked_text="abc Gabriel's pump [[Gabr]]iel's cloak xyz",
+            guide=BigramGuide.from_text(train_text, tokenizer),
+            train_text=train_text,
+            visible_limit=4,
+            morphology_limit=16,
+            surface_limit=8,
+            local_prior_calibration=True,
+            prior_weight_grid=[0.5, 1.0, 2.0],
+            local_prior_calibration_cases=4,
+            local_prior_calibration_context_chars=4,
+        )
+        self.assertFalse(row["local_prior_calibration"]["applied"])
+        self.assertEqual(row["effective_lattice_suture_weight"], 2.0)
+        self.assertEqual(row["effective_lattice_morphology_weight"], 1.0)
+        self.assertEqual(row["effective_lattice_surface_weight"], 1.0)
+        self.assertIsNotNone(row["local_prior_calibration_suggested_prior_exact_rank"])
 
     def test_retrieval_lattice_outcome_taxonomy_names_actionable_misses(self) -> None:
         self.assertEqual(

@@ -231,6 +231,9 @@ Suture TTA shipped and did not clear the stronger gate. Retrieval-lattice select
 2. rerank only the structural-prior top-4 candidates with `--lattice-prior-rerank-top-k 4 --lattice-verifier-mode dual --lattice-verifier-top-k 0 --lattice-selector-margin 3.0`;
 3. sweep selector margins with `--lattice-selector-margin-sweep` from the same scored candidates so margin calibration is measured rather than guessed;
 4. run `helixdiff-calibrate-selector` on the resulting benchmark JSON to pick the lowest safe observed margin frontier without pretending calibration is held-out proof;
-5. report oracle-in-lattice, prior top-k coverage, raw-verifier accuracy, anchor accuracy, margin activation, selected accuracy, and failure category per case.
+5. keep `--lattice-local-prior-calibration` diagnostic-only until a separate proof shows the visible-context weight proposal does not reduce top-4 oracle coverage;
+6. report oracle-in-lattice, prior top-k coverage, raw-verifier accuracy, anchor accuracy, margin activation, selected accuracy, and failure category per case.
+
+The first local-prior proof is useful because it failed safely. It records per-case visible-context weight proposals in `proof/lattice_oracle_4case_local_calibration.json`, keeps `applied=false`, and preserves the original top-4 oracle rate at `100%`. This prevents a seductive Mac-local trick from silently making the reranker set worse; the breakthrough standard is not novelty, it is novelty that survives the oracle.
 
 Only call DocForge impressive after verifier-guided lattice selection beats nearest-visible and bridge-only on widened held-out spans. The public line stays severe: **Mac-local SOTA for visible-context document repair, not a general language model.**

@@ -739,6 +739,232 @@ def parse_selector_margin_sweep(value: str) -> list[float]:
     return sorted(set(margins))
 
 
+def parse_prior_weight_grid(value: str) -> list[float]:
+    weights: list[float] = []
+    for chunk in value.split(","):
+        stripped = chunk.strip()
+        if not stripped:
+            continue
+        weight = float(stripped)
+        if weight < 0:
+            raise ValueError("prior weights must be non-negative")
+        weights.append(weight)
+    return sorted(set(weights))
+
+
+def visible_self_calibration_cases(
+    marked_text: str,
+    *,
+    span_chars: int,
+    context_chars: int = 12,
+    limit: int = 12,
+) -> list[str]:
+    before, rest = marked_text.split("[[", 1)
+    _, after = rest.split("]]", 1)
+    rows: list[tuple[int, str]] = []
+    for side, segment in (("before", before), ("after", after)):
+        if len(segment) < span_chars + 2:
+            continue
+        local_context = max(1, min(context_chars, (len(segment) - span_chars) // 2))
+        if len(segment) < (local_context * 2) + span_chars:
+            continue
+        for start in range(local_context, len(segment) - local_context - span_chars + 1):
+            hole = segment[start : start + span_chars]
+            if "\n" in hole or not hole.strip():
+                continue
+            left = segment[start - local_context : start]
+            right = segment[start + span_chars : start + span_chars + local_context]
+            if not left or not right:
+                continue
+            boundary_distance = (len(segment) - start) if side == "before" else start
+            rows.append((int(boundary_distance), f"{left}[[{hole}]]{right}"))
+    deduped: dict[str, int] = {}
+    for distance, marked in sorted(rows, key=lambda item: (item[0], item[1])):
+        deduped.setdefault(marked, distance)
+    return list(deduped.keys())[: max(0, limit)]
+
+
+def exact_rank_for_prior_weights(
+    *,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    guide: BigramGuide,
+    train_text: str,
+    visible_limit: int,
+    morphology_limit: int,
+    surface_limit: int,
+    suture_weight: float,
+    morphology_weight: float,
+    surface_weight: float,
+) -> tuple[int | None, int]:
+    example = parse_marked_infill(marked_text, tokenizer)
+    target = example.target[example.hole_start : example.hole_end]
+    ranked = rank_lattice_candidates_by_prior(
+        build_lattice_candidate_rows(
+            tokenizer=tokenizer,
+            marked_text=marked_text,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+        ),
+        suture_weight=suture_weight,
+        morphology_weight=morphology_weight,
+        surface_weight=surface_weight,
+    )
+    ranks = [
+        int(candidate["prior_rank"])
+        for candidate in ranked
+        if torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)
+    ]
+    return (min(ranks) if ranks else None), len(ranked)
+
+
+def evaluate_prior_weight_combo(
+    *,
+    tokenizer: ByteTokenizer,
+    calibration_cases: list[str],
+    guide: BigramGuide,
+    train_text: str,
+    visible_limit: int,
+    morphology_limit: int,
+    surface_limit: int,
+    suture_weight: float,
+    morphology_weight: float,
+    surface_weight: float,
+) -> dict[str, Any]:
+    ranks: list[int | None] = []
+    candidate_counts: list[int] = []
+    for marked in calibration_cases:
+        rank, candidate_count = exact_rank_for_prior_weights(
+            tokenizer=tokenizer,
+            marked_text=marked,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+            suture_weight=suture_weight,
+            morphology_weight=morphology_weight,
+            surface_weight=surface_weight,
+        )
+        ranks.append(rank)
+        candidate_counts.append(candidate_count)
+    exact_ranks = [rank for rank in ranks if rank is not None]
+    cases = len(calibration_cases)
+    return {
+        "suture_weight": float(suture_weight),
+        "morphology_weight": float(morphology_weight),
+        "surface_weight": float(surface_weight),
+        "cases": cases,
+        "oracle_exact_rate": (len(exact_ranks) / cases) if cases else 0.0,
+        "prior_top1_exact_rate": (sum(1 for rank in exact_ranks if rank == 0) / cases) if cases else 0.0,
+        "prior_top4_exact_rate": (sum(1 for rank in exact_ranks if rank < 4) / cases) if cases else 0.0,
+        "avg_prior_exact_rank": (sum(float(rank) for rank in exact_ranks) / len(exact_ranks)) if exact_ranks else None,
+        "avg_candidate_count": (sum(float(count) for count in candidate_counts) / cases) if cases else 0.0,
+    }
+
+
+def calibrate_lattice_prior_weights_on_visible_context(
+    *,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    guide: BigramGuide,
+    train_text: str,
+    visible_limit: int,
+    morphology_limit: int,
+    surface_limit: int,
+    default_suture_weight: float,
+    default_morphology_weight: float,
+    default_surface_weight: float,
+    weight_grid: list[float],
+    calibration_cases: int = 12,
+    calibration_context_chars: int = 12,
+) -> dict[str, Any]:
+    example = parse_marked_infill(marked_text, tokenizer)
+    cases = visible_self_calibration_cases(
+        marked_text,
+        span_chars=len(example.hole),
+        context_chars=calibration_context_chars,
+        limit=calibration_cases,
+    )
+    if not cases or not weight_grid:
+        return {
+            "enabled": True,
+            "status": "no_visible_calibration_cases",
+            "calibration_cases": len(cases),
+            "selected_weights": {
+                "suture_weight": float(default_suture_weight),
+                "morphology_weight": float(default_morphology_weight),
+                "surface_weight": float(default_surface_weight),
+            },
+            "grid_rows": [],
+            "claim_boundary": "visible self-calibration is per-case calibration, not held-out model proof",
+        }
+    rows: list[dict[str, Any]] = []
+    for suture in weight_grid:
+        for morphology in weight_grid:
+            for surface in weight_grid:
+                rows.append(
+                    evaluate_prior_weight_combo(
+                        tokenizer=tokenizer,
+                        calibration_cases=cases,
+                        guide=guide,
+                        train_text=train_text,
+                        visible_limit=visible_limit,
+                        morphology_limit=morphology_limit,
+                        surface_limit=surface_limit,
+                        suture_weight=suture,
+                        morphology_weight=morphology,
+                        surface_weight=surface,
+                    )
+                )
+
+    def default_distance(row: dict[str, Any]) -> float:
+        return (
+            abs(float(row["suture_weight"]) - default_suture_weight)
+            + abs(float(row["morphology_weight"]) - default_morphology_weight)
+            + abs(float(row["surface_weight"]) - default_surface_weight)
+        )
+
+    def row_key(row: dict[str, Any]) -> tuple[float, float, float, float, float]:
+        avg_rank = float(row["avg_prior_exact_rank"]) if row["avg_prior_exact_rank"] is not None else 1e9
+        return (
+            float(row["oracle_exact_rate"]),
+            float(row["prior_top4_exact_rate"]),
+            float(row["prior_top1_exact_rate"]),
+            -avg_rank,
+            -default_distance(row),
+        )
+
+    selected = max(rows, key=row_key)
+    default_row = next(
+        (
+            row
+            for row in rows
+            if float(row["suture_weight"]) == float(default_suture_weight)
+            and float(row["morphology_weight"]) == float(default_morphology_weight)
+            and float(row["surface_weight"]) == float(default_surface_weight)
+        ),
+        None,
+    )
+    return {
+        "enabled": True,
+        "status": "selected_visible_context_weights",
+        "calibration_cases": len(cases),
+        "selected_weights": {
+            "suture_weight": float(selected["suture_weight"]),
+            "morphology_weight": float(selected["morphology_weight"]),
+            "surface_weight": float(selected["surface_weight"]),
+        },
+        "selected_summary": selected,
+        "default_summary": default_row,
+        "top_grid_rows": sorted(rows, key=row_key, reverse=True)[:8],
+        "claim_boundary": "visible self-calibration is per-case calibration, not held-out model proof",
+    }
+
+
 def select_lattice_row_with_margin(
     scored_options: list[tuple[float, torch.Tensor, dict[str, Any]]],
     *,
@@ -848,11 +1074,58 @@ def lattice_oracle_case(
     visible_limit: int = 8,
     morphology_limit: int = 64,
     surface_limit: int = 64,
+    suture_weight: float = 2.0,
+    morphology_weight: float = 1.0,
+    surface_weight: float = 1.0,
+    local_prior_calibration: bool = False,
+    apply_local_prior_calibration: bool = False,
+    prior_weight_grid: list[float] | None = None,
+    local_prior_calibration_cases: int = 12,
+    local_prior_calibration_context_chars: int = 12,
 ) -> dict[str, Any]:
     example = parse_marked_infill(marked_text, tokenizer)
     target = example.target[example.hole_start : example.hole_end]
     summaries: list[dict[str, Any]] = []
     exact_sources: list[str] = []
+    local_calibration_report: dict[str, Any] | None = None
+    local_calibration_suggested_rank: int | None = None
+    effective_suture_weight = float(suture_weight)
+    effective_morphology_weight = float(morphology_weight)
+    effective_surface_weight = float(surface_weight)
+    if local_prior_calibration:
+        local_calibration_report = calibrate_lattice_prior_weights_on_visible_context(
+            tokenizer=tokenizer,
+            marked_text=marked_text,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+            default_suture_weight=suture_weight,
+            default_morphology_weight=morphology_weight,
+            default_surface_weight=surface_weight,
+            weight_grid=prior_weight_grid or [suture_weight, morphology_weight, surface_weight],
+            calibration_cases=local_prior_calibration_cases,
+            calibration_context_chars=local_prior_calibration_context_chars,
+        )
+        local_calibration_report["applied"] = bool(apply_local_prior_calibration)
+        selected_weights = local_calibration_report["selected_weights"]
+        local_calibration_suggested_rank, _ = exact_rank_for_prior_weights(
+            tokenizer=tokenizer,
+            marked_text=marked_text,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+            suture_weight=float(selected_weights["suture_weight"]),
+            morphology_weight=float(selected_weights["morphology_weight"]),
+            surface_weight=float(selected_weights["surface_weight"]),
+        )
+        if apply_local_prior_calibration:
+            effective_suture_weight = float(selected_weights["suture_weight"])
+            effective_morphology_weight = float(selected_weights["morphology_weight"])
+            effective_surface_weight = float(selected_weights["surface_weight"])
     ranked_candidates = rank_lattice_candidates_by_prior(
         build_lattice_candidate_rows(
             tokenizer=tokenizer,
@@ -862,7 +1135,10 @@ def lattice_oracle_case(
             visible_limit=visible_limit,
             morphology_limit=morphology_limit,
             surface_limit=surface_limit,
-        )
+        ),
+        suture_weight=effective_suture_weight,
+        morphology_weight=effective_morphology_weight,
+        surface_weight=effective_surface_weight,
     )
     for candidate in ranked_candidates:
         pred = torch.tensor(candidate["ids"], dtype=torch.long)
@@ -899,6 +1175,14 @@ def lattice_oracle_case(
         "prior_selected_exact": bool(prior_selected["exact"]) if prior_selected is not None else False,
         "prior_selected_score": prior_selected["prior_score"] if prior_selected is not None else None,
         "prior_selected_source": prior_selected["prior_source"] if prior_selected is not None else None,
+        "effective_lattice_suture_weight": effective_suture_weight,
+        "effective_lattice_morphology_weight": effective_morphology_weight,
+        "effective_lattice_surface_weight": effective_surface_weight,
+        "local_prior_calibration": local_calibration_report,
+        "local_prior_calibration_suggested_prior_exact_rank": local_calibration_suggested_rank,
+        "local_prior_calibration_suggested_prior_top4_exact": (
+            local_calibration_suggested_rank is not None and local_calibration_suggested_rank < 4
+        ),
         "prior_exact_rank": best_exact_prior_rank,
         "prior_exact_in_top4": best_exact_prior_rank is not None and best_exact_prior_rank < 4,
         "prior_exact_in_top8": best_exact_prior_rank is not None and best_exact_prior_rank < 8,
@@ -967,9 +1251,53 @@ def retrieval_lattice_case(
     verifier_top_k: int = 0,
     selector_margin: float = 0.0,
     selector_margin_sweep: list[float] | None = None,
+    local_prior_calibration: bool = False,
+    apply_local_prior_calibration: bool = False,
+    prior_weight_grid: list[float] | None = None,
+    local_prior_calibration_cases: int = 12,
+    local_prior_calibration_context_chars: int = 12,
 ) -> dict[str, Any]:
     example = parse_marked_infill(marked_text, tokenizer)
     target = example.target[example.hole_start : example.hole_end]
+    local_calibration_report: dict[str, Any] | None = None
+    local_calibration_suggested_rank: int | None = None
+    effective_suture_weight = float(suture_weight)
+    effective_morphology_weight = float(morphology_weight)
+    effective_surface_weight = float(surface_weight)
+    if local_prior_calibration:
+        local_calibration_report = calibrate_lattice_prior_weights_on_visible_context(
+            tokenizer=tokenizer,
+            marked_text=marked_text,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+            default_suture_weight=suture_weight,
+            default_morphology_weight=morphology_weight,
+            default_surface_weight=surface_weight,
+            weight_grid=prior_weight_grid or [suture_weight, morphology_weight, surface_weight],
+            calibration_cases=local_prior_calibration_cases,
+            calibration_context_chars=local_prior_calibration_context_chars,
+        )
+        local_calibration_report["applied"] = bool(apply_local_prior_calibration)
+        selected_weights = local_calibration_report["selected_weights"]
+        local_calibration_suggested_rank, _ = exact_rank_for_prior_weights(
+            tokenizer=tokenizer,
+            marked_text=marked_text,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+            suture_weight=float(selected_weights["suture_weight"]),
+            morphology_weight=float(selected_weights["morphology_weight"]),
+            surface_weight=float(selected_weights["surface_weight"]),
+        )
+        if apply_local_prior_calibration:
+            effective_suture_weight = float(selected_weights["suture_weight"])
+            effective_morphology_weight = float(selected_weights["morphology_weight"])
+            effective_surface_weight = float(selected_weights["surface_weight"])
     ranked_candidates = rank_lattice_candidates_by_prior(
         build_lattice_candidate_rows(
             tokenizer=tokenizer,
@@ -980,9 +1308,9 @@ def retrieval_lattice_case(
             morphology_limit=morphology_limit,
             surface_limit=surface_limit,
         ),
-        suture_weight=suture_weight,
-        morphology_weight=morphology_weight,
-        surface_weight=surface_weight,
+        suture_weight=effective_suture_weight,
+        morphology_weight=effective_morphology_weight,
+        surface_weight=effective_surface_weight,
     )
     exact_prior_ranks = [
         int(candidate["prior_rank"])
@@ -1062,9 +1390,17 @@ def retrieval_lattice_case(
         **selector_report,
         "lattice_verifier_mode": verifier_mode,
         "lattice_verifier_top_k": int(verifier_top_k),
-        "lattice_suture_weight": float(suture_weight),
-        "lattice_morphology_weight": float(morphology_weight),
-        "lattice_surface_weight": float(surface_weight),
+        "lattice_suture_weight": effective_suture_weight,
+        "lattice_morphology_weight": effective_morphology_weight,
+        "lattice_surface_weight": effective_surface_weight,
+        "configured_lattice_suture_weight": float(suture_weight),
+        "configured_lattice_morphology_weight": float(morphology_weight),
+        "configured_lattice_surface_weight": float(surface_weight),
+        "local_prior_calibration": local_calibration_report,
+        "local_prior_calibration_suggested_prior_exact_rank": local_calibration_suggested_rank,
+        "local_prior_calibration_suggested_prior_top4_exact": (
+            local_calibration_suggested_rank is not None and local_calibration_suggested_rank < 4
+        ),
         "candidate_count": len(ranked_candidates),
         "scored_candidate_count": len(candidates_to_score),
         "prior_rerank_top_k": int(prior_rerank_top_k),
@@ -1354,6 +1690,7 @@ def candidate_oracle_benchmark(args: argparse.Namespace) -> dict[str, Any]:
     tokenizer = ByteTokenizer()
     text = load_text(args.data)
     train_text, val_text = split_text(text, args.val_fraction)
+    prior_weight_grid = parse_prior_weight_grid(args.lattice_prior_weight_grid)
     cases = make_marked_cases(
         val_text,
         cases=args.cases,
@@ -1373,6 +1710,14 @@ def candidate_oracle_benchmark(args: argparse.Namespace) -> dict[str, Any]:
             visible_limit=args.lattice_visible_candidates,
             morphology_limit=args.lattice_morphology_candidates,
             surface_limit=args.lattice_surface_candidates,
+            suture_weight=args.lattice_suture_weight,
+            morphology_weight=args.lattice_morphology_weight,
+            surface_weight=args.lattice_surface_weight,
+            local_prior_calibration=args.lattice_local_prior_calibration,
+            apply_local_prior_calibration=args.lattice_apply_local_prior_calibration,
+            prior_weight_grid=prior_weight_grid,
+            local_prior_calibration_cases=args.lattice_local_prior_calibration_cases,
+            local_prior_calibration_context_chars=args.lattice_local_prior_calibration_context_chars,
         )
         for marked in cases
     ]
@@ -1391,6 +1736,14 @@ def candidate_oracle_benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_visible_candidates": int(args.lattice_visible_candidates),
             "lattice_morphology_candidates": int(args.lattice_morphology_candidates),
             "lattice_surface_candidates": int(args.lattice_surface_candidates),
+            "lattice_suture_weight": float(args.lattice_suture_weight),
+            "lattice_morphology_weight": float(args.lattice_morphology_weight),
+            "lattice_surface_weight": float(args.lattice_surface_weight),
+            "lattice_local_prior_calibration": bool(args.lattice_local_prior_calibration),
+            "lattice_apply_local_prior_calibration": bool(args.lattice_apply_local_prior_calibration),
+            "lattice_prior_weight_grid": prior_weight_grid,
+            "lattice_local_prior_calibration_cases": int(args.lattice_local_prior_calibration_cases),
+            "lattice_local_prior_calibration_context_chars": int(args.lattice_local_prior_calibration_context_chars),
             "span_chars": int(args.span_chars),
             "context_chars": int(args.context_chars),
             "seed": int(args.seed),
@@ -1443,6 +1796,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
     adapted_rows: list[dict[str, Any]] = []
     adapted_guided_rows: list[dict[str, Any]] = []
     selector_margin_sweep = parse_selector_margin_sweep(args.lattice_selector_margin_sweep)
+    prior_weight_grid = parse_prior_weight_grid(args.lattice_prior_weight_grid)
     for index, marked in enumerate(cases):
         unigram_rows.append(guide_only_case(tokenizer=tokenizer, marked_text=marked, guide=guide, strategy="unigram"))
         bridge = guide_only_case(tokenizer=tokenizer, marked_text=marked, guide=guide, strategy="bridge")
@@ -1469,6 +1823,11 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             verifier_top_k=args.lattice_verifier_top_k,
             selector_margin=args.lattice_selector_margin,
             selector_margin_sweep=selector_margin_sweep,
+            local_prior_calibration=args.lattice_local_prior_calibration,
+            apply_local_prior_calibration=args.lattice_apply_local_prior_calibration,
+            prior_weight_grid=prior_weight_grid,
+            local_prior_calibration_cases=args.lattice_local_prior_calibration_cases,
+            local_prior_calibration_context_chars=args.lattice_local_prior_calibration_context_chars,
         )
         lattice["target_hole_seen_in_train_split"] = lattice["target_hole"] in train_text
         retrieval_lattice_rows.append(lattice)
@@ -1602,6 +1961,11 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_verifier_top_k": int(args.lattice_verifier_top_k),
             "lattice_selector_margin": float(args.lattice_selector_margin),
             "lattice_selector_margin_sweep": parse_selector_margin_sweep(args.lattice_selector_margin_sweep),
+            "lattice_local_prior_calibration": bool(args.lattice_local_prior_calibration),
+            "lattice_apply_local_prior_calibration": bool(args.lattice_apply_local_prior_calibration),
+            "lattice_prior_weight_grid": prior_weight_grid,
+            "lattice_local_prior_calibration_cases": int(args.lattice_local_prior_calibration_cases),
+            "lattice_local_prior_calibration_context_chars": int(args.lattice_local_prior_calibration_context_chars),
             "visible_context_adaptation_steps": int(args.adapt_visible_steps),
         },
         "masked_eval": masked,
@@ -1669,6 +2033,11 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--lattice-verifier-top-k", type=int, default=0)
     parser.add_argument("--lattice-selector-margin", type=float, default=0.0)
     parser.add_argument("--lattice-selector-margin-sweep", default="0,1,2,3,5")
+    parser.add_argument("--lattice-local-prior-calibration", action="store_true")
+    parser.add_argument("--lattice-apply-local-prior-calibration", action="store_true")
+    parser.add_argument("--lattice-prior-weight-grid", default="0.5,1,2,4")
+    parser.add_argument("--lattice-local-prior-calibration-cases", type=int, default=12)
+    parser.add_argument("--lattice-local-prior-calibration-context-chars", type=int, default=12)
     parser.add_argument("--adapt-visible-steps", type=int, default=0)
     parser.add_argument("--adapt-batch-size", type=int, default=8)
     parser.add_argument("--adapt-learning-rate", type=float, default=1e-4)

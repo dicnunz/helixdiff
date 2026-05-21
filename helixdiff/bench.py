@@ -1078,11 +1078,24 @@ def select_lattice_row_with_margin(
     scored_options: list[tuple[float, torch.Tensor, dict[str, Any]]],
     *,
     selector_margin: float,
+    selector_anchor: str = "prior",
 ) -> tuple[float, torch.Tensor, dict[str, Any], dict[str, Any]]:
     if not scored_options:
         raise RuntimeError("retrieval lattice produced no candidates")
+    if selector_anchor not in {"prior", "surface"}:
+        raise ValueError(f"unknown selector anchor: {selector_anchor}")
     raw_best = max(scored_options, key=lambda item: (item[0], -int(item[2]["prior_rank"]), str(item[2]["predicted_hole"])))
-    anchor = scored_options[0]
+    if selector_anchor == "surface":
+        anchor = min(
+            scored_options,
+            key=lambda item: (
+                int(item[2].get("surface_verifier_rank", item[2]["prior_rank"])),
+                int(item[2]["prior_rank"]),
+                str(item[2]["predicted_hole"]),
+            ),
+        )
+    else:
+        anchor = scored_options[0]
     anchor_margin_gap = max(0.0, float(raw_best[0] - anchor[0]))
     margin_applied = selector_margin > 0 and raw_best is not anchor and raw_best[0] < anchor[0] + selector_margin
     selected = anchor if margin_applied else raw_best
@@ -1093,6 +1106,7 @@ def select_lattice_row_with_margin(
         selected[1],
         selected[2],
         {
+            "selector_anchor": selector_anchor,
             "selector_margin": float(selector_margin),
             "selector_margin_applied": bool(margin_applied),
             "anchor_margin_gap": json_score(anchor_margin_gap),
@@ -1111,6 +1125,10 @@ def select_lattice_row_with_margin(
             "anchor_score": json_score(anchor[0]),
             "anchor_exact": anchor_exact,
             "anchor_byte_accuracy": float(anchor[2].get("byte_accuracy", 0.0)),
+            "anchor_prior_rank": int(anchor[2]["prior_rank"]),
+            "anchor_surface_verifier_rank": (
+                int(anchor[2]["surface_verifier_rank"]) if anchor[2].get("surface_verifier_rank") is not None else None
+            ),
         },
     )
 
@@ -1134,6 +1152,7 @@ def selector_margin_sweep_report(
     scored_options: list[tuple[float, torch.Tensor, dict[str, Any]]],
     *,
     selector_margins: list[float],
+    selector_anchor: str,
     oracle_candidate_exact: bool,
     oracle_candidate_exact_in_scored_set: bool,
 ) -> list[dict[str, Any]]:
@@ -1142,6 +1161,7 @@ def selector_margin_sweep_report(
         selected_score, _, selected_row, selector_report = select_lattice_row_with_margin(
             scored_options,
             selector_margin=margin,
+            selector_anchor=selector_anchor,
         )
         exact = bool(selected_row.get("exact", False))
         outcome_category = classify_retrieval_lattice_outcome(
@@ -1155,6 +1175,7 @@ def selector_margin_sweep_report(
         report.append(
             {
                 "selector_margin": float(margin),
+                "selector_anchor": selector_anchor,
                 "selected_hole": selected_row["predicted_hole"],
                 "selected_score": json_score(selected_score),
                 "exact": exact,
@@ -1169,6 +1190,8 @@ def selector_margin_sweep_report(
                 "raw_best_exact": bool(selector_report["raw_best_exact"]),
                 "anchor_hole": selector_report["anchor_hole"],
                 "anchor_exact": bool(selector_report["anchor_exact"]),
+                "anchor_prior_rank": selector_report["anchor_prior_rank"],
+                "anchor_surface_verifier_rank": selector_report["anchor_surface_verifier_rank"],
             }
         )
     return report
@@ -1382,6 +1405,7 @@ def retrieval_lattice_case(
     verifier_mode: str = "suture_loo",
     verifier_top_k: int = 0,
     selector_margin: float = 0.0,
+    selector_anchor: str = "prior",
     selector_margin_sweep: list[float] | None = None,
     local_prior_calibration: bool = False,
     apply_local_prior_calibration: bool = False,
@@ -1525,10 +1549,12 @@ def retrieval_lattice_case(
     best_score, best_repaired, best_row, selector_report = select_lattice_row_with_margin(
         scored_options,
         selector_margin=selector_margin,
+        selector_anchor=selector_anchor,
     )
     sweep_report = selector_margin_sweep_report(
         scored_options,
         selector_margins=selector_margin_sweep or [],
+        selector_anchor=selector_anchor,
         oracle_candidate_exact=prior_exact_rank is not None,
         oracle_candidate_exact_in_scored_set=oracle_exact_in_scored_set,
     )
@@ -2097,6 +2123,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             verifier_mode=args.lattice_verifier_mode,
             verifier_top_k=args.lattice_verifier_top_k,
             selector_margin=args.lattice_selector_margin,
+            selector_anchor=args.lattice_selector_anchor,
             selector_margin_sweep=selector_margin_sweep,
             local_prior_calibration=args.lattice_local_prior_calibration,
             apply_local_prior_calibration=args.lattice_apply_local_prior_calibration,
@@ -2235,6 +2262,7 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_verifier_mode": args.lattice_verifier_mode,
             "lattice_verifier_top_k": int(args.lattice_verifier_top_k),
             "lattice_selector_margin": float(args.lattice_selector_margin),
+            "lattice_selector_anchor": args.lattice_selector_anchor,
             "lattice_selector_margin_sweep": parse_selector_margin_sweep(args.lattice_selector_margin_sweep),
             "lattice_local_prior_calibration": bool(args.lattice_local_prior_calibration),
             "lattice_apply_local_prior_calibration": bool(args.lattice_apply_local_prior_calibration),
@@ -2307,6 +2335,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--lattice-verifier-mode", choices=["suture_loo", "full_hole", "dual"], default="suture_loo")
     parser.add_argument("--lattice-verifier-top-k", type=int, default=0)
     parser.add_argument("--lattice-selector-margin", type=float, default=0.0)
+    parser.add_argument("--lattice-selector-anchor", choices=["prior", "surface"], default="prior")
     parser.add_argument("--lattice-selector-margin-sweep", default="0,1,2,3,5")
     parser.add_argument("--lattice-local-prior-calibration", action="store_true")
     parser.add_argument("--lattice-apply-local-prior-calibration", action="store_true")

@@ -347,6 +347,60 @@ class BenchTest(unittest.TestCase):
         self.assertAlmostEqual(report["anchor_margin_gap"], 0.4)
         self.assertTrue(report["selector_margin_clears_anchor_gap"])
         self.assertEqual(report["selector_margin_shortfall"], 0.0)
+        self.assertEqual(report["selector_anchor"], "prior")
+        self.assertEqual(report["anchor_prior_rank"], 0)
+
+    def test_selector_margin_can_use_surface_verifier_anchor(self) -> None:
+        prior_anchor = torch.tensor([1])
+        surface_anchor = torch.tensor([2])
+        challenger = torch.tensor([3])
+        selected_score, selected_ids, selected_row, report = select_lattice_row_with_margin(
+            [
+                (
+                    1.0,
+                    prior_anchor,
+                    {
+                        "predicted_hole": "prior",
+                        "prior_rank": 0,
+                        "surface_verifier_rank": 3,
+                        "exact": False,
+                        "byte_accuracy": 0.0,
+                    },
+                ),
+                (
+                    1.2,
+                    surface_anchor,
+                    {
+                        "predicted_hole": "surface",
+                        "prior_rank": 1,
+                        "surface_verifier_rank": 0,
+                        "exact": True,
+                        "byte_accuracy": 1.0,
+                    },
+                ),
+                (
+                    1.5,
+                    challenger,
+                    {
+                        "predicted_hole": "challenger",
+                        "prior_rank": 2,
+                        "surface_verifier_rank": 1,
+                        "exact": False,
+                        "byte_accuracy": 0.0,
+                    },
+                ),
+            ],
+            selector_margin=0.5,
+            selector_anchor="surface",
+        )
+        self.assertEqual(selected_score, 1.2)
+        self.assertTrue(torch.equal(selected_ids, surface_anchor))
+        self.assertEqual(selected_row["predicted_hole"], "surface")
+        self.assertTrue(report["selector_margin_applied"])
+        self.assertEqual(report["selector_anchor"], "surface")
+        self.assertEqual(report["anchor_hole"], "surface")
+        self.assertEqual(report["anchor_prior_rank"], 1)
+        self.assertEqual(report["anchor_surface_verifier_rank"], 0)
 
     def test_selector_margin_sweep_reuses_scored_options(self) -> None:
         anchor = torch.tensor([1])
@@ -361,6 +415,7 @@ class BenchTest(unittest.TestCase):
                 ),
             ],
             selector_margins=[0.0, 0.5],
+            selector_anchor="prior",
             oracle_candidate_exact=True,
             oracle_candidate_exact_in_scored_set=True,
         )

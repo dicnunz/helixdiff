@@ -905,6 +905,161 @@ def surface_verifier_candidate_report(
     return report
 
 
+def recommend_selector_anchor_from_visible_rows(
+    rows: list[dict[str, Any]],
+    *,
+    default_selector_anchor: str,
+) -> dict[str, Any]:
+    if default_selector_anchor not in {"prior", "surface"}:
+        raise ValueError(f"unknown selector anchor: {default_selector_anchor}")
+    if not rows:
+        return {
+            "status": "no_visible_anchor_calibration_cases",
+            "selected_selector_anchor": default_selector_anchor,
+            "reason": "no visible-context anchor calibration rows were available",
+            "claim_boundary": "visible-context anchor calibration is diagnostic unless predeclared for held-out cases",
+        }
+    cases = len(rows)
+    prior_exact = sum(1 for row in rows if row.get("prior_selected_exact"))
+    surface_exact = sum(1 for row in rows if row.get("surface_selected_exact"))
+    prior_top4 = sum(1 for row in rows if row.get("prior_exact_in_top4"))
+    surface_top4 = sum(1 for row in rows if row.get("surface_exact_in_top4"))
+    surface_help = sum(
+        1 for row in rows if row.get("surface_selected_exact") and not row.get("prior_selected_exact")
+    )
+    surface_harm = sum(
+        1 for row in rows if row.get("prior_selected_exact") and not row.get("surface_selected_exact")
+    )
+    selected = default_selector_anchor
+    reason = "kept default anchor because visible calibration did not show a decisive anchor difference"
+    if surface_exact > prior_exact and surface_harm == 0 and surface_top4 >= prior_top4:
+        selected = "surface"
+        reason = "surface anchor won visible synthetic holes without blocking a prior exact hit"
+    elif prior_exact > surface_exact:
+        selected = "prior"
+        reason = "prior anchor won visible synthetic holes"
+    elif surface_harm > 0:
+        selected = "prior"
+        reason = "prior anchor kept because surface blocked a visible-context prior exact hit"
+    elif surface_top4 < prior_top4:
+        selected = "prior"
+        reason = "prior anchor kept because surface reduced visible-context top-k coverage"
+    return {
+        "status": "selected_visible_context_anchor",
+        "selected_selector_anchor": selected,
+        "default_selector_anchor": default_selector_anchor,
+        "cases": cases,
+        "prior_selected_exact_rate": prior_exact / cases,
+        "surface_selected_exact_rate": surface_exact / cases,
+        "prior_top4_exact_rate": prior_top4 / cases,
+        "surface_top4_exact_rate": surface_top4 / cases,
+        "surface_help_count": surface_help,
+        "surface_harm_count": surface_harm,
+        "reason": reason,
+        "claim_boundary": "visible-context anchor calibration is diagnostic unless predeclared for held-out cases",
+    }
+
+
+def calibrate_lattice_selector_anchor_on_visible_context(
+    *,
+    tokenizer: ByteTokenizer,
+    marked_text: str,
+    guide: BigramGuide,
+    train_text: str,
+    visible_limit: int,
+    morphology_limit: int,
+    surface_limit: int,
+    suture_weight: float,
+    morphology_weight: float,
+    surface_weight: float,
+    default_selector_anchor: str,
+    calibration_cases: int = 12,
+    calibration_context_chars: int = 12,
+) -> dict[str, Any]:
+    example = parse_marked_infill(marked_text, tokenizer)
+    cases = visible_self_calibration_cases(
+        marked_text,
+        span_chars=len(example.hole),
+        context_chars=calibration_context_chars,
+        limit=calibration_cases,
+    )
+    rows: list[dict[str, Any]] = []
+    for calibration_marked in cases:
+        calibration_example = parse_marked_infill(calibration_marked, tokenizer)
+        target = calibration_example.target[calibration_example.hole_start : calibration_example.hole_end]
+        ranked_candidates = rank_lattice_candidates_by_prior(
+            build_lattice_candidate_rows(
+                tokenizer=tokenizer,
+                marked_text=calibration_marked,
+                guide=guide,
+                train_text=train_text,
+                visible_limit=visible_limit,
+                morphology_limit=morphology_limit,
+                surface_limit=surface_limit,
+            ),
+            suture_weight=suture_weight,
+            morphology_weight=morphology_weight,
+            surface_weight=surface_weight,
+        )
+        surface_report = surface_verifier_candidate_report(
+            ranked_candidates,
+            marked_text=calibration_marked,
+            train_text=train_text,
+        )
+        exact_prior_ranks = [
+            int(candidate["prior_rank"])
+            for candidate in ranked_candidates
+            if torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)
+        ]
+        exact_surface_ranks = [
+            int(surface_report[tuple(int(token_id) for token_id in candidate["ids"])]["surface_verifier_rank"])
+            for candidate in ranked_candidates
+            if torch.equal(torch.tensor(candidate["ids"], dtype=torch.long), target)
+        ]
+        prior_selected = ranked_candidates[0] if ranked_candidates else None
+        surface_selected = min(
+            ranked_candidates,
+            key=lambda candidate: (
+                int(surface_report[tuple(int(token_id) for token_id in candidate["ids"])]["surface_verifier_rank"]),
+                int(candidate["prior_rank"]),
+                str(candidate["predicted_hole"]),
+            ),
+            default=None,
+        )
+        rows.append(
+            {
+                "marked_text": calibration_marked,
+                "target_hole": calibration_example.hole,
+                "prior_selected_hole": prior_selected["predicted_hole"] if prior_selected is not None else None,
+                "prior_selected_exact": (
+                    bool(torch.equal(torch.tensor(prior_selected["ids"], dtype=torch.long), target))
+                    if prior_selected is not None
+                    else False
+                ),
+                "surface_selected_hole": surface_selected["predicted_hole"] if surface_selected is not None else None,
+                "surface_selected_exact": (
+                    bool(torch.equal(torch.tensor(surface_selected["ids"], dtype=torch.long), target))
+                    if surface_selected is not None
+                    else False
+                ),
+                "prior_exact_rank": min(exact_prior_ranks) if exact_prior_ranks else None,
+                "surface_exact_rank": min(exact_surface_ranks) if exact_surface_ranks else None,
+                "prior_exact_in_top4": bool(exact_prior_ranks and min(exact_prior_ranks) < 4),
+                "surface_exact_in_top4": bool(exact_surface_ranks and min(exact_surface_ranks) < 4),
+            }
+        )
+    recommendation = recommend_selector_anchor_from_visible_rows(
+        rows,
+        default_selector_anchor=default_selector_anchor,
+    )
+    return {
+        "enabled": True,
+        **recommendation,
+        "calibration_cases": len(rows),
+        "rows": rows,
+    }
+
+
 def exact_rank_for_prior_weights(
     *,
     tokenizer: ByteTokenizer,
@@ -1243,6 +1398,11 @@ def lattice_oracle_case(
     suture_weight: float = 2.0,
     morphology_weight: float = 1.0,
     surface_weight: float = 1.0,
+    selector_anchor: str = "prior",
+    local_surface_anchor_calibration: bool = False,
+    apply_local_surface_anchor_calibration: bool = False,
+    local_surface_anchor_calibration_cases: int = 12,
+    local_surface_anchor_calibration_context_chars: int = 12,
     local_prior_calibration: bool = False,
     apply_local_prior_calibration: bool = False,
     prior_weight_grid: list[float] | None = None,
@@ -1254,6 +1414,7 @@ def lattice_oracle_case(
     summaries: list[dict[str, Any]] = []
     exact_sources: list[str] = []
     local_calibration_report: dict[str, Any] | None = None
+    local_surface_anchor_report: dict[str, Any] | None = None
     local_calibration_suggested_rank: int | None = None
     effective_suture_weight = float(suture_weight)
     effective_morphology_weight = float(morphology_weight)
@@ -1292,6 +1453,25 @@ def lattice_oracle_case(
             effective_suture_weight = float(selected_weights["suture_weight"])
             effective_morphology_weight = float(selected_weights["morphology_weight"])
             effective_surface_weight = float(selected_weights["surface_weight"])
+    if local_surface_anchor_calibration:
+        local_surface_anchor_report = calibrate_lattice_selector_anchor_on_visible_context(
+            tokenizer=tokenizer,
+            marked_text=marked_text,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+            suture_weight=effective_suture_weight,
+            morphology_weight=effective_morphology_weight,
+            surface_weight=effective_surface_weight,
+            default_selector_anchor=selector_anchor,
+            calibration_cases=local_surface_anchor_calibration_cases,
+            calibration_context_chars=local_surface_anchor_calibration_context_chars,
+        )
+        local_surface_anchor_report["requested_apply"] = bool(apply_local_surface_anchor_calibration)
+        local_surface_anchor_report["applied"] = False
+        local_surface_anchor_report["application_status"] = "not_applicable_in_candidate_oracle_mode"
     ranked_candidates = rank_lattice_candidates_by_prior(
         build_lattice_candidate_rows(
             tokenizer=tokenizer,
@@ -1367,6 +1547,8 @@ def lattice_oracle_case(
         "effective_lattice_suture_weight": effective_suture_weight,
         "effective_lattice_morphology_weight": effective_morphology_weight,
         "effective_lattice_surface_weight": effective_surface_weight,
+        "configured_selector_anchor": selector_anchor,
+        "local_surface_anchor_calibration": local_surface_anchor_report,
         "local_prior_calibration": local_calibration_report,
         "local_prior_calibration_suggested_prior_exact_rank": local_calibration_suggested_rank,
         "local_prior_calibration_suggested_prior_top4_exact": (
@@ -1442,6 +1624,10 @@ def retrieval_lattice_case(
     selector_anchor: str = "prior",
     selector_margin_sweep: list[float] | None = None,
     selector_anchor_sweep: list[str] | None = None,
+    local_surface_anchor_calibration: bool = False,
+    apply_local_surface_anchor_calibration: bool = False,
+    local_surface_anchor_calibration_cases: int = 12,
+    local_surface_anchor_calibration_context_chars: int = 12,
     local_prior_calibration: bool = False,
     apply_local_prior_calibration: bool = False,
     prior_weight_grid: list[float] | None = None,
@@ -1451,10 +1637,12 @@ def retrieval_lattice_case(
     example = parse_marked_infill(marked_text, tokenizer)
     target = example.target[example.hole_start : example.hole_end]
     local_calibration_report: dict[str, Any] | None = None
+    local_surface_anchor_report: dict[str, Any] | None = None
     local_calibration_suggested_rank: int | None = None
     effective_suture_weight = float(suture_weight)
     effective_morphology_weight = float(morphology_weight)
     effective_surface_weight = float(surface_weight)
+    effective_selector_anchor = selector_anchor
     if local_prior_calibration:
         local_calibration_report = calibrate_lattice_prior_weights_on_visible_context(
             tokenizer=tokenizer,
@@ -1489,6 +1677,25 @@ def retrieval_lattice_case(
             effective_suture_weight = float(selected_weights["suture_weight"])
             effective_morphology_weight = float(selected_weights["morphology_weight"])
             effective_surface_weight = float(selected_weights["surface_weight"])
+    if local_surface_anchor_calibration:
+        local_surface_anchor_report = calibrate_lattice_selector_anchor_on_visible_context(
+            tokenizer=tokenizer,
+            marked_text=marked_text,
+            guide=guide,
+            train_text=train_text,
+            visible_limit=visible_limit,
+            morphology_limit=morphology_limit,
+            surface_limit=surface_limit,
+            suture_weight=effective_suture_weight,
+            morphology_weight=effective_morphology_weight,
+            surface_weight=effective_surface_weight,
+            default_selector_anchor=selector_anchor,
+            calibration_cases=local_surface_anchor_calibration_cases,
+            calibration_context_chars=local_surface_anchor_calibration_context_chars,
+        )
+        local_surface_anchor_report["applied"] = bool(apply_local_surface_anchor_calibration)
+        if apply_local_surface_anchor_calibration:
+            effective_selector_anchor = str(local_surface_anchor_report["selected_selector_anchor"])
     ranked_candidates = rank_lattice_candidates_by_prior(
         build_lattice_candidate_rows(
             tokenizer=tokenizer,
@@ -1584,12 +1791,12 @@ def retrieval_lattice_case(
     best_score, best_repaired, best_row, selector_report = select_lattice_row_with_margin(
         scored_options,
         selector_margin=selector_margin,
-        selector_anchor=selector_anchor,
+        selector_anchor=effective_selector_anchor,
     )
     sweep_report = selector_margin_sweep_report(
         scored_options,
         selector_margins=selector_margin_sweep or [],
-        selector_anchor=selector_anchor,
+        selector_anchor=effective_selector_anchor,
         oracle_candidate_exact=prior_exact_rank is not None,
         oracle_candidate_exact_in_scored_set=oracle_exact_in_scored_set,
     )
@@ -1623,6 +1830,9 @@ def retrieval_lattice_case(
         "configured_lattice_suture_weight": float(suture_weight),
         "configured_lattice_morphology_weight": float(morphology_weight),
         "configured_lattice_surface_weight": float(surface_weight),
+        "configured_selector_anchor": selector_anchor,
+        "effective_selector_anchor": effective_selector_anchor,
+        "local_surface_anchor_calibration": local_surface_anchor_report,
         "local_prior_calibration": local_calibration_report,
         "local_prior_calibration_suggested_prior_exact_rank": local_calibration_suggested_rank,
         "local_prior_calibration_suggested_prior_top4_exact": (
@@ -1835,6 +2045,14 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "surface_verifier_top4_delta_vs_prior": 0.0,
                 "surface_verifier_harm_count": 0,
                 "surface_verifier_help_count": 0,
+                "local_surface_anchor_calibration_cases": 0,
+                "local_surface_anchor_selected_counts": {},
+                "local_surface_anchor_surface_selected_rate": 0.0,
+                "local_surface_anchor_applied_rate": 0.0,
+                "local_surface_anchor_visible_prior_exact_rate": None,
+                "local_surface_anchor_visible_surface_exact_rate": None,
+                "local_surface_anchor_surface_help_count": 0,
+                "local_surface_anchor_surface_harm_count": 0,
                 "outcome_categories": {},
                 "selector_effects": {},
                 "margin_rescued_exact_rate": 0.0,
@@ -1856,6 +2074,14 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
     surface_rank_rows = [row for row in rows if row.get("surface_verifier_exact_rank") is not None]
     surface_top4_rate = sum(1.0 for row in rows if row.get("surface_verifier_exact_in_top4")) / len(rows)
     exact_anchor_rows = [row for row in rows if row.get("anchor_exact")]
+    local_surface_reports = [
+        row["local_surface_anchor_calibration"]
+        for row in rows
+        if row.get("local_surface_anchor_calibration") is not None
+    ]
+    local_surface_selected_counts = Counter(
+        str(report.get("selected_selector_anchor", "unknown")) for report in local_surface_reports
+    )
     outcome_categories = Counter(str(row.get("outcome_category", "unknown")) for row in rows)
     selector_effects = Counter(str(row.get("selector_effect", "unknown")) for row in rows)
     summary.update(
@@ -1901,6 +2127,36 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 for row in rows
                 if not (row.get("prior_exact_rank") is not None and int(row["prior_exact_rank"]) < 4)
                 and row.get("surface_verifier_exact_in_top4")
+            ),
+            "local_surface_anchor_calibration_cases": len(local_surface_reports),
+            "local_surface_anchor_selected_counts": dict(sorted(local_surface_selected_counts.items())),
+            "local_surface_anchor_surface_selected_rate": (
+                local_surface_selected_counts.get("surface", 0) / len(local_surface_reports)
+                if local_surface_reports
+                else 0.0
+            ),
+            "local_surface_anchor_applied_rate": (
+                sum(1.0 for report in local_surface_reports if report.get("applied")) / len(local_surface_reports)
+                if local_surface_reports
+                else 0.0
+            ),
+            "local_surface_anchor_visible_prior_exact_rate": (
+                sum(float(report.get("prior_selected_exact_rate", 0.0)) for report in local_surface_reports)
+                / len(local_surface_reports)
+                if local_surface_reports
+                else None
+            ),
+            "local_surface_anchor_visible_surface_exact_rate": (
+                sum(float(report.get("surface_selected_exact_rate", 0.0)) for report in local_surface_reports)
+                / len(local_surface_reports)
+                if local_surface_reports
+                else None
+            ),
+            "local_surface_anchor_surface_help_count": sum(
+                int(report.get("surface_help_count", 0)) for report in local_surface_reports
+            ),
+            "local_surface_anchor_surface_harm_count": sum(
+                int(report.get("surface_harm_count", 0)) for report in local_surface_reports
             ),
             "outcome_categories": dict(sorted(outcome_categories.items())),
             "selector_effects": dict(sorted(selector_effects.items())),
@@ -1951,6 +2207,14 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "surface_verifier_top4_delta_vs_prior": 0.0,
             "surface_verifier_harm_count": 0,
             "surface_verifier_help_count": 0,
+            "local_surface_anchor_calibration_cases": 0,
+            "local_surface_anchor_selected_counts": {},
+            "local_surface_anchor_surface_selected_rate": 0.0,
+            "local_surface_anchor_applied_rate": 0.0,
+            "local_surface_anchor_visible_prior_exact_rate": None,
+            "local_surface_anchor_visible_surface_exact_rate": None,
+            "local_surface_anchor_surface_help_count": 0,
+            "local_surface_anchor_surface_harm_count": 0,
             "local_prior_calibration_cases": 0,
             "local_prior_suggested_top4_exact_rate": None,
             "local_prior_suggested_avg_prior_exact_rank": None,
@@ -1960,6 +2224,14 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "local_prior_applied_rate": 0.0,
         }
     local_rows = [row for row in rows if row.get("local_prior_calibration") is not None]
+    local_surface_reports = [
+        row["local_surface_anchor_calibration"]
+        for row in rows
+        if row.get("local_surface_anchor_calibration") is not None
+    ]
+    local_surface_selected_counts = Counter(
+        str(report.get("selected_selector_anchor", "unknown")) for report in local_surface_reports
+    )
     local_rank_rows = [
         row for row in local_rows if row.get("local_prior_calibration_suggested_prior_exact_rank") is not None
     ]
@@ -2008,6 +2280,36 @@ def summarize_lattice_oracle(rows: list[dict[str, Any]]) -> dict[str, Any]:
             1
             for row in rows
             if not row.get("prior_exact_in_top4") and row.get("surface_verifier_exact_in_top4")
+        ),
+        "local_surface_anchor_calibration_cases": len(local_surface_reports),
+        "local_surface_anchor_selected_counts": dict(sorted(local_surface_selected_counts.items())),
+        "local_surface_anchor_surface_selected_rate": (
+            local_surface_selected_counts.get("surface", 0) / len(local_surface_reports)
+            if local_surface_reports
+            else 0.0
+        ),
+        "local_surface_anchor_applied_rate": (
+            sum(1.0 for report in local_surface_reports if report.get("applied")) / len(local_surface_reports)
+            if local_surface_reports
+            else 0.0
+        ),
+        "local_surface_anchor_visible_prior_exact_rate": (
+            sum(float(report.get("prior_selected_exact_rate", 0.0)) for report in local_surface_reports)
+            / len(local_surface_reports)
+            if local_surface_reports
+            else None
+        ),
+        "local_surface_anchor_visible_surface_exact_rate": (
+            sum(float(report.get("surface_selected_exact_rate", 0.0)) for report in local_surface_reports)
+            / len(local_surface_reports)
+            if local_surface_reports
+            else None
+        ),
+        "local_surface_anchor_surface_help_count": sum(
+            int(report.get("surface_help_count", 0)) for report in local_surface_reports
+        ),
+        "local_surface_anchor_surface_harm_count": sum(
+            int(report.get("surface_harm_count", 0)) for report in local_surface_reports
         ),
         "local_prior_calibration_cases": len(local_rows),
         "local_prior_suggested_top4_exact_rate": local_top4_rate,
@@ -2076,6 +2378,11 @@ def candidate_oracle_benchmark(args: argparse.Namespace) -> dict[str, Any]:
             suture_weight=args.lattice_suture_weight,
             morphology_weight=args.lattice_morphology_weight,
             surface_weight=args.lattice_surface_weight,
+            selector_anchor=args.lattice_selector_anchor,
+            local_surface_anchor_calibration=args.lattice_local_surface_anchor_calibration,
+            apply_local_surface_anchor_calibration=args.lattice_apply_local_surface_anchor_calibration,
+            local_surface_anchor_calibration_cases=args.lattice_local_surface_anchor_calibration_cases,
+            local_surface_anchor_calibration_context_chars=args.lattice_local_surface_anchor_calibration_context_chars,
             local_prior_calibration=args.lattice_local_prior_calibration,
             apply_local_prior_calibration=args.lattice_apply_local_prior_calibration,
             prior_weight_grid=prior_weight_grid,
@@ -2102,6 +2409,13 @@ def candidate_oracle_benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_suture_weight": float(args.lattice_suture_weight),
             "lattice_morphology_weight": float(args.lattice_morphology_weight),
             "lattice_surface_weight": float(args.lattice_surface_weight),
+            "lattice_selector_anchor": args.lattice_selector_anchor,
+            "lattice_local_surface_anchor_calibration": bool(args.lattice_local_surface_anchor_calibration),
+            "lattice_apply_local_surface_anchor_calibration": bool(args.lattice_apply_local_surface_anchor_calibration),
+            "lattice_local_surface_anchor_calibration_cases": int(args.lattice_local_surface_anchor_calibration_cases),
+            "lattice_local_surface_anchor_calibration_context_chars": int(
+                args.lattice_local_surface_anchor_calibration_context_chars
+            ),
             "lattice_local_prior_calibration": bool(args.lattice_local_prior_calibration),
             "lattice_apply_local_prior_calibration": bool(args.lattice_apply_local_prior_calibration),
             "lattice_prior_weight_grid": prior_weight_grid,
@@ -2189,6 +2503,10 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             selector_anchor=args.lattice_selector_anchor,
             selector_margin_sweep=selector_margin_sweep,
             selector_anchor_sweep=selector_anchor_sweep,
+            local_surface_anchor_calibration=args.lattice_local_surface_anchor_calibration,
+            apply_local_surface_anchor_calibration=args.lattice_apply_local_surface_anchor_calibration,
+            local_surface_anchor_calibration_cases=args.lattice_local_surface_anchor_calibration_cases,
+            local_surface_anchor_calibration_context_chars=args.lattice_local_surface_anchor_calibration_context_chars,
             local_prior_calibration=args.lattice_local_prior_calibration,
             apply_local_prior_calibration=args.lattice_apply_local_prior_calibration,
             prior_weight_grid=prior_weight_grid,
@@ -2327,6 +2645,12 @@ def benchmark(args: argparse.Namespace) -> dict[str, Any]:
             "lattice_verifier_top_k": int(args.lattice_verifier_top_k),
             "lattice_selector_margin": float(args.lattice_selector_margin),
             "lattice_selector_anchor": args.lattice_selector_anchor,
+            "lattice_local_surface_anchor_calibration": bool(args.lattice_local_surface_anchor_calibration),
+            "lattice_apply_local_surface_anchor_calibration": bool(args.lattice_apply_local_surface_anchor_calibration),
+            "lattice_local_surface_anchor_calibration_cases": int(args.lattice_local_surface_anchor_calibration_cases),
+            "lattice_local_surface_anchor_calibration_context_chars": int(
+                args.lattice_local_surface_anchor_calibration_context_chars
+            ),
             "lattice_selector_margin_sweep": parse_selector_margin_sweep(args.lattice_selector_margin_sweep),
             "lattice_selector_anchor_sweep": selector_anchor_sweep,
             "lattice_local_prior_calibration": bool(args.lattice_local_prior_calibration),
@@ -2403,6 +2727,10 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--lattice-selector-anchor", choices=["prior", "surface"], default="prior")
     parser.add_argument("--lattice-selector-anchor-sweep", default="prior,surface")
     parser.add_argument("--lattice-selector-margin-sweep", default="0,1,2,3,5")
+    parser.add_argument("--lattice-local-surface-anchor-calibration", action="store_true")
+    parser.add_argument("--lattice-apply-local-surface-anchor-calibration", action="store_true")
+    parser.add_argument("--lattice-local-surface-anchor-calibration-cases", type=int, default=12)
+    parser.add_argument("--lattice-local-surface-anchor-calibration-context-chars", type=int, default=12)
     parser.add_argument("--lattice-local-prior-calibration", action="store_true")
     parser.add_argument("--lattice-apply-local-prior-calibration", action="store_true")
     parser.add_argument("--lattice-prior-weight-grid", default="0.5,1,2,4")

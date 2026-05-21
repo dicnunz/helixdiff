@@ -5,6 +5,7 @@ import torch
 from helixdiff.bench import (
     build_lattice_candidate_rows,
     calibrate_lattice_prior_weights_on_visible_context,
+    calibrate_lattice_selector_anchor_on_visible_context,
     classify_retrieval_lattice_outcome,
     classify_selector_effect,
     evaluate_prior_weight_combo,
@@ -17,6 +18,7 @@ from helixdiff.bench import (
     nearest_visible_case,
     parse_selector_margin_sweep,
     rank_lattice_candidates_by_prior,
+    recommend_selector_anchor_from_visible_rows,
     repair_surface_verifier_features,
     score_lattice_verifier,
     select_lattice_row_with_margin,
@@ -243,6 +245,79 @@ class BenchTest(unittest.TestCase):
             report[wrong_key]["surface_verifier_rank"],
         )
         self.assertEqual(report[exact_key]["surface_verifier_features"]["speaker_label_count"], 2)
+
+    def test_visible_anchor_recommendation_requires_surface_win_without_harm(self) -> None:
+        rows = [
+            {
+                "prior_selected_exact": False,
+                "surface_selected_exact": True,
+                "prior_exact_in_top4": True,
+                "surface_exact_in_top4": True,
+            },
+            {
+                "prior_selected_exact": False,
+                "surface_selected_exact": True,
+                "prior_exact_in_top4": True,
+                "surface_exact_in_top4": True,
+            },
+        ]
+        report = recommend_selector_anchor_from_visible_rows(rows, default_selector_anchor="prior")
+        self.assertEqual(report["selected_selector_anchor"], "surface")
+        self.assertEqual(report["surface_help_count"], 2)
+        harmed = rows + [
+            {
+                "prior_selected_exact": True,
+                "surface_selected_exact": False,
+                "prior_exact_in_top4": True,
+                "surface_exact_in_top4": True,
+            }
+        ]
+        harmed_report = recommend_selector_anchor_from_visible_rows(harmed, default_selector_anchor="prior")
+        self.assertEqual(harmed_report["selected_selector_anchor"], "prior")
+        self.assertEqual(harmed_report["surface_harm_count"], 1)
+        harmed_surface_default = recommend_selector_anchor_from_visible_rows(harmed, default_selector_anchor="surface")
+        self.assertEqual(harmed_surface_default["selected_selector_anchor"], "prior")
+
+    def test_visible_anchor_calibration_handles_no_visible_cases(self) -> None:
+        tokenizer = ByteTokenizer()
+        report = calibrate_lattice_selector_anchor_on_visible_context(
+            tokenizer=tokenizer,
+            marked_text="aa[[bb]]cc",
+            guide=BigramGuide.from_text("aa bb cc", tokenizer),
+            train_text="aa bb cc",
+            visible_limit=2,
+            morphology_limit=2,
+            surface_limit=2,
+            suture_weight=2.0,
+            morphology_weight=1.0,
+            surface_weight=1.0,
+            default_selector_anchor="surface",
+            calibration_cases=4,
+            calibration_context_chars=12,
+        )
+        self.assertEqual(report["status"], "no_visible_anchor_calibration_cases")
+        self.assertEqual(report["selected_selector_anchor"], "surface")
+        self.assertEqual(report["calibration_cases"], 0)
+
+    def test_lattice_oracle_keeps_surface_anchor_calibration_diagnostic(self) -> None:
+        tokenizer = ByteTokenizer()
+        train_text = "Nathaniel's book and Michael's cloak are nearby."
+        row = lattice_oracle_case(
+            tokenizer=tokenizer,
+            marked_text="And Gabr[[iel']]s pumps were bright",
+            guide=BigramGuide.from_text(train_text, tokenizer),
+            train_text=train_text,
+            visible_limit=4,
+            morphology_limit=16,
+            local_surface_anchor_calibration=True,
+            apply_local_surface_anchor_calibration=True,
+            local_surface_anchor_calibration_cases=4,
+            local_surface_anchor_calibration_context_chars=6,
+        )
+        report = row["local_surface_anchor_calibration"]
+        self.assertTrue(report["requested_apply"])
+        self.assertFalse(report["applied"])
+        self.assertEqual(report["application_status"], "not_applicable_in_candidate_oracle_mode")
 
     def test_lattice_oracle_case_reports_morphology_hit(self) -> None:
         tokenizer = ByteTokenizer()
@@ -627,6 +702,14 @@ class BenchTest(unittest.TestCase):
                 "surface_verifier_selected_exact": False,
                 "surface_verifier_exact_rank": 5,
                 "surface_verifier_exact_in_top4": False,
+                "local_surface_anchor_calibration": {
+                    "selected_selector_anchor": "prior",
+                    "prior_selected_exact_rate": 0.5,
+                    "surface_selected_exact_rate": 0.25,
+                    "surface_help_count": 0,
+                    "surface_harm_count": 1,
+                    "applied": False,
+                },
                 "selector_anchor_margin_sweep": [
                     {
                         "selector_anchor": "prior",
@@ -685,6 +768,14 @@ class BenchTest(unittest.TestCase):
                 "surface_verifier_selected_exact": True,
                 "surface_verifier_exact_rank": 2,
                 "surface_verifier_exact_in_top4": True,
+                "local_surface_anchor_calibration": {
+                    "selected_selector_anchor": "surface",
+                    "prior_selected_exact_rate": 0.25,
+                    "surface_selected_exact_rate": 0.75,
+                    "surface_help_count": 2,
+                    "surface_harm_count": 0,
+                    "applied": True,
+                },
                 "selector_anchor_margin_sweep": [
                     {
                         "selector_anchor": "prior",
@@ -725,6 +816,14 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(summary["surface_verifier_top4_delta_vs_prior"], 0.0)
         self.assertEqual(summary["surface_verifier_harm_count"], 1)
         self.assertEqual(summary["surface_verifier_help_count"], 1)
+        self.assertEqual(summary["local_surface_anchor_calibration_cases"], 2)
+        self.assertEqual(summary["local_surface_anchor_selected_counts"], {"prior": 1, "surface": 1})
+        self.assertEqual(summary["local_surface_anchor_surface_selected_rate"], 0.5)
+        self.assertEqual(summary["local_surface_anchor_applied_rate"], 0.5)
+        self.assertEqual(summary["local_surface_anchor_visible_prior_exact_rate"], 0.375)
+        self.assertEqual(summary["local_surface_anchor_visible_surface_exact_rate"], 0.5)
+        self.assertEqual(summary["local_surface_anchor_surface_help_count"], 2)
+        self.assertEqual(summary["local_surface_anchor_surface_harm_count"], 1)
         self.assertEqual(summary["outcome_categories"], {"oracle_outside_scored_set": 1, "selected_exact": 1})
         self.assertEqual(
             summary["selector_effects"],
@@ -765,6 +864,14 @@ class BenchTest(unittest.TestCase):
                 "surface_verifier_selected_exact": False,
                 "surface_verifier_exact_rank": 5,
                 "surface_verifier_exact_in_top4": False,
+                "local_surface_anchor_calibration": {
+                    "selected_selector_anchor": "prior",
+                    "prior_selected_exact_rate": 0.5,
+                    "surface_selected_exact_rate": 0.25,
+                    "surface_help_count": 0,
+                    "surface_harm_count": 1,
+                    "applied": False,
+                },
                 "local_prior_calibration": {"applied": False},
                 "local_prior_calibration_suggested_prior_exact_rank": 7,
                 "local_prior_calibration_suggested_prior_top4_exact": False,
@@ -784,6 +891,14 @@ class BenchTest(unittest.TestCase):
                 "surface_verifier_selected_exact": True,
                 "surface_verifier_exact_rank": 2,
                 "surface_verifier_exact_in_top4": True,
+                "local_surface_anchor_calibration": {
+                    "selected_selector_anchor": "surface",
+                    "prior_selected_exact_rate": 0.25,
+                    "surface_selected_exact_rate": 0.75,
+                    "surface_help_count": 2,
+                    "surface_harm_count": 0,
+                    "applied": False,
+                },
                 "local_prior_calibration": {"applied": False},
                 "local_prior_calibration_suggested_prior_exact_rank": 2,
                 "local_prior_calibration_suggested_prior_top4_exact": True,
@@ -804,6 +919,14 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(summary["surface_verifier_top4_delta_vs_prior"], 0.0)
         self.assertEqual(summary["surface_verifier_harm_count"], 1)
         self.assertEqual(summary["surface_verifier_help_count"], 1)
+        self.assertEqual(summary["local_surface_anchor_calibration_cases"], 2)
+        self.assertEqual(summary["local_surface_anchor_selected_counts"], {"prior": 1, "surface": 1})
+        self.assertEqual(summary["local_surface_anchor_surface_selected_rate"], 0.5)
+        self.assertEqual(summary["local_surface_anchor_applied_rate"], 0.0)
+        self.assertEqual(summary["local_surface_anchor_visible_prior_exact_rate"], 0.375)
+        self.assertEqual(summary["local_surface_anchor_visible_surface_exact_rate"], 0.5)
+        self.assertEqual(summary["local_surface_anchor_surface_help_count"], 2)
+        self.assertEqual(summary["local_surface_anchor_surface_harm_count"], 1)
         self.assertEqual(summary["local_prior_calibration_cases"], 2)
         self.assertEqual(summary["local_prior_suggested_top4_exact_rate"], 0.5)
         self.assertEqual(summary["local_prior_suggested_top4_delta"], 0.0)

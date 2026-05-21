@@ -192,10 +192,18 @@ def build_breakthrough_plan() -> dict[str, Any]:
         "source_refresh_date": SOURCE_REFRESH_DATE,
         "chatgpt_teammate_status": {
             "requested": True,
-            "usable_this_run": True,
-            "model_mode": "Extended Pro",
-            "conversation_url": "https://chatgpt.com/c/6a0f1cf7-b734-83ea-afa1-1a92152682f1",
-            "claim": "Live ChatGPT teammate recommended the model-free visible-reranker oracle smoke before heavy scoring.",
+            "usable_this_run": False,
+            "blocker": "Current Chrome/ChatGPT bridge probe fails at node_repl/js Transport closed.",
+            "claim": "No fresh GPT-5.5 Pro contribution is claimed for this continuation.",
+            "recorded_prior_note": {
+                "model_mode": "Extended Pro",
+                "conversation_url": "https://chatgpt.com/c/6a0f1cf7-b734-83ea-afa1-1a92152682f1",
+                "contribution": (
+                    "Recorded prior note: test the model-free visible-reranker oracle smoke "
+                    "before spending Mac heat on model scoring."
+                ),
+                "verification_status": "recorded_url_not_reverified_by_current_bridge",
+            },
         },
         "claim_boundary": CLAIM_BOUNDARY,
         "current_best_move": "visible_reranker_oracle_smoke",
@@ -241,6 +249,16 @@ def _format_markdown(plan: dict[str, Any]) -> str:
                 f"- Claim: {plan['chatgpt_teammate_status']['claim']}",
             ]
         )
+        prior_note = plan["chatgpt_teammate_status"].get("recorded_prior_note")
+        if isinstance(prior_note, dict):
+            lines.extend(
+                [
+                    f"- Recorded prior mode: {prior_note.get('model_mode', 'unknown')}",
+                    f"- Recorded prior URL: {prior_note.get('conversation_url', 'none')}",
+                    f"- Recorded prior contribution: {prior_note.get('contribution', 'none')}",
+                    f"- Recorded prior status: {prior_note.get('verification_status', 'unknown')}",
+                ]
+            )
     lines.extend(
         [
             "",

@@ -291,7 +291,7 @@ helixdiff-bench \
   --json-out proof/lattice_oracle_4case.json
 ```
 
-The live Extended Pro critique pushed one more cheap proof before the next model-scored run:
+The current proof ladder includes one more cheap proof before the next model-scored run:
 
 ```
 helixdiff-visible-reranker-oracle-smoke \
@@ -300,7 +300,7 @@ helixdiff-visible-reranker-oracle-smoke \
   --json
 ```
 
-This smoke is deliberately model-free. It proves the `prior`, `surface`, and `visible_reranker` branches exist, logs visible-reranker calibration with `apply=false`, records leakage flags, and runs shuffle falsification. The checked-in receipt passes with `model_load=false`, `gold_in_lattice_at_128=1.0` on the 2-case smoke, `visible_reranker.selected_exact=1.0`, zero leakage flags, and shuffled selected-exact down at `0.333`. That is proof integrity, not a model-quality claim.
+This smoke is deliberately model-free. It proves the `prior`, `surface`, and `visible_reranker` branches exist, logs visible-reranker calibration with `apply=false`, records leakage flags, and runs shuffle falsification. Its verdict now fails closed unless the shuffle control drops both selected-exact and lattice-coverage rates. The checked-in receipt passes with `model_load=false`, `gold_in_lattice_at_128=1.0` on the 2-case smoke, `visible_reranker.selected_exact=1.0`, zero leakage flags, and shuffled selected-exact down at `0.333`. That is proof integrity, not a model-quality claim.
 
 For the next model-scored run, use `--lattice-prior-rerank-top-k 4 --lattice-verifier-mode dual --lattice-verifier-top-k 0 --lattice-selector-margin 3.0 --lattice-selector-anchor surface --lattice-selector-anchor-sweep prior,surface,visible_reranker --lattice-bi-anchor-candidates 64 --lattice-bi-anchor-sizes 32,24,16,12,8,6,4 --lattice-local-surface-anchor-calibration --lattice-visible-reranker-calibration` to score only the small structural-prior set that the oracle proved contains the answer on this slice while testing whether the non-leaky surface verifier or visible-context reranker is a better selector anchor than raw prior rank. `dual` averages leave-one-out suture scoring with full-hole reconstruction scoring, verifier top-k `0` keeps scoring from masking out candidate bytes that the sampler would not normally pick, and the selector margin prevents a weak diffusion preference from overriding the chosen anchor. The local anchor calibration is a verifier-of-the-verifier: it reports whether same-case visible synthetic holes would have trusted prior, surface, or a prior/surface-weighted visible reranker before the hidden span is scored. The summary now separates raw-verifier exact rate, anchor exact rate, scored-top-k oracle coverage, bi-anchor oracle contribution, surface-verifier and visible-reranker exact/top-k diagnostics, local surface-anchor recommendation, the no-extra-compute `local_surface_anchor_margin_sweep`, margin activation rate, selector effects, outcome categories, anchor-margin gaps, and a counterfactual selector-anchor/margin sweep from the same scored candidates, so the run tells you whether to train the verifier, tune the margin, switch anchors, trust per-case anchor calibration, or widen the lattice instead of hiding all failures inside one accuracy number.
 

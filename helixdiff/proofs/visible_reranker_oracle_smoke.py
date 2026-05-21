@@ -152,6 +152,57 @@ def _shuffle_falsification(
     }
 
 
+def evaluate_visible_reranker_oracle_contract(receipt: dict[str, Any]) -> dict[str, Any]:
+    """Make the model-free smoke fail closed when its anti-leak checks stop falsifying."""
+
+    leakage = receipt.get("leakage", {})
+    leakage = leakage if isinstance(leakage, dict) else {}
+    lattice = receipt.get("lattice", {})
+    lattice = lattice if isinstance(lattice, dict) else {}
+    shuffle = receipt.get("shuffle_falsification", {})
+    shuffle = shuffle if isinstance(shuffle, dict) else {}
+    sweep = receipt.get("selector_anchor_sweep", {})
+    sweep = sweep if isinstance(sweep, dict) else {}
+    visible = sweep.get("visible_reranker", {})
+    visible = visible if isinstance(visible, dict) else {}
+
+    try:
+        real_selected_exact = float(visible.get("selected_exact", 0.0))
+        shuffled_selected_exact = float(shuffle.get("visible_reranker_selected_exact", 1.0))
+        real_lattice_rate = float(lattice.get("gold_in_lattice_at_128", 0.0))
+        shuffled_lattice_rate = float(shuffle.get("gold_in_lattice_at_128", 1.0))
+    except (TypeError, ValueError):
+        real_selected_exact = 0.0
+        shuffled_selected_exact = 1.0
+        real_lattice_rate = 0.0
+        shuffled_lattice_rate = 1.0
+
+    checks = {
+        "model_not_loaded": receipt.get("model_load") is False,
+        "visible_reranker_diagnostic_only": visible.get("apply") is False,
+        "gold_not_used_for_selection": leakage.get("gold_used_for_selection") is False,
+        "masked_bytes_not_seen_by_features": leakage.get("masked_bytes_seen_by_features") is False,
+        "no_train_split_target_hole_leakage": int(leakage.get("target_hole_seen_in_train_split", 1) or 0) == 0,
+        "no_eval_doc_hits": int(leakage.get("eval_doc_hits", 1) or 0) == 0,
+        "no_same_doc_hits": int(leakage.get("same_doc_hits", 1) or 0) == 0,
+        "shuffle_falsification_drops_selected_exact": shuffled_selected_exact < real_selected_exact,
+        "shuffle_falsification_drops_lattice_coverage": shuffled_lattice_rate < real_lattice_rate,
+    }
+    missing = [name for name, passed in checks.items() if not passed]
+    return {
+        "passed": not missing,
+        "missing": missing,
+        "checks": checks,
+        "observed": {
+            "visible_reranker_selected_exact": real_selected_exact,
+            "shuffle_visible_reranker_selected_exact": shuffled_selected_exact,
+            "gold_in_lattice_at_128": real_lattice_rate,
+            "shuffle_gold_in_lattice_at_128": shuffled_lattice_rate,
+        },
+        "claim_boundary": "model_free_oracle_smoke_only_no_generation_claim",
+    }
+
+
 def build_receipt(config: dict[str, Any]) -> dict[str, Any]:
     tokenizer = ByteTokenizer()
     text = load_text(str(config["data"]))
@@ -295,15 +346,7 @@ def build_receipt(config: dict[str, Any]) -> dict[str, Any]:
         "target_hole_seen_in_train_split": int(leakage_flags["target_hole_seen_in_train_split"]),
         "document_id_support": "single_contiguous_train_validation_split_no_doc_ids",
     }
-    contract_passed = (
-        leakage["target_hole_seen_in_train_split"] == 0
-        and leakage["eval_doc_hits"] == 0
-        and leakage["same_doc_hits"] == 0
-        and leakage["masked_bytes_seen_by_features"] is False
-        and leakage["gold_used_for_selection"] is False
-        and selector_anchor_sweep["visible_reranker"]["apply"] is False
-    )
-    return {
+    receipt = {
         "proof_name": "visible_reranker_oracle_smoke",
         "commit": current_commit(),
         "git_dirty": current_git_dirty(),
@@ -334,11 +377,14 @@ def build_receipt(config: dict[str, Any]) -> dict[str, Any]:
             {key: value for key, value in row.items() if not key.startswith("_")}
             for row in case_rows
         ],
-        "verdict": "pass" if contract_passed else "fail",
         "claim_boundary": (
             "model-free visible-context reranker proof only; reranker apply=false and no generation claim"
         ),
     }
+    proof_contract = evaluate_visible_reranker_oracle_contract(receipt)
+    receipt["proof_contract"] = proof_contract
+    receipt["verdict"] = "pass" if proof_contract["passed"] else "fail"
+    return receipt
 
 
 def main(argv: list[str] | None = None) -> None:

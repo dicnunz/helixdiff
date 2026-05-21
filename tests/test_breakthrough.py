@@ -22,10 +22,14 @@ class BreakthroughPlanTests(unittest.TestCase):
         self.assertIn("gold_blind_bi_anchor_oracle", lane_names)
         self.assertIn("frozen_selector_heldout_trial", lane_names)
         self.assertIn("visible_hole_reranker", lane_names)
-        self.assertTrue(plan["chatgpt_teammate_status"]["usable_this_run"])
-        self.assertEqual(plan["chatgpt_teammate_status"]["model_mode"], "Extended Pro")
-        self.assertIn("chatgpt.com/c/", plan["chatgpt_teammate_status"]["conversation_url"])
-        self.assertIn("visible-reranker oracle smoke", plan["chatgpt_teammate_status"]["claim"])
+        self.assertFalse(plan["chatgpt_teammate_status"]["usable_this_run"])
+        self.assertIn("Transport closed", plan["chatgpt_teammate_status"]["blocker"])
+        self.assertIn("No fresh GPT-5.5 Pro contribution", plan["chatgpt_teammate_status"]["claim"])
+        prior_note = plan["chatgpt_teammate_status"]["recorded_prior_note"]
+        self.assertEqual(prior_note["model_mode"], "Extended Pro")
+        self.assertIn("chatgpt.com/c/", prior_note["conversation_url"])
+        self.assertIn("visible-reranker oracle smoke", prior_note["contribution"])
+        self.assertEqual(prior_note["verification_status"], "recorded_url_not_reverified_by_current_bridge")
 
     def test_top_lane_reuses_predeclared_recipe_and_gate(self) -> None:
         plan = build_breakthrough_plan()

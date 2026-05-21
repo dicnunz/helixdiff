@@ -748,6 +748,7 @@ def select_lattice_row_with_margin(
         raise RuntimeError("retrieval lattice produced no candidates")
     raw_best = max(scored_options, key=lambda item: (item[0], -int(item[2]["prior_rank"]), str(item[2]["predicted_hole"])))
     anchor = scored_options[0]
+    anchor_margin_gap = max(0.0, float(raw_best[0] - anchor[0]))
     margin_applied = selector_margin > 0 and raw_best is not anchor and raw_best[0] < anchor[0] + selector_margin
     selected = anchor if margin_applied else raw_best
     raw_best_exact = bool(raw_best[2].get("exact", False))
@@ -759,6 +760,9 @@ def select_lattice_row_with_margin(
         {
             "selector_margin": float(selector_margin),
             "selector_margin_applied": bool(margin_applied),
+            "anchor_margin_gap": json_score(anchor_margin_gap),
+            "selector_margin_clears_anchor_gap": bool(raw_best is not anchor and selector_margin > anchor_margin_gap),
+            "selector_margin_shortfall": json_score(max(0.0, anchor_margin_gap - float(selector_margin))),
             "selector_effect": classify_selector_effect(
                 raw_best_exact=raw_best_exact,
                 anchor_exact=anchor_exact,
@@ -821,6 +825,9 @@ def selector_margin_sweep_report(
                 "exact": exact,
                 "byte_accuracy": float(selected_row.get("byte_accuracy", 0.0)),
                 "selector_margin_applied": bool(selector_report["selector_margin_applied"]),
+                "anchor_margin_gap": selector_report["anchor_margin_gap"],
+                "selector_margin_clears_anchor_gap": bool(selector_report["selector_margin_clears_anchor_gap"]),
+                "selector_margin_shortfall": selector_report["selector_margin_shortfall"],
                 "selector_effect": selector_report["selector_effect"],
                 "outcome_category": outcome_category,
                 "raw_best_hole": selector_report["raw_best_hole"],
@@ -1238,12 +1245,16 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 "selector_effects": {},
                 "margin_rescued_exact_rate": 0.0,
                 "raw_verifier_overrode_exact_anchor_rate": 0.0,
+                "avg_anchor_margin_gap": 0.0,
+                "avg_exact_anchor_margin_gap": None,
+                "max_exact_anchor_margin_gap": None,
                 "selector_margin_sweep": {},
             }
         )
         return summary
 
     prior_rank_rows = [row for row in rows if row.get("prior_exact_rank") is not None]
+    exact_anchor_rows = [row for row in rows if row.get("anchor_exact")]
     outcome_categories = Counter(str(row.get("outcome_category", "unknown")) for row in rows)
     selector_effects = Counter(str(row.get("selector_effect", "unknown")) for row in rows)
     summary.update(
@@ -1275,6 +1286,17 @@ def summarize_retrieval_lattice(rows: list[dict[str, Any]]) -> dict[str, Any]:
                 1.0 for row in rows if row.get("selector_effect") == "raw_verifier_overrode_exact_anchor"
             )
             / len(rows),
+            "avg_anchor_margin_gap": sum(float(row.get("anchor_margin_gap", 0.0)) for row in rows) / len(rows),
+            "avg_exact_anchor_margin_gap": (
+                sum(float(row.get("anchor_margin_gap", 0.0)) for row in exact_anchor_rows) / len(exact_anchor_rows)
+                if exact_anchor_rows
+                else None
+            ),
+            "max_exact_anchor_margin_gap": (
+                max(float(row.get("anchor_margin_gap", 0.0)) for row in exact_anchor_rows)
+                if exact_anchor_rows
+                else None
+            ),
             "selector_margin_sweep": summarize_selector_margin_sweep(rows),
         }
     )

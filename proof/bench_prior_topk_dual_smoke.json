@@ -37,8 +37,8 @@
     "visible_context_adaptation_steps": 0
   },
   "masked_eval": {
-    "loss": 3.264528751373291,
-    "masked_accuracy": 0.1090909093618393,
+    "loss": 3.295706033706665,
+    "masked_accuracy": 0.16923077404499054,
     "mask_rate": 0.5,
     "batches": 1,
     "batch_size": 2
@@ -137,6 +137,9 @@
         },
         "margin_rescued_exact_rate": 1.0,
         "raw_verifier_overrode_exact_anchor_rate": 0.0,
+        "avg_anchor_margin_gap": 2.5397194766998297,
+        "avg_exact_anchor_margin_gap": 2.5397194766998297,
+        "max_exact_anchor_margin_gap": 2.5397194766998297,
         "selector_margin_sweep": {
           "0": {
             "cases": 1,
@@ -216,6 +219,9 @@
           "selector": "diffusion_score_plus_structural_prior_topk",
           "selector_margin": 3.0,
           "selector_margin_applied": true,
+          "anchor_margin_gap": 2.5397194766998297,
+          "selector_margin_clears_anchor_gap": true,
+          "selector_margin_shortfall": 0.0,
           "selector_effect": "margin_rescued_exact_anchor",
           "raw_best_hole": "Nath",
           "raw_best_score": 3.3911870861053472,
@@ -1475,6 +1481,9 @@
               "exact": false,
               "byte_accuracy": 0.25,
               "selector_margin_applied": false,
+              "anchor_margin_gap": 2.5397194766998297,
+              "selector_margin_clears_anchor_gap": false,
+              "selector_margin_shortfall": 2.5397194766998297,
               "selector_effect": "raw_verifier_overrode_exact_anchor",
               "outcome_category": "raw_verifier_overrode_exact_anchor",
               "raw_best_hole": "Nath",
@@ -1489,6 +1498,9 @@
               "exact": false,
               "byte_accuracy": 0.25,
               "selector_margin_applied": false,
+              "anchor_margin_gap": 2.5397194766998297,
+              "selector_margin_clears_anchor_gap": false,
+              "selector_margin_shortfall": 1.5397194766998297,
               "selector_effect": "raw_verifier_overrode_exact_anchor",
               "outcome_category": "raw_verifier_overrode_exact_anchor",
               "raw_best_hole": "Nath",
@@ -1503,6 +1515,9 @@
               "exact": false,
               "byte_accuracy": 0.25,
               "selector_margin_applied": false,
+              "anchor_margin_gap": 2.5397194766998297,
+              "selector_margin_clears_anchor_gap": false,
+              "selector_margin_shortfall": 0.5397194766998297,
               "selector_effect": "raw_verifier_overrode_exact_anchor",
               "outcome_category": "raw_verifier_overrode_exact_anchor",
               "raw_best_hole": "Nath",
@@ -1517,6 +1532,9 @@
               "exact": true,
               "byte_accuracy": 1.0,
               "selector_margin_applied": true,
+              "anchor_margin_gap": 2.5397194766998297,
+              "selector_margin_clears_anchor_gap": true,
+              "selector_margin_shortfall": 0.0,
               "selector_effect": "margin_rescued_exact_anchor",
               "outcome_category": "selected_exact",
               "raw_best_hole": "Nath",
@@ -1531,6 +1549,9 @@
               "exact": true,
               "byte_accuracy": 1.0,
               "selector_margin_applied": true,
+              "anchor_margin_gap": 2.5397194766998297,
+              "selector_margin_clears_anchor_gap": true,
+              "selector_margin_shortfall": 0.0,
               "selector_effect": "margin_rescued_exact_anchor",
               "outcome_category": "selected_exact",
               "raw_best_hole": "Nath",
@@ -1575,7 +1596,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 0.11543541701394133
+          "elapsed_seconds": 0.17030658302246593
         }
       ]
     },
@@ -1610,7 +1631,7 @@
               "exact": false
             }
           ],
-          "elapsed_seconds": 1.3280800830107182,
+          "elapsed_seconds": 1.6554066659882665,
           "target_hole_seen_in_train_split": false
         }
       ]
@@ -1641,7 +1662,7 @@
     "adapted_bridge_guided_minus_nearest_visible_byte_accuracy": 0.0,
     "retrieval_lattice_minus_nearest_visible_byte_accuracy": 1.0
   },
-  "quality_label": "undertrained",
+  "quality_label": "mechanism_checkpoint",
   "ten_out_of_ten_gate": {
     "artifact": "pass_if_tests_verifier_docs_and_benchmarks_pass",
     "actual_model": "requires strong_laptop_checkpoint or better; otherwise do not claim 10/10 model quality",

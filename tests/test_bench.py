@@ -286,6 +286,9 @@ class BenchTest(unittest.TestCase):
         self.assertEqual(report["raw_best_byte_accuracy"], 0.0)
         self.assertEqual(report["anchor_byte_accuracy"], 1.0)
         self.assertEqual(report["selector_effect"], "margin_rescued_exact_anchor")
+        self.assertAlmostEqual(report["anchor_margin_gap"], 0.4)
+        self.assertTrue(report["selector_margin_clears_anchor_gap"])
+        self.assertEqual(report["selector_margin_shortfall"], 0.0)
 
     def test_selector_margin_sweep_reuses_scored_options(self) -> None:
         anchor = torch.tensor([1])
@@ -306,9 +309,12 @@ class BenchTest(unittest.TestCase):
         self.assertEqual([row["selector_margin"] for row in sweep], [0.0, 0.5])
         self.assertEqual(sweep[0]["selected_hole"], "challenger")
         self.assertEqual(sweep[0]["outcome_category"], "raw_verifier_overrode_exact_anchor")
+        self.assertAlmostEqual(sweep[0]["anchor_margin_gap"], 0.4)
+        self.assertAlmostEqual(sweep[0]["selector_margin_shortfall"], 0.4)
         self.assertEqual(sweep[1]["selected_hole"], "anchor")
         self.assertEqual(sweep[1]["outcome_category"], "selected_exact")
         self.assertEqual(sweep[1]["selector_effect"], "margin_rescued_exact_anchor")
+        self.assertTrue(sweep[1]["selector_margin_clears_anchor_gap"])
 
     def test_parse_selector_margin_sweep_dedupes_and_sorts(self) -> None:
         self.assertEqual(parse_selector_margin_sweep("3, 0,1,3,,2"), [0.0, 1.0, 2.0, 3.0])
@@ -356,6 +362,7 @@ class BenchTest(unittest.TestCase):
                 "selector_effect": "margin_rescued_exact_anchor",
                 "outcome_category": "selected_exact",
                 "selector_margin_applied": True,
+                "anchor_margin_gap": 0.4,
                 "selector_margin_sweep": [
                     {
                         "selector_margin": 0.0,
@@ -390,6 +397,7 @@ class BenchTest(unittest.TestCase):
                 "selector_effect": "raw_verifier_selected_nonexact",
                 "outcome_category": "oracle_outside_scored_set",
                 "selector_margin_applied": False,
+                "anchor_margin_gap": 0.0,
                 "selector_margin_sweep": [
                     {
                         "selector_margin": 0.0,
@@ -430,6 +438,9 @@ class BenchTest(unittest.TestCase):
         )
         self.assertEqual(summary["margin_rescued_exact_rate"], 0.5)
         self.assertEqual(summary["raw_verifier_overrode_exact_anchor_rate"], 0.0)
+        self.assertEqual(summary["avg_anchor_margin_gap"], 0.2)
+        self.assertEqual(summary["avg_exact_anchor_margin_gap"], 0.4)
+        self.assertEqual(summary["max_exact_anchor_margin_gap"], 0.4)
         self.assertEqual(summary["selector_margin_sweep"]["0"]["exact_match_rate"], 0.0)
         self.assertEqual(summary["selector_margin_sweep"]["0.5"]["exact_match_rate"], 0.5)
         self.assertEqual(summary["selector_margin_sweep"]["0.5"]["selector_margin_applied_rate"], 0.5)
